@@ -1,0 +1,163 @@
+                                                                
+version 2
+run Edge-40-20170112-16:51:32-18351
+attr caching 1
+attr configname Edge
+attr datetime 20170112-16:51:32
+attr emergencyInterest 0
+attr experiment Edge
+attr inifile omnetpp_line.ini
+attr iterationvars "$startCache=0, $policy=1, $caching=1, $maxCache=5, $zipfChar=1, $multimediaInterest=100, $trafficInterest=0, $networkInterest=0, $emergencyInterest=0"
+attr iterationvars2 "$startCache=0, $policy=1, $caching=1, $maxCache=5, $zipfChar=1, $multimediaInterest=100, $trafficInterest=0, $networkInterest=0, $emergencyInterest=0, $repetition=0"
+attr maxCache 5
+attr measurement "$startCache=0, $policy=1, $caching=1, $maxCache=5, $zipfChar=1, $multimediaInterest=100, $trafficInterest=0, $networkInterest=0, $emergencyInterest=0"
+attr multimediaInterest 100
+attr network BaconScenario
+attr networkInterest 0
+attr policy 1
+attr processid 18351
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 40
+attr seedset 40
+attr startCache 0
+attr trafficInterest 0
+attr zipfChar 1
+param **.coreDebug false
+param **.debug false
+param *.**.nic.mac1609_4.bitrate 18Mbps
+param *.**.nic.mac1609_4.txPower 20mW
+param *.**.nic.mac1609_4.useServiceChannel false
+param *.**.nic.phy80211p.analogueModels "xmldoc(\"config.xml\")"
+param *.**.nic.phy80211p.decider "xmldoc(\"config.xml\")"
+param *.**.nic.phy80211p.maxTXPower 20mW
+param *.**.nic.phy80211p.sensitivity -89dBm
+param *.**.nic.phy80211p.thermalNoise -110dBm
+param *.**.nic.phy80211p.usePropagationDelay true
+param *.**.nic.phy80211p.useThermalNoise true
+param *.annotations.draw false
+param *.connectionManager.alpha 2.0
+param *.connectionManager.carrierFrequency "5.890e9 Hz"
+param *.connectionManager.pMax 20mW
+param *.connectionManager.sat -89dBm
+param *.connectionManager.sendDirect true
+param *.library.multimediaLibrarySize 50000
+param *.library.zipfCaracterization ${zipfChar=1}
+param *.manager.autoShutdown true
+param *.manager.host "\"localhost\""
+param *.manager.launchConfig "xmldoc(\"line.launchd.xml\")"
+param *.manager.margin 25
+param *.manager.moduleDisplayString "\"\""
+param *.manager.moduleName "\"node\""
+param *.manager.moduleType "\"paradise.bacon.BaconCar\""
+param *.manager.port 9999
+param *.manager.updateInterval 0.1s
+param *.node[*].appl.beaconInterval 1s
+param *.node[*].appl.beaconPriority 3
+param *.node[*].appl.cacheCopyProbability 0.5
+param *.node[*].appl.dataLengthBits "11696 bit"
+param *.node[*].appl.dataOnSch false
+param *.node[*].appl.dataPriority 2
+param *.node[*].appl.debug false
+param *.node[*].appl.headerLength "256 bit"
+param *.node[*].appl.inNetworkCaching ${caching=0,1,2,6}
+param *.node[*].appl.interestBroadcastTimeout 1
+param *.node[*].appl.maxAttempts 1
+param *.node[*].appl.maxOffset 0.005s
+param *.node[*].appl.maxSimultaneousConnections 5
+param *.node[*].appl.sendBeacons false
+param *.node[*].appl.sendData true
+param *.node[*].appl.sendWhileParking true
+param *.node[*].appl.transferTimeoutTime 0.2
+param *.node[*].client.emergencyInterest ${emergencyInterest=0}
+param *.node[*].client.locationTimerDelay 1
+param *.node[*].client.maximumRequestDelay 1
+param *.node[*].client.minimumRequestDelay 0.5
+param *.node[*].client.multimediaInterest ${multimediaInterest=100}
+param *.node[*].client.networkInterest ${networkInterest=0}
+param *.node[*].client.trafficInterest ${trafficInterest=0}
+param *.node[*].content.availableMultimediaObjects ${startCache=0}
+param *.node[*].content.cacheReplacementPolicy ${policy=1}
+param *.node[*].content.maxCachedContents ${maxCache=5,15,25,50,75,125,250,500}
+param *.node[*].mobilityType "\"TraCIMobility\""
+param *.node[*].mobilityType.debug false
+param *.node[*].veinsmobility.accidentCount 15
+param *.node[*].veinsmobility.accidentDuration 100s
+param *.node[*].veinsmobility.accidentInterval 0s
+param *.node[*].veinsmobility.accidentStart 0s
+param *.node[*].veinsmobility.x 0
+param *.node[*].veinsmobility.y 0
+param *.node[*].veinsmobility.z 1.895
+param *.node[*].veinsmobilityType "\"org.car2x.veins.modules.mobility.traci.TraCIMobility\""
+param *.node[*].veinsmobilityType.debug false
+param *.node[0].appl.maxSimultaneousConnections -1
+param *.node[0].client.maximumRequestDelay -1
+param *.node[0].client.minimumRequestDelay -1
+param *.node[0].content.availableMultimediaObjects -1
+param *.node[0].content.maxCachedContents -1
+param *.obstacles.obstacles "xmldoc(\"config.xml\", \"//AnalogueModel[@type='SimplePathlossModel']/obstacles\")"
+param *.playgroundHeight 12000m
+param *.playgroundLatitude 45.4427
+param *.playgroundLongitude -75.7017
+param *.playgroundSizeX 3000m
+param *.playgroundSizeY 12000m
+param *.playgroundSizeZ 100m
+param *.playgroundWidth 3000m
+param *.statistics.collectingPositions false
+param *.statistics.collectingRequestNames true
+param *.statistics.collectingStatistics true
+param *.statistics.contentNameStatisticsFile "\"${resultdir}/statistics-cache${maxCache}/zipf=${zipfChar}/P=${policy}/Cache=${caching}/library-M=${multimediaInterest}-T=${trafficInterest}-N=${networkInterest}-R=${repetition}.csv\""
+param *.statistics.locationStatisticsFile "\"${resultdir}/statistics-cache${maxCache}/zipf=${zipfChar}/P=${policy}/Cache=${caching}/heatmap-M=${multimediaInterest}-T=${trafficInterest}-N=${networkInterest}-R=${repetition}.csv\""
+param *.statistics.statisticsStartTime 50
+param *.statistics.statisticsStopTime 1550
+param *.world.use2D false
+param *.world.useTorus false
+
+vector 0  BaconScenario.statistics  SentPackets  ETV
+vector 2  BaconScenario.statistics  UnservedPackets  ETV
+vector 3  BaconScenario.statistics  LostPackets  ETV
+vector 4  BaconScenario.statistics  LostChunks  ETV
+vector 5  BaconScenario.statistics  ActiveVehicles  ETV
+vector 6  BaconScenario.statistics  MultimediaSentPackets  ETV
+vector 7  BaconScenario.statistics  MultimediaUnservedPackets  ETV
+vector 8  BaconScenario.statistics  MultimediaLostPackets  ETV
+vector 9  BaconScenario.statistics  MultimediaLostChunks  ETV
+vector 10  BaconScenario.statistics  TrafficSentPackets  ETV
+vector 11  BaconScenario.statistics  TrafficUnservedPackets  ETV
+vector 12  BaconScenario.statistics  TrafficLostPackets  ETV
+vector 13  BaconScenario.statistics  TrafficLostChunks  ETV
+vector 14  BaconScenario.statistics  NetworkSentPackets  ETV
+vector 15  BaconScenario.statistics  NetworkUnservedPackets  ETV
+vector 16  BaconScenario.statistics  NetworkLostPackets  ETV
+vector 17  BaconScenario.statistics  NetworkLostChunks  ETV
+vector 18  BaconScenario.statistics  EmergencySentPackets  ETV
+vector 19  BaconScenario.statistics  EmergencyUnservedPackets  ETV
+vector 20  BaconScenario.statistics  EmergencyLostPackets  ETV
+vector 21  BaconScenario.statistics  EmergencyLostChunks  ETV
+vector 22  BaconScenario.statistics  ServerCacheHits  ETV
+vector 23  BaconScenario.statistics  BackloggedResponses  ETV
+vector 24  BaconScenario.statistics  InterestsCreated  ETV
+vector 25  BaconScenario.statistics  InterestsRegistered  ETV
+vector 26  BaconScenario.statistics  InterestsFulfilled  ETV
+vector 27  BaconScenario.statistics  LocalLateCacheHits  ETV
+vector 28  BaconScenario.statistics  LocalCacheHits  ETV
+vector 29  BaconScenario.statistics  RemoteCacheHits  ETV
+vector 30  BaconScenario.statistics  LocalCacheMisses  ETV
+vector 31  BaconScenario.statistics  RemoteCacheMisses  ETV
+vector 32  BaconScenario.statistics  CacheReplacements  ETV
+vector 36  BaconScenario.statistics  CompletionPercentage  ETV
+vector 87  BaconScenario.node[1].appl  HopCount-1  ETV
+vector 34  BaconScenario.statistics  CompleteCommunicationLatency  ETV
+vector 33  BaconScenario.statistics  CommunicationLatency  ETV
+vector 88  BaconScenario.node[2].appl  HopCount-2  ETV
+vector 89  BaconScenario.node[5].appl  HopCount-5  ETV
+vector 90  BaconScenario.node[4].appl  HopCount-4  ETV
+vector 91  BaconScenario.node[6].appl  HopCount-6  ETV
+vector 92  BaconScenario.node[9].appl  HopCount-9  ETV
+vector 93  BaconScenario.node[12].appl  HopCount-12  ETV
+vector 35  BaconScenario.statistics  FailedCommunicationLatency  ETV
+vector 94  BaconScenario.node[15].appl  HopCount-15  ETV
+vector 95  BaconScenario.node[14].appl  HopCount-14  ETV
+vector 96  BaconScenario.node[16].appl  HopCount-16  ETV
+vector 

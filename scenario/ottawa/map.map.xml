@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on Fri Dec 11 00:46:43 2015 by SUMO polyconvert Version 0.21.0
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo-sim.org/xsd/polyconvertConfiguration.xsd">
+
+    <input>
+        <net-file value="map.roads.xml"/>
+        <osm-files value="map.osm"/>
+        <type-file value="typemap.xml"/>
+    </input>
+
+    <output>
+        <output-file value="map.map.xml"/>
+    </output>
+
+    <processing>
+        <ignore-errors value="false"/>
+    </processing>
+
+</configuration>
+-->
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo-sim.org/xsd/additional_file.xsd">
+    <poly id="-26" type="unknown" color="51,128,255" fill="1" layer="-1.00" shape="0.00,198.92 100.13,198.92 200.26,198.92 200.26,99.56 200.27,0.00 100.14,-0.00 0.01,-0.00 0.00,99.55 0.00,198.92"/>
+    <poly id="-28" type="unknown" color="51,128,255" fill="0" layer="-1.00" shape="0.00,198.92 44.23,154.82 100.13,99.46 155.70,44.28 200.27,0.00"/>
+    <poly id="-30" type="unknown" color="51,128,255" fill="0" layer="-1.00" shape="200.26,198.92 155.78,154.74 100.13,99.46 44.41,44.10 0.01,-0.00"/>
+    <poly id="-32" type="unknown" color="51,128,255" fill="0" layer="-1.00" shape="200.26,99.56 100.13,99.46 0.00,99.55"/>
+    <poly id="-34" type="unknown" color="51,128,255" fill="0" layer="-1.00" shape="100.14,-0.00 100.13,99.46 100.13,198.92"/>
+    <poly id="-42" type="unknown" color="51,128,255" fill="1" layer="-1.00" shape="44.23,154.82 155.78,154.74 155.70,44.28 44.41,44.10 44.23,154.82"/>
+    <poi id="-10" type="unknown" color="51,128,255" layer="-1.00" x="200.26" y="198.92"/>
+    <poi id="-12" type="unknown" color="51,128,255" layer="-1.00" x="200.27" y="0.00"/>
+    <poi id="-14" type="unknown" color="51,128,255" layer="-1.00" x="0.01" y="-0.00"/>
+    <poi id="-16" type="unknown" color="51,128,255" layer="-1.00" x="100.13" y="99.46"/>
+    <poi id="-18" type="unknown" color="51,128,255" layer="-1.00" x="0.00" y="99.55"/>
+    <poi id="-20" type="unknown" color="51,128,255" layer="-1.00" x="200.26" y="99.56"/>
+    <poi id="-22" type="unknown" color="51,128,255" layer="-1.00" x="100.13" y="198.92"/>
+    <poi id="-24" type="unknown" color="51,128,255" layer="-1.00" x="100.14" y="-0.00"/>
+    <poi id="-41" type="unknown" color="51,128,255" layer="-1.00" x="44.23" y="154.82"/>
+    <poi id="-44" type="unknown" color="51,128,255" layer="-1.00" x="155.78" y="154.74"/>
+    <poi id="-47" type="unknown" color="51,128,255" layer="-1.00" x="155.70" y="44.28"/>
+    <poi id="-50" type="unknown" color="51,128,255" layer="-1.00" x="44.41" y="44.10"/>
+    <poi id="-8" type="unknown" color="51,128,255" layer="-1.00" x="0.00" y="198.92"/>
+</additional>

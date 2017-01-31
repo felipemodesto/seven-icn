@@ -1,0 +1,15 @@
+./configure
+make
+cd scenario
+valgrind --leak-check=yes --tool=memcheck
+
+opp_run_release -r 0 -u Cmdenv -c nodebug -n ../examples/veins:scenarios:../src/paradise:../src/veins --image-path=../images -l ../src/veins-5 --record-eventlog=false --debug-on-errors=false omnetpp.ini
+
+opp_run -r 0 -u Cmdenv -c nodebug -n ../examples/veins:scenarios:../src/paradise:../src/veins --image-path=../images -l ../src/veins-5 --record-eventlog=false --debug-on-errors=false omnetpp.ini
+
+Built Command:
+
+valgrind --leak-check=yes --tool=memcheck opp_run -r 0 -u Cmdenv -c nodebug -n ../examples/veins:scenarios:../src/paradise:../src/veins --image-path=../images -l ../src/veins-5 --record-eventlog=false --debug-on-errors=false omnetpp.ini
+
+
+valgrind --tool=callgrind --dump-instr=yes --trace-jump=yes --collect-jumps=yes --simulate-cache=yes opp_run -r 0 -u Cmdenv -c nodebug -n ../examples/veins:scenarios:../src/paradise:../src/veins --image-path=../images -l ../src/veins-5 --record-eventlog=false --debug-on-errors=false omnetpp.ini

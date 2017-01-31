@@ -1,0 +1,289 @@
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#499: bad window path name ""
+    while executing
+"winfo toplevel [focus]"
+    invoked from within
+"if [catch {
+       opp_displaystring $dispstr parse tags $submodptr 1
+
+       # scale (x,y)
+       if {$scaling != ""} {
+           set x [expr $scali..."
+    (procedure "ModuleInspector:drawSubmodule" line 20)
+    invoked from within
+"ModuleInspector:drawSubmodule .inspector0.c ptr0x2a7a5a0 60 166 {nic} p=60,166 {} 0"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: watchinspector.cc#62: can't read "insp": no such variable
+    while executing
+"inspector:bindSideButtons $insp"
+    (procedure "createWatchViewer" line 7)
+    invoked from within
+"createWatchViewer $insp.main"
+    (procedure "createWatchInspector" line 7)
+    invoked from within
+"createWatchInspector .inspector2 {}"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: watchinspector.cc#62: can't read "insp": no such variable
+    while executing
+"inspector:bindSideButtons $insp"
+    (procedure "createWatchViewer" line 7)
+    invoked from within
+"createWatchViewer $insp.main"
+    (procedure "createWatchInspector" line 7)
+    invoked from within
+"createWatchInspector .inspector0 {}"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: watchinspector.cc#62: can't read "insp": no such variable
+    while executing
+"inspector:bindSideButtons $insp"
+    (procedure "createWatchViewer" line 7)
+    invoked from within
+"createWatchViewer $insp.main"
+    (procedure "createWatchInspector" line 7)
+    invoked from within
+"createWatchInspector .inspector0 {}"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: watchinspector.cc#62: can't read "insp": no such variable
+    while executing
+"inspector:bindSideButtons $insp"
+    (procedure "createWatchViewer" line 7)
+    invoked from within
+"createWatchViewer $insp.main"
+    (procedure "createWatchInspector" line 7)
+    invoked from within
+"createWatchInspector .inspector0 {}"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: watchinspector.cc#62: can't read "insp": no such variable
+    while executing
+"inspector:bindSideButtons $insp"
+    (procedure "createWatchViewer" line 7)
+    invoked from within
+"createWatchViewer $insp.main"
+    (procedure "createWatchInspector" line 7)
+    invoked from within
+"createWatchInspector .inspector0 {}"
+
+
+Tcl error: watchinspector.cc#62: can't read "insp": no such variable
+    while executing
+"inspector:bindSideButtons $insp"
+    (procedure "createWatchViewer" line 7)
+    invoked from within
+"createWatchViewer $insp.main"
+    (procedure "createWatchInspector" line 7)
+    invoked from within
+"createWatchInspector .inspector1 {}"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x26b5960 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector1.c ptr0x26b5960 1"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x3c889a0 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector0.c ptr0x3c889a0 2"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x3920820 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector0.c ptr0x3920820 2"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x2efb8a0 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector0.c ptr0x2efb8a0 2"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x28ef250 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector0.c ptr0x28ef250 1"
+
+
+Tcl error: moduleinspector.cc#631: ptr0x28ef250 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector0.c ptr0x28ef250 1"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x21db990 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector1.c ptr0x21db990 2"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x2781410 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector0.c ptr0x2781410 1"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x2a2b5a0 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector0.c ptr0x2a2b5a0 1"
+
+
+Tcl error: moduleinspector.cc#631: ptr0x2a2b5a0 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector1.c ptr0x2a2b5a0 1"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x3fcc870 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector2.c ptr0x3fcc870 2"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x3529be0 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector0.c ptr0x3529be0 1"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x358e6e0 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector0.c ptr0x358e6e0 1"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: moduleinspector.cc#631: ptr0x335a860 not found
+    while executing
+"error "$tag not found""
+    (procedure "ModuleInspector:getSubmodCoords" line 4)
+    invoked from within
+"ModuleInspector:getSubmodCoords $c $modptr"
+    (procedure "ModuleInspector:drawNextEventMarker" line 2)
+    invoked from within
+"ModuleInspector:drawNextEventMarker .inspector0.c ptr0x335a860 1"
+
+

@@ -1,0 +1,2136 @@
+//Concent Centric Class - Felipe Modesto
+
+#include <paradise/bacon/BaconServiceManager.hh>
+
+using Veins::TraCIMobilityAccess;
+using Veins::AnnotationManagerAccess;
+
+using namespace omnetpp;
+
+using namespace osgEarth;
+using namespace osgEarth::Annotation;
+using namespace osgEarth::Features;
+
+const simsignalwrap_t BaconServiceManager::parkingStateChangedSignal = simsignalwrap_t(TRACI_SIGNAL_PARKING_CHANGE_NAME);
+
+Define_Module(BaconServiceManager);
+
+//Initialization Function
+void BaconServiceManager::initialize(int stage) {
+    //Initializing
+    BaseWaveApplLayer::initialize(stage);
+
+    switch (stage) {
+        case 0: {
+            //Getting Simulation Scenario Configured Parameters
+            sendWhileParking = par("sendWhileParking").boolValue();
+            requestTimeoutTime = par("connectionTimeoutTime").doubleValue();
+            transferTimeoutTime = par("transferTimeoutTime").doubleValue();
+            maxSimultaneousConnections = par("maxSimultaneousConnections").doubleValue();
+
+            cacheCopyProbability = par("cacheCopyProbability").doubleValue();
+            inNetworkCaching = static_cast<CacheCoordinationPolicy>(par("inNetworkCaching").longValue());
+
+            //Getting TraCI Manager (SUMO Connection & Annotations Ready)
+            traci = TraCIMobilityAccess().get(getParentModule());
+            annotations = AnnotationManagerAccess().getIfExists();
+            ASSERT(annotations);
+
+            //Setting Gates
+            clientExchangeIn = findGate("clientExchangeIn");
+            clientExchangeOut = findGate("clientExchangeOut");
+
+            //Setting Base Parameters
+            sentMessage = false;
+            isParking = false;
+            lastDroveAt = simTime();
+            requestTimeLimit = 5;
+
+            totalPacketsForwarded = 0;
+            totalChunksRetransmited = 0;
+            totalChunksLost = 0;
+            totalPacketsLost = 0;
+            totalPacketsSent = 0;
+            totalPacketsUnserved = 0;
+            totalServerBusyResponses = 0;
+            totalContentUnavailableResponses = 0;
+            PITRetries = 0;
+            currentlyActiveConnections = 0;
+
+            updateNodeColor();
+
+            //Set Parking state change listener on current car Object
+            findHost()->subscribe(parkingStateChangedSignal, this);
+            break;
+        }
+
+        case 1: {
+            cSimulation *sim = getSimulation();
+            stats = check_and_cast<BaconStatistics *>(sim->getModuleByPath("CCScenario01.statistics"));
+            library = check_and_cast<BaconLibrary *>(sim->getModuleByPath("CCScenario01.library"));
+            cache = check_and_cast<BaconContentProvider *>(getParentModule()->getSubmodule("content"));
+
+            //Adding vehicle to statistics
+            stats->increaseActiveVehicles();
+
+            //traci->changeParkingState(true);
+            //std::cout << "(SM) <" << myId << "> is ready.\n";
+        }
+    }
+}
+
+void BaconServiceManager::finish() {
+    //Storing final object statistics upon object destruction
+    stats->setPacketsSent(totalPacketsSent);
+    stats->setPacketsLost(totalPacketsLost);
+    stats->setPacketsUnserved(totalPacketsUnserved);
+    stats->setChunksLost(totalChunksLost);
+    stats->setServerBusy(totalServerBusyResponses);
+    stats->setContentUnavailable(totalContentUnavailableResponses);
+    stats->decreaseActiveVehicles();
+
+    saveStatistics();
+
+    //std::cout << "(SM) <" << myId << "> has attempted to retry <" << PITRetries << "> connections after PIT lookup.\n";
+
+    //Canceling all self-timer Messages, cleaning up
+    if (cancelMessageTimer.size() != 0) {
+        for (std::vector<cMessage*>::size_type i = 0; i != cancelMessageTimer.size(); i++) {
+            if ((cancelMessageTimer[i] != NULL) && (cancelMessageTimer[i]->isScheduled()) && (cancelMessageTimer[i]->isSelfMessage()) ) {
+                cancelAndDelete(cancelMessageTimer[i]);
+            } else {
+                if (cancelMessageTimer[i]->isScheduled() == false) {
+                    delete(cancelMessageTimer[i]);
+                } else {
+                    std::cout << "(SM) <" << myId << "> Error: Self-message Issue. Name: <" << cancelMessageTimer[i]->getName() << "> isScheduled: <" << cancelMessageTimer[i]->isScheduled() << "> isSelfMessage: <" << cancelMessageTimer[i]->isSelfMessage() << ">\n";
+                    std::cout.flush();
+                }
+                //std::cerr << "(SM) Error: Non Self-message object. <" << cancelMessageTimer[i]->getName() << ">\n";
+                //std::cerr.flush();
+            }
+        }
+        cancelMessageTimer.clear();
+    }
+}
+
+//Maintenance function to reduce ConnectionList Sizes
+void BaconServiceManager::saveStatistics() {
+    //Saving individual vehicle statistics
+    for (auto it = connectionList.begin(); it != connectionList.end();) {
+        //TODO: (DECIDE) if we should Log additional statistics for connections
+
+
+        //Removing items for which we have logged the statistics (Complete status at client)
+        if ( it->clientAddress == myId &&  ConnectionStatus::DONE_MIN < it->connectionStatus && it->connectionStatus < ConnectionStatus::DONE_MAX) {
+            if ( it->downstreamHopCount != -1 ) {
+                if (it->downstreamHopCount != it->upstreamHopCount) {
+                    std::cout << "(SM) <" << myId << "> Connection <" << it->upstreamConnectionID << "> complete with weird uphopps/downhops = <" << it->upstreamHopCount << ";" << it->downstreamHopCount << ">. Status: <" << it->connectionStatus << "> \n";
+                }
+                stats->setHopsCount(it->downstreamHopCount);
+                stats->logDuplicateMessagesForConnection(it->duplicateRequests,it->upstreamConnectionID);
+
+                //Deleting Stuff
+                delete[] it->chunkStatusList;
+                it->chunkStatusList = NULL;
+                it = connectionList.erase(it);
+            } else {
+                //TODO: Maybe log some sort of statistic for locally sourced communications?
+                //Deleting Stuff
+                delete[] it->chunkStatusList;
+                it->chunkStatusList = NULL;
+                it = connectionList.erase(it);
+            }
+        //Also removing items for which the server has provided content successfully (logging different statistics)
+        } else if ( it->serverAddress == myId && it->downstreamHopCount != -1 && it->connectionStatus > ConnectionStatus::DONE_MIN && it->connectionStatus < ConnectionStatus::DONE_MAX) {
+            stats->logDuplicateMessagesForConnection(it->duplicateRequests,it->upstreamConnectionID);
+
+            //Deleting Stuff
+            delete[] it->chunkStatusList;
+            it->chunkStatusList = NULL;
+            it = connectionList.erase(it);
+        } else {
+            if (it->connectionStatus == ConnectionStatus::ERROR) {
+                std::cerr << "(SM) Error Message!\n";
+                std::cerr.flush();
+            }
+
+            //Checking messages that don't have a "DONE" status and that have been in our list for a long time.
+            simtime_t difTime = simTime() - it->requestTime;
+            if (it->clientAddress == myId && difTime.dbl() > (requestTimeoutTime + 1) ) {
+                //std::cout << "\t(SM) OOH SHIT. OLD RESPONSES!!! <" << it->connectionStatus << ">\n";
+                //TODO: (DECIDE) if we're going to delete these entries or something...
+            }
+            it++;
+        }
+    }
+}
+
+//=============================================================
+// FANCY DATA FUNCTIONS
+//=============================================================
+
+//Function called to update the Debug Circle UI of objects
+void BaconServiceManager::updateNodeColor() {
+    bool providingContent = false;      //Red
+    bool requestingContent = false;     //Green
+    bool waitingForContent = false;     //Blue
+
+    for (auto it = connectionList.begin(); it != connectionList.end(); it++) {
+        //Comparing Request ID
+        if (ConnectionStatus::WAITING_MIN < it->connectionStatus
+                && it->connectionStatus < ConnectionStatus::WAITING_MAX) {
+            waitingForContent = true;
+        } else if (ConnectionStatus::TRANSFER_MIN < it->connectionStatus
+                && it->connectionStatus < ConnectionStatus::TRANSFER_MAX) {
+            providingContent = true;
+        } else if (ConnectionStatus::RECEIVE_MIN < it->connectionStatus
+                && it->connectionStatus < ConnectionStatus::RECEIVE_MAX) {
+            requestingContent = true;
+        }
+    }
+
+    int sequenceNumber = 0;
+    if (providingContent)
+        sequenceNumber += 4;
+    if (requestingContent)
+        sequenceNumber += 2;
+    //if (waitingForContent)
+    //    sequenceNumber += 1;
+
+    std::string radius = "10";
+    if (waitingForContent)
+        radius = "20";
+
+    std::string color = "r=5,black";
+
+    //USING RGB Binary reference list:
+    //Providing | Receiving | Waiting
+    switch (sequenceNumber) {
+    //000   -   IDLE
+    case 0:
+        color = ("gray");
+        break;
+        //001   -   WAITING
+    case 1:
+        color = ("blue");
+        break;
+        //010   -   RECEIVING
+    case 2:
+        color = ("green");
+        break;
+        //011   -   WAITING + RECEIVING
+    case 3:
+        color = ("cyan");
+        break;
+        //100   -   SENDING
+    case 4:
+        color = ("red");
+        break;
+        //101   -   SENDING + WAITING
+    case 5:
+        color = ("magenta");
+        break;
+        //110   -   SENDING + RECEIVING
+    case 6:
+        color = ("yellow");
+        break;
+        //111   -   ALL
+    case 7:
+        color = ("white");
+        break;
+    }
+    //Updating String Text for DisplayObject
+    color = "r=" + radius + "," + color;
+    findHost()->getDisplayString().updateWith(color.c_str());
+}
+
+//Starts a new timer for the given message ID (assumed to be in connection list) with 1 second default delay
+void BaconServiceManager::startTimer(int timerID) {
+    startTimer(timerID, requestTimeoutTime); //Start a timer with a 1 second delay
+}
+
+//Starts a new timer for the given message ID (assumed to be in connection list) and specific delay
+void BaconServiceManager::startTimer(int timerID, int time) {
+    if (cancelTimer(timerID) == true) {
+        EV_WARN << "(SM) Warning: Canceled a timer to start a timer.\n";
+        EV_WARN.flush();
+    } else {
+        EV_WARN << "(SM) Don't worry about the cancelation message above. We good boys.\n";
+        EV_WARN.flush();
+    }
+
+    //cMessage* messageTimer = new cMessage("cancelMessageTimer");
+    WaveShortMessage* messageTimer = new WaveShortMessage("cancelMessageTimer");
+
+    //ID for Content
+    cMsgPar* idParameter = new cMsgPar(MessageParameter::ID.c_str());
+    idParameter->setLongValue(timerID);
+    messageTimer->addPar(idParameter);
+
+    cancelMessageTimer.push_back(messageTimer);
+    scheduleAt(simTime() + time, messageTimer);
+
+    EV_WARN << "(SM) Created new TimerMessage for Timer ID "
+                   << timerID << ".\n";
+    EV_WARN.flush();
+}
+
+//Cancel/Update timer for connection timeouts
+bool BaconServiceManager::cancelTimer(int timerID) {
+    if (cancelMessageTimer.size() != 0) {
+        for (std::vector<cMessage*>::size_type i = 0;
+                i != cancelMessageTimer.size(); i++) {
+            cArray parArray = cancelMessageTimer[i]->getParList();
+            cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(
+                    MessageParameter::ID.c_str()));
+            if (requestID->longValue() == timerID) {
+                EV << "(SM) Canceling Timer with ID "
+                          << requestID->longValue() << "\n";
+                EV.flush();
+
+                cancelAndDelete(cancelMessageTimer[i]);
+                cancelMessageTimer.erase(cancelMessageTimer.begin() + i);
+                return true;
+            }
+        }
+    }
+
+    EV_WARN << "(SM) Warning: did not find the requested timer.\n";
+    EV_WARN.flush();
+
+    return false;
+}
+
+//
+void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
+    //EV << "(SM) Handling selfTimer Message.\n";
+    //EV.flush();
+
+    cArray parArray = timerMessage->getParList();
+    cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::ID.c_str()));
+    long messageID = requestID->longValue();
+
+    //TODO: UNAXE (NOT COMMENTED :/)
+    Connection_t* connection = getConnection(messageID,-1);
+    if (connection == NULL) {
+        EV_ERROR << "(SM) Error: Timer message ID " << messageID << " does not map to any known connection.\n";
+        EV_ERROR.flush();
+        return;
+    }
+
+    //std::cout << "(SM) <" << myId << "> is handling a selftimer for connection <" << connection->connectionID << "> \n";
+    //std::cout.flush();
+
+    int segments = (int) ceil(connection->contentSize / (double) dataLengthBits);
+
+    //Checking status of SelfTimer Connection.
+    //Waiting for Backoff == Waiting for message to be transfered was not interrupted
+    switch (connection->connectionStatus) {
+
+    //Client Side
+    case ConnectionStatus::WAITING_FOR_CACHE:
+        connection->connectionStatus = ConnectionStatus::ERROR;
+        connection->pendingMessage = NULL;
+
+        EV_ERROR << "(SM) ERROR : No response from cache!\n";
+        EV_ERROR.flush();
+
+        std::cout << "(SM) ERROR : No response from cache!\n";
+        std::cout.flush();
+
+        cancelTimer(connection->upstreamConnectionID);
+        notifyClient(connection, MessageClass::DATA);
+
+        totalPacketsUnserved++;
+        break;
+
+    //Client Side
+    case ConnectionStatus::WAITING_FOR_NETWORK:
+        EV << "(SM) Did not obtain replies for content request <" << connection->upstreamConnectionID << ">. :/ So sad.\n";
+        EV.flush();
+
+        connection->connectionStatus = ConnectionStatus::DONE_UNAVAILABLE;
+        connection->pendingMessage = NULL;
+        updateNodeColor();
+        if (connection->clientAddress == myId) {
+            notifyClient(connection, MessageClass::DATA);
+            totalPacketsUnserved++;
+        } else {
+            stats->increasePacketsForwarded();
+            totalPacketsForwarded++;
+        }
+
+        break;
+
+    //Server Side
+    case ConnectionStatus::WAITING_FOR_ACCEPT:
+        connection->connectionStatus = ConnectionStatus::DONE_NO_CLIENT_REPLY;
+        connection->pendingMessage = NULL;
+        EV << "(SM) Client did not reply to proposed transfer request!\n";
+        EV.flush();
+
+        cancelTimer(connection->upstreamConnectionID);
+
+        //When providing content, we don't store statistics for "received/unserved/failed" results
+        break;
+
+    //Client Side
+    case ConnectionStatus::WAITING_FOR_BACKOFF:
+        //if (connection->connectionStatus == ConnectionStatus::WAITING_FOR_BACKOFF) {
+        EV << "(SM) Completed Backoff Time, proceeding with data request.\n";
+        EV.flush();
+
+        //std::cout << "\t(SM) <" << myId << "> Completed Backoff Time, proceeding with data request to <" << connection->intermediateAddress << ">.\n";
+        //std::cout.flush();
+
+        if (connection->pendingMessage == NULL) {
+            EV_ERROR << "(SM) Error: Timer for \"WAITING_BACKOFF\" Message does not include an associated WSM message to be sent after timer.\n";
+            EV_ERROR.flush();
+
+            std::cout << "(SM) Error: Timer for \"WAITING_BACKOFF\" Message does not include an associated WSM message to be sent after timer.\n";
+            std::cout.flush();
+
+            connection->connectionStatus = ConnectionStatus::ERROR;
+            notifyClient(connection, MessageClass::DATA);
+
+            return;
+        }
+
+        sendWSM(connection->pendingMessage);
+        connection->connectionStatus = ConnectionStatus::WAITING_FOR_ACCEPT;
+
+        //Updating fields now that we know that
+        connection->pendingMessage = NULL;
+        break;
+
+    //Client Side
+    case ConnectionStatus::WAITING_FOR_CONTENT:
+        connection->connectionStatus = ConnectionStatus::DONE_NO_DATA;
+        connection->pendingMessage = NULL;
+
+        EV << "(SM) Content provider did not send us data. So sad :/\n";
+        EV.flush();
+
+        notifyClient(connection, MessageClass::DATA);
+        totalPacketsUnserved++;
+
+        cancelTimer(connection->upstreamConnectionID);
+        break;
+
+    //Server Side
+    case ConnectionStatus::TRANSFER_FORWARDING:
+    case ConnectionStatus::TRANSFER_TRANSFERING:
+    case ConnectionStatus::TRANSFER_WAITING_ACK:
+        EV << "(SM) Client did not reply after content delivery. Not our problem anymore.\n";
+        EV.flush();
+
+        connection->connectionStatus = ConnectionStatus::DONE_PROVIDED;
+        connection->pendingMessage = NULL;
+        cancelTimer(connection->upstreamConnectionID);
+        updateNodeColor();
+        break;
+
+    //Client Side (+ Intermediate)
+    case ConnectionStatus::RECEIVE_FORWARDING:
+    case ConnectionStatus::RECEIVE_CLIENT:
+        //Checking if we've received all chunks
+        for ( int i = 0 ; i< segments ; i++ ) {
+            if (connection->chunkStatusList[i] == false) {
+                //Chunk missing, message was ultimately incomplete. :/ #RIP
+                connection->connectionStatus = ConnectionStatus::DONE_PARTIAL;
+                connection->pendingMessage = NULL;
+                cancelTimer(connection->upstreamConnectionID);
+
+                if (connection->clientAddress == myId) {
+                    notifyClient(connection, MessageClass::DATA);
+                }
+
+                totalPacketsLost++;
+                break;
+            }
+        }
+        //If no chunks were lost, we're ok I guess, no final confirmation but whatever, we're good bois
+        connection->connectionStatus = ConnectionStatus::DONE_RECEIVED;
+        connection->pendingMessage = NULL;
+        cancelTimer(connection->upstreamConnectionID);
+
+        if (connection->clientAddress == myId) {
+            notifyClient(connection, MessageClass::DATA);
+        }
+
+        totalPacketsSent++;
+        break;
+
+    //Server Side
+    case ConnectionStatus::DONE_PROVIDED:
+        std::cout << "(SM) Warning: o.o This is redundant and the timer should have been canceled.\n";
+        std::cout.flush();
+        cancelTimer(connection->upstreamConnectionID);
+        updateNodeColor();
+        break;
+
+    //Server Side
+    case ConnectionStatus::DONE_NO_CLIENT_REPLY:
+        std::cout << "(SM) Warning: Our timer timed out and we assumed there would be no response.\n";
+        std::cout.flush();
+        cancelTimer(connection->upstreamConnectionID);
+        updateNodeColor();
+        break;
+
+    //Client Side
+    case ConnectionStatus::DONE_RECEIVED:
+        cancelTimer(connection->upstreamConnectionID);
+        updateNodeColor();
+
+        notifyClient(connection, MessageClass::DATA);
+
+        totalPacketsSent++;
+        break;
+
+    default:
+        std::cerr << "(SM) Warning: Unknown state on SelfTimer Management! Value: " << connection->connectionStatus << "\n";
+        std::cerr.flush();
+
+        cancelTimer(connection->upstreamConnectionID);
+        connection->connectionStatus = ConnectionStatus::ERROR;
+
+        break;
+    }
+
+    //Passing cancelationg responsability onwards to cancelation function (it also does extra cleanup)
+    cancelTimer(messageID);
+}
+
+//=============================================================
+// INTERFACE CONTENT HANDLING FUNCTION (ON MESSAGES RECEIVED FOR EACH LINK TYPE)
+//=============================================================
+
+void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
+    //Checking Message Type
+    if (strcmp(wsm->getName(), MessageClass::INTEREST.c_str()) != 0) {
+        std::cerr << "(SM) THIS IS NOT AN INTEREST MESSAGE!\n";
+        std::cerr.flush();
+        return;
+    }
+
+    //Getting Basic Parameters used for evaluation
+    cArray parArray = wsm->getParList();
+    cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::ID.c_str()));
+    cMsgPar* requestPrefix = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
+    int idValue = requestID->longValue();
+    std::string prefixValue = requestPrefix->stringValue();
+
+    //Checking if we already have a downstream connection for this interest
+    Connection_t* downstreamConnection = getDownstreamConnection(requestID);
+    if (downstreamConnection != NULL){
+       std::cerr << "(SM) Downstream Connection already exists!\n";
+       std::cerr.flush();
+       return;
+    }
+
+    //Checking if item is in our database
+    if (cache->handleLookup(prefixValue) == true) {
+        std::cout << "(SM) <" << myId << "> we have the content requested by networked connection <" << idValue << ">.\n";
+    } else {
+        //Checking if we already have an interest for the given prefix
+        Interest_t* interest = getInterest(prefixValue);
+        if (interest == NULL) {
+            //Creating new interest and forwarding it!
+            bool result = createInterest(prefixValue, wsm->getSenderAddress());
+            if (result == false) {
+                std::cerr << "(SM) Error: Interest creation failed.\n";
+                std::cerr.flush();
+                return;
+            }
+            //forwardContentSearch(wsm,connection);
+            //TODO: Actually forward the document
+        } else {
+            //TODO: Check if we have a FIB match!!!
+        }
+    }
+
+}
+
+//Function called whenever we get a message coming from the network interfaces
+void BaconServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
+    //Checking Message Type
+    if (strcmp(wsm->getName(), MessageClass::INTEREST.c_str()) == 0) {
+        handleInterestMessage(wsm);
+    }
+    /*
+    //std::cout << "(SM) <" << myId << "> Got a message from our network interface with ID <" << idValue << "> from <" << wsm->getSenderAddress() << ">.\n";
+    //std::cout.flush();
+
+    Connection_t* attemptedConnection = getConnection(idValue);
+    if (wsm->getRecipientAddress() != getParentModule()->getIndex() && wsm->getRecipientAddress() != -1 && attemptedConnection == NULL) {
+        EV_WARN << "(SM) Warning: Message not addressed to this node.\n";
+        EV_WARN.flush();
+        delete (wsm);
+        return;
+    }
+
+    //Checking for previous knowledge of message
+    if (attemptedConnection == NULL) {
+        if (strcmp(wsm->getName(), MessageClass::INTEREST.c_str()) == 0) {
+            EV << "(SM) Got a Lookup Message from Network Interface.\n";
+            EV.flush();
+
+            //std::cout << "(SM) <" << myId << "> just heard a message from <" << wsm->getSenderAddress() << ">. Message Type <" << wsm->getName() << ">\n";
+            //std::cout.flush();
+
+            startLocalContentSearch(wsm);
+            return;
+        }
+    } else {
+        //Checking if someone else is replying to our already fulfilled request
+        if (strcmp(wsm->getName(), MessageClass::INTEREST_REPLY.c_str()) == 0
+                && wsm->getSenderAddress() != attemptedConnection->intermediateAddress
+                && wsm->getSenderAddress() != attemptedConnection->providerAddress
+                && attemptedConnection->connectionStatus != ConnectionStatus::WAITING_FOR_NETWORK
+                && attemptedConnection->connectionStatus != ConnectionStatus::DONE_NO_DATA
+                && attemptedConnection->connectionStatus != ConnectionStatus::DONE_PARTIAL) {
+            rejectNetworkrequest(wsm);
+            return;
+        }
+
+        //Checking our status
+        switch (attemptedConnection->connectionStatus) {
+
+            //We're putting this before other cases because some scenarios change connection state
+            //and this might trigger us to change status in order to "reset" connection
+            case ConnectionStatus::DONE_REJECTED:
+                //std::cout << "(SM) <" << myId << "> Message from <" << wsm->getSenderAddress() << "> to <"  << wsm->getRecipientAddress() << "> arrived on connection marked as \"DONE_REJECTED\". Message Type <" << wsm->getName() << ">\n";
+                //std::cout << "\t\\--> Connection <" << attemptedConnection->connectionID << "> from <" << attemptedConnection->providerAddress << "> to <" << attemptedConnection->clientAddress << "> through <" << attemptedConnection->intermediateAddress << ">.\n";
+                //std::cout << "\t\\--> Simulation Time is <" << simTime() << ">.\n";
+
+                //if (wsm->getSenderAddress() == attemptedConnection->clientAddress || wsm->getSenderAddress() == attemptedConnection->intermediateAddress) {
+                //    std::cout << "(SM) Welp, origin message arrived after retransmission.\n";
+                //}
+
+                //Logging duplicate requests for same content.
+                attemptedConnection->duplicateRequests++;
+                //std::cout << "(SM) Logging Duplicate for <" << attemptedConnection->connectionID << ">\n";
+
+                break;
+
+            case ConnectionStatus::WAITING_FOR_CACHE:
+                //While we don't have a response, this is a duplicate message
+                attemptedConnection->duplicateRequests++;
+                break;
+
+            case ConnectionStatus::WAITING_FOR_NETWORK:
+
+                //std::cout << "\n(SM) <" << myId << "> WE GOT A REPLY! for connection <" << attemptedConnection->connectionID << "> from <" << wsm->getSenderAddress() << "> with type <" << wsm->getName() << ">.\n\n";
+                //std::cout .flush();
+
+                if (strcmp(wsm->getName(), MessageClass::INTEREST_REPLY.c_str()) == 0) {
+                    EV << "(SM) Got a Response Message from Network Interface.\n";
+                    EV.flush();
+                    acceptNetworkrequest(wsm);
+                } else if (strcmp(wsm->getName(), MessageClass::INTEREST.c_str()) == 0) {
+                    //EV << "(SM) Heard someone re-broadcasting our Content request. Nice.\n";
+                    //EV.flush();
+                } else if (strcmp(wsm->getName(), MessageClass::DATA_COMPLETE.c_str()) == 0) {
+                    //This means  that one of our neighbors is replying that they got the data we need and will likely forward it to us next
+                } else {
+                    EV << "(SM) Heard something else <" << wsm->getName() << ">. Not sure what's up.\n";
+                    EV.flush();
+
+                    std::cout << "(SM) <" << myId << "> heard " << wsm->getName() << "\n";
+                }
+                break;
+
+            case ConnectionStatus::WAITING_FOR_ACCEPT:
+                //Checking Message Response to ensure that it is a
+                if (strcmp(wsm->getName(), MessageClass::INTEREST_ACCEPT.c_str()) == 0) {
+                    EV << "(SM) Client has accepted connection. Providing Content.\n";
+                    EV.flush();
+
+                    //std::cout << "(SM) <" << myId << "> Client <" << attemptedConnection->clientAddress << "> has accepted connection with <" << attemptedConnection->upstreamHopCount << "> uphops. Providing Content.\n";
+                    //std::cout.flush();
+
+                    //When Remote Nodes accept transfers, we increase the number of cache hits
+                    stats->increaseRemoteCacheHits();
+                    if (attemptedConnection->downstreamHopCount == -1) {
+                        attemptedConnection->downstreamHopCount = 0;      //0 means content was provided locally
+                    }
+
+                    cArray parArray = wsm->getParList();
+                    if (wsm->hasPar(MessageParameter::HOPS_UP.c_str())) {
+                    cMsgPar* upHops = static_cast<cMsgPar*>(parArray.get(MessageParameter::HOPS_UP.c_str()));
+                    attemptedConnection->upstreamHopCount = upHops->longValue() + 1;
+                    }
+                    //else {
+                    //    std::cerr << "(SM) ERROR: UPSTREAM PARAMETER NOT AVAILABLE IN MESSAGE.\n";
+                    //    std::cerr.flush();
+                    //}
+
+                    startRemoteDataTransfer(attemptedConnection->upstreamConnectionID,NULL);    //NULL list for full data transfer
+                    delete (wsm);
+                } else if (strcmp(wsm->getName(), MessageClass::INTEREST_CANCEL.c_str()) == 0) {
+                    EV << "(SM) Client has canceled connection. Our services are not required.\n";
+                    EV.flush();
+
+                    //Checking if we're the provider or a transmission intermediate.
+                    if (attemptedConnection->providerAddress != myId) {
+                        std::cout << "(SM) Content was cached from upstream remote connection but rejected by downstream client.\n";
+                        std::cout.flush();
+                    }
+                    attemptedConnection->connectionStatus = ConnectionStatus::DONE_REJECTED;
+
+                    //std::cout << "(SM) <" << myId << "> Connection <" << attemptedConnection->connectionID << "> from <" << wsm->getSenderAddress() << "> aka <" << attemptedConnection->clientAddress << "/" << attemptedConnection->intermediateAddress << "> to <" << wsm->getRecipientAddress() << "> sent us an \"INTEREST_CANCEL\" message.\n";
+                    //std::cout << "\t\\--> Simulation Time is <" << simTime() << ">.\n";
+                    //std::cout.flush();
+
+                    updateNodeColor();
+                } else {
+                    if (wsm->getSenderAddress() != attemptedConnection->clientAddress && wsm->getSenderAddress() != attemptedConnection->intermediateAddress) {
+                        //Someone else is also broadcasting this content in our neighborhood but we're on some other status so meeh
+                        EV << "(SM) Overheard someone else asking for the same piece of content we're already engaged in with someone else.\nTODO: Decide with we want to reply to it. Possibly, right?.\n";
+                        EV.flush();
+                    } else {
+                        EV_ERROR << "(SM) Error: Got a weird reply for our Content provisioning proposal from <" << wsm->getSenderAddress() << ">, namely \"" << wsm->getName() << "\".\n";
+                        EV.flush();
+                    }
+                }
+                break;
+
+            case ConnectionStatus::WAITING_FOR_CONTENT:
+            case ConnectionStatus::RECEIVE_CLIENT:
+            case ConnectionStatus::DONE_RECEIVED:
+                if (strcmp(wsm->getName(), MessageClass::DATA.c_str()) == 0) {
+                    EV << "(SM) Receiving content.\n";
+                    EV.flush();
+                    acceptContent(wsm);
+                } else {
+                    EV_ERROR << "(SM) Not sure what we got <" << wsm->getName() << ">, but we needed data.\n";
+                    EV_ERROR.flush();
+                }
+                break;
+
+            case ConnectionStatus::TRANSFER_WAITING_ACK:
+                if (strcmp(wsm->getName(), MessageClass::DATA_MISSING.c_str()) == 0) {
+                    retransmitMissingChunks(wsm);
+                } else {
+                    completeRemoteDataTransfer(attemptedConnection->upstreamConnectionID);
+                }
+                break;
+
+
+            default:
+                std::cout << "(SM) Warning: Message from node "  << wsm->getSenderAddress() << " on connection with status " << attemptedConnection->connectionStatus << " has not been implemented yet.\n";
+                std::cout.flush();
+                return;
+        }
+    }
+    */
+}
+
+//Function called to handle content exchange with Local Client
+void BaconServiceManager::onClientMessage(WaveShortMessage* wsm) {
+    if (strcmp(wsm->getName(), MessageClass::INTEREST.c_str()) == 0) {
+        /*
+        cArray parArray = wsm->getParList();
+        cMsgPar* requestPrefixField = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
+
+        Connection_t* newConnection = createClientSidedConnection(wsm);
+
+        bool contentAvailabilityStatus = cache->handleLookup(requestPrefixField->stringValue());
+        if (contentAvailabilityStatus == true) {
+
+            //Updating Connection Information
+            newConnection->serverAddress = newConnection->clientAddress;
+            newConnection->serverPosition = newConnection->clientPosition;
+            newConnection->upstreamHopCount = 0;
+            newConnection->downstreamHopCount = 0;
+            newConnection->connectionStatus = ConnectionStatus::DONE_AVAILABLE;
+
+            notifyClient(newConnection, MessageClass::DATA);
+
+        } else {
+            //std::cout << "(SM) Content is NOT available Locally. :/\n";
+            //std::cout.flush();
+
+            //Updating Connection information for incomplete transfer
+            newConnection->upstreamHopCount = 0;
+
+            forwardContentSearch(wsm,newConnection);
+        }
+        */
+    } else {
+        std::cerr << "(SM) Error: We don't know how to treat the given request type.\n";
+        std::cerr.flush();
+    }
+    updateNodeColor();
+}
+
+//Function called to handle content exchange with Content Provider (CP)
+void BaconServiceManager::onContentProviderMessage(WaveShortMessage* wsm) {
+    std::cerr << "\n\n\t(SM) THIS IS NOT RIGHT.\n\n";
+    std::cerr.flush();
+
+    /*
+    //Unwrapping contents of request
+    cArray parArray = wsm->getParList();
+    cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::ID.c_str()));
+    cMsgPar* requestPrefixField = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
+    cMsgPar* requestResponse = static_cast<cMsgPar*>(parArray.get(MessageParameter::STATUS.c_str()));
+    cMsgPar* requestSize = static_cast<cMsgPar*>(parArray.get(MessageParameter::SIZE.c_str()));
+    //cMsgPar* requestClient = static_cast<cMsgPar*>(parArray.get(MessageParameter::CLIENT.c_str()));
+    cMsgPar* requestUpHops = static_cast<cMsgPar*>(parArray.get(MessageParameter::HOPS_UP.c_str()));
+
+    //Getting Values from Unwrapped Parameters
+    bool responseValue = requestResponse->boolValue();
+    int idValue = requestID->longValue();
+    //int clientValue = requestClient->longValue();
+    int sizeValue = requestSize->longValue();
+    std::string prefixValue = requestPrefixField->str();
+
+    if (prefixValue.c_str()[0] == '\"') {
+        prefixValue = prefixValue.substr(1, prefixValue.length() - 2); //No fucking idea why but strings added as parameters get extra quotes around them. WTF
+    }
+
+    //Checking the message type
+    if (strcmp(wsm->getName(), MessageClass::INTEREST_REPLY.c_str()) == 0) {
+
+        EV << "(SM) Searching for request ID <" << idValue << "> for content <" << prefixValue << "> is <" << responseValue << ">\n";
+        EV.flush();
+
+        //ContentRequest_t* thisRequest = fetchRequest(wsm);
+
+        Connection_t* connection = getConnection(idValue);
+        //Checking our connection List
+        if (connection != NULL) {
+            //Checking Response from local DB
+            if (responseValue == true) {
+                if (connection->clientAddress == myId) {
+                    //EV << "(SM) Forwarding response to Local Client!\n";
+                    //EV.flush();
+                    //sendToClient(wsm);
+                    connection->connectionStatus = ConnectionStatus::DONE_AVAILABLE;
+                    connection->downstreamHopCount = 0;     //0 means local
+                    connection->upstreamHopCount = 0;       //0 means local
+
+                    //Logging Statistics
+                    stats->increaseHopCountResult(connection->downstreamHopCount);
+                    stats->increaseLocalCacheHits();
+                    totalPacketsSent++;
+
+                    //Sending Result Upstream
+                    notifyClient(connection, MessageClass::DATA);
+                } else {
+                    connection->connectionStatus = ConnectionStatus::WAITING_FOR_ACCEPT;
+
+                    EV << "(SM) Got a Successful response for remote request from client <" << wsm->getSenderAddress() << ">!\n";
+                    EV.flush();
+                    startDelayedResponse(wsm);
+
+                    //std::cout << "(SM) <" << myId << "> Content found in Cache for Remote Connection <" << connection->connectionID << ">\n";
+                    //Not Increasing Remote Cache Hits
+                    //I'm only increasing remote cache hits on acceptance
+                    //stats->increaseRemoteCacheHits();
+                    return;
+                }
+            } else {
+                //TODO: (IMPLEMENT) Forwarding Information Base (FIB) (Part of this logic is in our connection list, rethink naming & check what we're missing)
+
+                if (connection->clientAddress == myId) {
+                    EV << "(SM) Got a Service Lookup from a Local Node that was not Available Locally.\n";
+                    EV.flush();
+
+                    connection->connectionStatus = ConnectionStatus::WAITING_FOR_NETWORK;
+
+                    //Replacing Message Type with Lookup, as a local lookup is going to be forwarded to the network, also, removing the status tag as we don't know the status from network replies beforehand
+                    wsm->removeObject(MessageParameter::STATUS.c_str());
+                    wsm->removeObject(MessageParameter::TYPE.c_str());
+                    cMsgPar* classParameter = new cMsgPar(MessageParameter::TYPE.c_str());
+                    classParameter->setStringValue(MessageClass::INTEREST.c_str());
+                    wsm->addPar(classParameter);
+                    wsm->setName(MessageClass::INTEREST.c_str());
+
+                    //Logging Statistics
+                    stats->increaseLocalCacheMisses();
+                    connection->upstreamHopCount = 0;
+                } else {
+                    EV << "(SM) Got a Service Lookup from a Remote Node that was not Available Locally.\n";
+                    EV.flush();
+
+                    //Increasing Remote Cache Misses
+                    stats->increaseRemoteCacheMisses();
+
+                    connection->upstreamHopCount = requestUpHops->longValue() + 1;
+
+                    //std::cout << "(SM) <" << myId << "> Outsourced request was not found locally. Shit. New upHops is <" << connection->upstreamHopCount << ">\n";
+                    //std::cout.flush();
+                }
+
+                //Checking if interest is already in our PIT
+                Interest_t* interest = getInterest(prefixValue);
+                if (interest == NULL) {
+                    //Creating new interest and forwarding it!
+                    bool result = createInterest(prefixValue, sizeValue, idValue);
+                    if (result == false) {
+                        EV_ERROR << "(SM) Error: Interest creation failed.\n";
+                        EV_ERROR.flush();
+                    } else {
+                        forwardContentSearch(wsm,connection);
+                    }
+                } else {
+                    updateInterest(wsm);
+                    //TODO: (DECIDE) if Content should be forwarded regardless of previous inclusing in PIT
+                    //Update: We are not forwarding requests anymore. Fuck this, i'm fixing the FIB and PIT...
+                        //We are forwarding content searches regardless of them being in our previous interest list. Should we really do this for all content?
+                        //Maybe we should filter for Traffic information...
+                    //if (prefixValue.compare("") == 0) {
+                    //forwardContentSearch(wsm);
+                    //}
+                    if (connection->clientAddress == myId) {
+                        //std::cout << "WE WANT CONTENT SOMEONE ELSE ALREADY ASKED FOR! THIS IS THE CAUSE.\n";
+                        //std::cout.flush();
+
+                        //Starting a timeout timer
+                        startTimer(connection->upstreamConnectionID);
+                    }
+                }
+
+            }
+        } else {
+            EV_ERROR
+                            << "(SM) Error: Content Provider Message ID was not found.\n";
+            EV_ERROR.flush();
+            return;
+        }
+
+        //Transfer Response from Content Provider with "data" to be sent
+    } else if (strcmp(wsm->getName(), MessageClass::DATA.c_str()) == 0) {
+        //Got reply message from content manager
+        Connection_t* connection = getConnection(idValue);
+
+        //Checking connection
+        if (connection == NULL) {
+            EV_ERROR
+                            << "(SM) Error: Content Provider provided content for a request that does not exist.\n";
+            EV_ERROR.flush();
+            return;
+        }
+
+        EV_WARN
+                       << "(SM) Warning: Data Transfers not implemented on Content Provider Response Messages.\n";
+        EV_WARN.flush();
+        //IF we provide information we'll have to implement data transfer to clients here
+    }
+    */
+}
+
+//=============================================================
+// CONNECTION LIST FUNCTIONS
+//=============================================================
+
+//Returns connection from list of connections. Will return NULL if ID is not listed
+Connection_t* BaconServiceManager::getConnection(long requestID, int peerID) {
+    for (auto it = connectionList.begin(); it != connectionList.end(); it++) {
+        //Checking Downstream
+        if (it->requestID == requestID && it->peerID == peerID) {
+            return &*it;
+        }
+    }
+    return NULL;
+}
+
+//creates a generic connection (and does not add it to the connection list)
+Connection_t*  BaconServiceManager::createConnection(Content_t* content) {
+    if (content == NULL) {
+        EV_ERROR << "(SM) CreateConnection got NULL WSM object.\n";
+        EV_ERROR.flush();
+        return NULL;
+    }
+
+    //Creating a Generic Connection Based on a content
+    Connection_t* newConnection = new Connection_t();
+    newConnection->peerID = -1;
+    newConnection->clientAddress = -1;
+    newConnection-> = -1;
+    newConnection->downstreamHopCount = -1;
+    newConnection->upstreamHopCount = -1;
+    newConnection->requestPrefix = content->contentPrefix;
+    newConnection->contentClass = content->contentClass;
+    newConnection->contentSize = content->contentSize;
+    newConnection->requestTime = simTime();
+    newConnection->replyFromPIT = false;
+    newConnection->connectionStatus = ConnectionStatus::IDLE;
+    newConnection->obtainedSize = 0;
+    newConnection->lostSize = 0;
+    newConnection->duplicateRequests= 0;
+    newConnection->clientPosition = Coord::ZERO;
+    newConnection->serverPosition = Coord::ZERO;
+    newConnection->pendingMessage = NULL;
+
+    EV << "(SM) Creating Connection with ID " << newConnection->upstreamConnectionID << " and prefix <" << newConnection->requestPrefix << ">\n";
+    EV.flush();
+
+    return newConnection;
+}
+
+
+//=============================================================
+// PIT FUNCTIONS
+//=============================================================
+
+//Function called to obtain connection from list of connections. Will return NULL if ID is not listed
+Interest_t* BaconServiceManager::getInterest(std::string interest) {
+    for (auto it = PIT.begin(); it != PIT.end(); it++) {
+        //Comparing Request ID
+        if (it->interestPrefix.compare(interest) == 0) {
+            return &*it;
+        }
+    }
+    return NULL;
+}
+
+//
+bool BaconServiceManager::createInterest(std::string interestPrefix, int senderAddress) {
+    //Checking if connection is already listed
+    if (getInterest(interestPrefix) != NULL) {
+        EV_WARN << "Interest already exists. Ignoring request.\n";
+        EV_WARN.flush();
+        return false;
+    }
+
+    //Content_t* contentReference = library->getContent(interestPrefix);
+
+    Interest_t newInterest = Interest_t();
+    newInterest.interestPrefix = interestPrefix;
+    newInterest.totalTimesRequested = 1;
+    newInterest.pendingConnections = std::vector<int>();
+    newInterest.pendingConnections.push_back(senderAddress);
+
+    PIT.push_front(newInterest);
+    EV << "(SM) Created new Interest for Content Prefix <" << interestPrefix.c_str() << ">\n";
+    EV.flush();
+
+    return true;
+}
+
+//Function used to update connection with content of WSM message
+bool BaconServiceManager::updateInterest(WaveShortMessage* wsm) {
+    //Unwrapping contents of request
+    cArray parArray = wsm->getParList();
+    cMsgPar* requestPrefixField = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
+
+    Interest_t* interest = getInterest(requestPrefixField->stringValue());
+    if (interest == NULL) {
+        EV_ERROR << "(SM) Error: Interest <" << requestPrefixField->stringValue()  << "> does not exist, unable to update.\n";
+        EV_ERROR.flush();
+        return false;
+    }
+
+    interest->pendingConnections.push_back(wsm->getSenderAddress());
+    interest->lastTimeRequested = simTime();
+    interest->totalTimesRequested++;
+
+    //TODO: (DECIDE) if  I need to do something else when updating an interest
+
+    return true;
+}
+
+//
+void BaconServiceManager::fulfillPendingInterest(std::string interestPrefix) {
+    //std::cout << "(SM) Searching for Pending Interest <" << interestPrefix << ">.\n";
+    Interest_t* interest = getInterest(interestPrefix);
+    if (interest == NULL) {
+        std::cout << "\t\\-->No pending requests...\n";
+        return;
+    }
+
+    for (std::vector<int>::iterator it = interest->pendingConnections.begin(); it != interest->pendingConnections.end(); it++) {
+        Connection_t* con = getDownstreamConnection(*it);
+        //std::cout << "(SM) Got Request for item <" << interestPrefix << "> from client <" << con->clientAddress << ">\n";
+        if ((ConnectionStatus::DONE_MIN < con->connectionStatus || con->connectionStatus > ConnectionStatus::DONE_MAX || con->connectionStatus == ConnectionStatus::DONE_NO_CLIENT_REPLY || con->connectionStatus == ConnectionStatus::DONE_UNAVAILABLE) && con->clientAddress != myId) {
+            std::cout << "(SM) <" << myId << "> Got Request for item <" << interestPrefix << "> from client <" << con->clientAddress << "> that is still not done <" << con->connectionStatus << ">. We can fulfill it now!\n";
+            con->replyFromPIT = true;
+            PITRetries++;
+            replyAfterContentInclusion(con);
+            stats->increaseLocalLateCacheHits();
+        }
+    }
+    std::cout.flush();
+
+    //std::cout << "(SM) Deleting Interest <" << interestPrefix << ">\n";
+    deleteInterest(interestPrefix);
+}
+
+//
+bool BaconServiceManager::deleteInterest(std::string interest) {
+    //std::cout << "(SM) Delete Pending Request.\n";
+    for (auto it = PIT.begin(); it != PIT.end(); it++) {
+        //Comparing Request ID
+        if (it->interestPrefix.compare(interest) == 0) {
+            EV << "(SM) Deleting interest for content "
+                      << interest.c_str() << ".\n";
+            EV.flush();
+            PIT.erase(it);
+            return true;
+        }
+    }
+
+    EV_WARN << "(SM) Warning: Did not find an interest to erase.\n";
+    EV_WARN.flush();
+    return false;
+}
+
+//=============================================================
+// MESSAGE TRANSMISSION ABSTRACTION FUNCTIONS
+//=============================================================
+
+//Reply to node that we have content after some delay, possibly after getting it from another request and checking our PIT
+void BaconServiceManager::replyAfterContentInclusion(Connection_t* connection) {
+    connection->replyFromPIT = true;
+
+    //Checking if we got a really late reply for a local request
+    if (connection->clientAddress == myId) {
+        std::cout << "(SM) Holy shit, we got content we wanted after ages. #PraiseTheSun\n";
+
+        notifyClient(connection, MessageClass::DATA);
+        return;
+    }
+
+    t_channel channel = dataOnSch ? type_SCH : type_CCH;
+    WaveShortMessage * responseMessage = prepareWSM(MessageClass::INTEREST_REPLY, headerLength, channel, dataPriority, -1, 2);
+
+    Content_t* content = library->getContent(connection->requestPrefix);
+
+    //Content Type
+    cMsgPar* contentTypeParameter = new cMsgPar(MessageParameter::CLASS.c_str());
+    contentTypeParameter->setLongValue(static_cast<int>(content->contentClass));
+    responseMessage->addPar(contentTypeParameter);
+
+    //Named Prefix for specific content
+    cMsgPar* contentNameParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
+    contentNameParameter->setStringValue(content->contentPrefix.c_str());
+    responseMessage->addPar(contentNameParameter);
+
+    //Adding Priority for Content
+    cMsgPar* priorityParameter = new cMsgPar(MessageParameter::PRIORITY.c_str());
+    priorityParameter->setLongValue(content->contentPriority);
+    responseMessage->addPar(priorityParameter);
+
+    //Adding Size for Content
+    cMsgPar* sizeParameter = new cMsgPar(MessageParameter::SIZE.c_str());
+    sizeParameter->setLongValue(content->contentSize);
+    responseMessage->addPar(sizeParameter);
+
+    //Adding Popularity for Content
+    cMsgPar* popularityParameter = new cMsgPar(MessageParameter::POPULARITY.c_str());
+    popularityParameter->setLongValue(content->contentSize);
+    responseMessage->addPar(popularityParameter);
+
+    //Adding User ID
+    cMsgPar* clientIDParameter = new cMsgPar(MessageParameter::CLIENT.c_str());
+    clientIDParameter->setLongValue(connection->clientAddress);
+    responseMessage->addPar(clientIDParameter);
+
+    //Adding Message Type (Interest)
+    cMsgPar* classParameter = new cMsgPar(MessageParameter::TYPE.c_str());
+    classParameter->setStringValue(MessageClass::INTEREST_REPLY.c_str());
+    responseMessage->addPar(classParameter);
+
+    //ID for Content
+    cMsgPar* idParameter = new cMsgPar(MessageParameter::ID.c_str());
+    idParameter->setLongValue(connection->upstreamConnectionID);
+    responseMessage->addPar(idParameter);
+
+    //Provider Address
+    responseMessage->setSenderAddress(myId);
+    responseMessage->setSenderPos(traci->getCurrentPosition());
+
+    std::cout << "(SM) <" << myId << "> is attempting to contact client <" << connection->clientAddress << "> after obtaining desired content for another event.\n";
+    std::cout.flush();
+    startDelayedResponse(responseMessage);
+}
+
+//Function called by receiving node whenever it gets a final data chunk but chunks are missing
+void BaconServiceManager::requestChunkRetransmission(Connection_t* connection) {
+    std::string missingChunkList = "";
+
+    int requestSize = (int) ceil(connection->contentSize / (double) dataLengthBits);
+
+    //connection->lostSize = 0;
+
+    for (int i = 0; i < requestSize ; i++) {
+        if (connection->chunkStatusList[i] == false) {
+            connection->lostSize++;
+            missingChunkList += std::to_string(i) + ";";
+            totalChunksLost++;
+        }
+    }
+    //std::cout << "(SM) Missing Chunks in Connection <" << connection->connectionID << ">";
+    //std::cout << "\n\tObtained <" << connection->obtainedSize << "> out of <" << requestSize << "> Chunks";
+    //std::cout << "Missing Chunk List: <" << missingChunkList.c_str() << ">.\n";
+    //std::cout.flush();
+
+
+
+    t_channel channel = dataOnSch ? type_SCH : type_CCH;
+    WaveShortMessage * retransmissionMessage = prepareWSM(MessageClass::INTEREST,headerLength, channel, dataPriority, -1, 2);
+
+    //Adding Message Type
+    retransmissionMessage->setName(MessageClass::DATA_MISSING.c_str());
+    cMsgPar* classParameter = new cMsgPar(MessageParameter::TYPE.c_str());
+    classParameter->setStringValue(MessageClass::DATA_MISSING.c_str());
+    retransmissionMessage->addPar(classParameter);
+
+    //Adding Content Status
+    cMsgPar* responseParameter = new cMsgPar(MessageParameter::STATUS.c_str());
+    responseParameter->setBoolValue(false);
+    retransmissionMessage->addPar(responseParameter);
+
+    //Adding Content Type
+    cMsgPar* contentTypeParameter = new cMsgPar(MessageParameter::CLASS.c_str());
+    contentTypeParameter->setLongValue(library->getContentClass(connection->contentClass));
+    retransmissionMessage->addPar(contentTypeParameter);
+
+    //Adding Named Prefix for specific content
+    cMsgPar* contentNameParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
+    contentNameParameter->setStringValue(connection->requestPrefix.c_str());
+    retransmissionMessage->addPar(contentNameParameter);
+
+    //Adding ID for Connection
+    cMsgPar* idParameter = new cMsgPar(MessageParameter::ID.c_str());
+    idParameter->setLongValue(connection->upstreamConnectionID);
+    retransmissionMessage->addPar(idParameter);
+
+    //Adding Distance for Connection -> We don't add HOP count in requests, only in replies
+    //cMsgPar* hopsParameter = new cMsgPar(MessageParameter::HOPS.c_str());
+    //hopsParameter->setLongValue(connection->hopCount);
+    //retransmissionMessage->addPar(hopsParameter);
+
+    //Adding Missing chunks into sequence number parameter
+    cMsgPar* sequenceParameter = new cMsgPar(MessageParameter::SEQUENCE_NUMBER.c_str());
+    sequenceParameter->setStringValue(missingChunkList.c_str());
+    retransmissionMessage->addPar(sequenceParameter);
+
+    int targetAddress = connection->serverAddress;
+    //if (connection->intermediateAddress == -1 || connection->intermediateAddress == myId) {
+    //    targetAddress = connection->providerAddress;
+    //}
+    retransmissionMessage->setRecipientAddress(targetAddress);
+    retransmissionMessage->setSenderAddress(myId);
+    retransmissionMessage->setSenderPos(traci->getCurrentPosition());
+
+    EV << "(SM) Starting Data Retransmission Request to provider ID <" << targetAddress << ">.\n";
+    EV.flush();
+
+    //Updating Status
+    connection->connectionStatus = ConnectionStatus::WAITING_FOR_CONTENT;
+
+    //Sending retransmit packet
+    sendWSM(retransmissionMessage);
+
+    //Updating Timer
+    startTimer(connection->upstreamConnectionID);
+}
+
+//Function called by transmitting node whenever it gets a data_missing message (notification of missing chunks)
+void BaconServiceManager::retransmitMissingChunks(WaveShortMessage* wsm) {
+    //Getting the connection
+    cArray parArray = wsm->getParList();
+    cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::ID.c_str()));
+    int idValue = requestID->longValue();
+    Connection_t* connection = getDownstreamConnection(idValue);
+
+    //Checking if the connection is null (not previously listed and therefore cannot be used for retransmission)
+    if (connection == NULL) {
+        EV_ERROR << "(SM) ERROR: Null connection on retransmission request.\n";
+        EV_ERROR.flush();
+        return;
+    }
+
+    //Parsing what data is missing
+    cMsgPar* requestMissingData = static_cast<cMsgPar*>(parArray.get(MessageParameter::SEQUENCE_NUMBER.c_str()));
+    std::string missingDataText = requestMissingData->stringValue();
+
+    size_t pos = 0;
+    std::string token;
+    std::string delimiter = ";";
+
+    //Counting Dividers
+    size_t n = std::count(missingDataText.begin(), missingDataText.end(), ';');
+
+
+    //Iterating through list to get all missing indexes
+    std::vector<int>* chunkVector = new std::vector<int>(n);
+    int curIndex = 0;
+    //std::cout << "Chunks: ";
+    while ((pos = missingDataText.find(delimiter)) != std::string::npos) {
+        token = missingDataText.substr(0, pos);
+        if (token.length() != 0 && token.compare("") != 0) {
+            (*chunkVector)[curIndex] = atoi(token.c_str());
+            //std::cout << "" << token << "\t";
+            missingDataText.erase(0, pos + delimiter.length());
+            curIndex++;
+        }
+    }
+    //std::cout << "\n";
+    //std::cout.flush();
+    //(*chunkVector)[curIndex] = atoi(token.c_str());
+
+    //printing stuff for UI debugging
+    EV << "(SM) Retransmitting Chunks: ";
+    for (int i = 0; i < (int)n; i++) {
+        EV << "\t" << (*chunkVector)[i];
+    }
+    EV << "\n";
+    EV.flush();
+
+    //Transmitting missing data
+    startRemoteDataTransfer(idValue,chunkVector);
+}
+
+//Function called upon data delivery
+void BaconServiceManager::acceptContent(WaveShortMessage* wsm) {
+    cArray parArray = wsm->getParList();
+    cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::ID.c_str()));
+    cMsgPar* requestSequenceNumber = static_cast<cMsgPar*>(parArray.get(MessageParameter::SEQUENCE_NUMBER.c_str()));
+    cMsgPar* hopsParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::HOPS_DOWN.c_str()));
+    long connectionID = requestID->longValue();
+    long sequenceNumber = requestSequenceNumber->longValue();
+    long hops = hopsParameter->longValue();
+
+    //Getting Connection
+    Connection_t* connection = getUpstreamConnection(connectionID);
+    if (connection == NULL) {
+        EV_ERROR
+                        << "(SM) Error: Initiating remote data transfer for connection that does not exist.\n";
+        EV_ERROR.flush();
+        return;
+    }
+
+    int requestSize = (int) ceil(connection->contentSize / (double) dataLengthBits);
+
+    //Checking for first chunk arrival
+    if (connection->connectionStatus == ConnectionStatus::WAITING_FOR_CONTENT) {
+        //Start handling content on delivery?
+        connection->connectionStatus = ConnectionStatus::RECEIVE_CLIENT;
+        updateNodeColor();
+
+        if (connection->chunkStatusList == NULL) {
+            connection->chunkStatusList = new bool[requestSize];
+            for (int i = 0; i < requestSize; i++) {
+                connection->chunkStatusList[i] = false;
+            };
+        }
+    }
+
+    //Setting/Increasing Hop count on first fragment number
+    if (sequenceNumber == 0) {
+        connection->downstreamHopCount = hops+1;
+
+
+        cMsgPar* upstreamHopCount = static_cast<cMsgPar*>(parArray.get(MessageParameter::HOPS_UP.c_str()));
+        connection->upstreamHopCount = upstreamHopCount->longValue();
+        //std::cout << "(SM) <" << myId << "> increases hopcount after receiving content to <" << connection->hopCount << "> \n";
+        //std::cout.flush();
+    }
+
+    //Checking for Sequence End Chunk
+    if (sequenceNumber == -1) {
+        if (connection->obtainedSize != requestSize) {
+
+            EV_WARN << "(SM) Warning: Missing Chunks Detected.\n";
+            EV_WARN.flush();
+
+            requestChunkRetransmission(connection);
+            return;
+        }
+    } else {
+        //Adding chunk to list
+        if (connection->chunkStatusList[sequenceNumber] == true) {
+            EV_WARN << "(SM) Warning: Obtained duplicate chunk <" << sequenceNumber << ">.\n";
+            EV_WARN.flush();
+        } else {
+            connection->chunkStatusList[sequenceNumber] = true;
+            connection->obtainedSize++;
+        }
+    }
+
+    //Checking for incomplete transfer
+    if (connection->obtainedSize == requestSize) {
+        if (sequenceNumber == -1) {
+            EV << "(SM) Obtained the END (-1) Chunk Segment for Connection " << connectionID << " (chunk <" << sequenceNumber << ">).\n";
+            EV.flush();
+
+
+            //std::cout << "(SM) <" << myId << "> obtained END chunk for Connection <" << connectionID << ">\n";
+            //std::cout.flush();
+
+            completeRemoteDataTransfer(connectionID);
+            cMsgPar* requestPrefix = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
+        } else {
+            EV << "(SM) Obtained \"final\" Chunk Segment " << sequenceNumber
+                      << " from Connection " << connectionID << " totaling "
+                      << connection->obtainedSize << " out of " << requestSize
+                      << " total chunks. All we need now is the confirmation chunk.\n";
+            EV.flush();
+
+            //std::cout << "(SM) <" << myId << "> awaits END chunk for Connection <" << connectionID << ">\n";
+            //std::cout.flush();
+
+            //Updating Timer
+            startTimer(connection->upstreamConnectionID);
+        }
+    } else {
+        EV << "(SM) Obtained Chunk Segment " << sequenceNumber
+                  << " from Connection " << connectionID << " totaling "
+                  << connection->obtainedSize << " out of " << requestSize
+                  << " total chunks.\n";
+        EV.flush();
+
+        //cancelTimer(connection->connectionID);
+        startTimer(connection->upstreamConnectionID);
+    }
+
+    delete (wsm);
+}
+
+//Prepare content for network forward and start remote data transfer with forwarding purpose
+void BaconServiceManager::startRemoteDataForward(int connectionID) {
+    //Getting Connection
+    Connection_t* connection = getDownstreamConnection(connectionID);
+    if (connection == NULL) {
+        EV_ERROR << "(SM) Error: Initiating remote data forward for connection that does not exist.\n";
+        EV_ERROR.flush();
+
+        std::cerr << "(SM) <" << myId << "> Error: Initiating remote data forward for connection that does not exist.\n";
+        std::cerr.flush();
+        return;
+    }
+
+    std::cout << "(SM) <" << myId << "> will attempt to forward content to downstream client <" << connection->clientAddress << ">.\n";
+    std::cout.flush();
+
+    t_channel channel = dataOnSch ? type_SCH : type_CCH;
+    WaveShortMessage * forwardMessage = prepareWSM(MessageClass::INTEREST, headerLength, channel, dataPriority, -1, 2);
+
+    //Adding Message Type
+    forwardMessage->setName(MessageClass::INTEREST_REPLY.c_str());
+    cMsgPar* classParameter = new cMsgPar(MessageParameter::TYPE.c_str());
+    classParameter->setStringValue(MessageClass::INTEREST_REPLY.c_str());
+    forwardMessage->addPar(classParameter);
+
+    //Adding Content Status
+    cMsgPar* responseParameter = new cMsgPar(MessageParameter::STATUS.c_str());
+    responseParameter->setBoolValue(true);
+    forwardMessage->addPar(responseParameter);
+
+    //Adding Content Type
+    cMsgPar* contentTypeParameter = new cMsgPar(MessageParameter::CLASS.c_str());
+    contentTypeParameter->setLongValue(library->getContentClass(connection->contentClass));
+    forwardMessage->addPar(contentTypeParameter);
+
+    //Adding Named Prefix for specific content
+    cMsgPar* contentNameParameter = new cMsgPar(
+            MessageParameter::PREFIX.c_str());
+    contentNameParameter->setStringValue(connection->requestPrefix.c_str());
+    forwardMessage->addPar(contentNameParameter);
+
+    //Adding ID for Connection
+    cMsgPar* idParameter = new cMsgPar(MessageParameter::ID.c_str());
+    idParameter->setLongValue(connection->upstreamConnectionID);
+    forwardMessage->addPar(idParameter);
+
+    forwardMessage->setRecipientAddress(connection->clientAddress);
+    forwardMessage->setSenderAddress(myId);
+    forwardMessage->setSenderPos(traci->getCurrentPosition());
+
+    EV << "(SM) Starting Data Forward.\n";
+    EV.flush();
+
+    startDelayedResponse(forwardMessage);
+}
+
+//Starting transfer to remote node after handshake is done
+void BaconServiceManager::startRemoteDataTransfer(int connectionID, std::vector<int>* chunkVector) {
+    //Getting Connection
+    Connection_t* connection = getDownstreamConnection(connectionID);
+    if (connection == NULL) {
+        EV_ERROR << "(SM) Error: Initiating remote data transfer for connection that does not exist.\n";
+        EV_ERROR.flush();
+        return;
+    }
+
+    //Updating Connection Status
+    connection->connectionStatus = ConnectionStatus::TRANSFER_TRANSFERING;
+
+
+    //Calculating number of Chunks and warning receiving Node
+    int requestSize = connection->contentSize;
+    //Calculating number of items to be sent
+    int queueSize = ceil(requestSize / (double) dataLengthBits);
+    //Null chunk vector implies full transmission
+    if (chunkVector == NULL) {
+        EV << "(SM) Starting fresh data transfer for " << queueSize << " Data Packets totaling " << requestSize << " bytes.\n";
+        EV.flush();
+
+        //std::cout << "(SM) <" << myId << "> is Starting a Data Transfer for Connection <" << connection->connectionID << "> with upHops <" << connection->upstreamHopCount << "> and downHops <" << connection->downstreamHopCount << ">\n";
+        //std::cout.flush();
+
+        //Reserving space for the size we want & listing all packets to be sent
+        //chunkVector->reserve(queueSize);
+        chunkVector = new std::vector<int>(queueSize);
+        for (int i = 0; i < queueSize; i++) {
+            (*chunkVector)[i] = i;
+        }
+    } else {
+        queueSize = chunkVector->size();
+    }
+
+
+    //Preparing base message
+    t_channel channel = dataOnSch ? type_SCH : type_CCH;
+    WaveShortMessage * baseChunkMessage = prepareWSM(MessageClass::DATA,dataLengthBits, channel, dataPriority, -1, 2);
+    cMsgPar* contentNameParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
+    contentNameParameter->setStringValue(connection->requestPrefix.c_str());
+    baseChunkMessage->addPar(contentNameParameter);
+
+    //Adding Client ID
+    cMsgPar* clientIDParameter = new cMsgPar(MessageParameter::CLIENT.c_str());
+    clientIDParameter->setLongValue(myId);
+    baseChunkMessage->addPar(clientIDParameter);
+
+    //Adding Connection ID
+    cMsgPar* connectionParameter = new cMsgPar(MessageParameter::ID.c_str());
+    connectionParameter->setLongValue(connection->upstreamConnectionID);
+    baseChunkMessage->addPar(connectionParameter);
+
+    //Adding Downstream Hop Count
+    cMsgPar* distanceParameter = new cMsgPar(MessageParameter::HOPS_DOWN.c_str());
+    distanceParameter->setLongValue(connection->downstreamHopCount);
+    baseChunkMessage->addPar(distanceParameter);
+
+    //Adding Upstream Hop Count
+    cMsgPar* distanceBackParameter = new cMsgPar(MessageParameter::HOPS_UP.c_str());
+    distanceBackParameter->setLongValue(connection->upstreamHopCount);
+    baseChunkMessage->addPar(distanceBackParameter);
+
+    //Adding other base parameters
+    baseChunkMessage->setSenderAddress(myId);
+    baseChunkMessage->setSenderPos(traci->getCurrentPosition());
+
+    //Setting Intended Recipient
+
+    //TODO AXE
+    /*
+        if (connection->intermediateAddress != myId) {
+            baseChunkMessage->setRecipientAddress(connection->intermediateAddress);
+        } else {
+            baseChunkMessage->setRecipientAddress(connection->clientAddress);
+        }
+    */
+
+    //
+    if (queueSize == 0) {
+      std::cerr << "(SM) ERROR: EMPTY QUEUE!\n";
+      std::cerr.flush();
+    }
+
+    //Sending all data chunks to lower layers
+    for (int i = 0 ; i < queueSize; i++) {
+        std::string contentString = "content_chunk_" + std::to_string((*chunkVector)[i]);
+        WaveShortMessage* chunkMessage = baseChunkMessage->dup();
+
+        //Adding Sequence Number
+        cMsgPar* clientIDParameter = new cMsgPar(MessageParameter::SEQUENCE_NUMBER.c_str());
+        clientIDParameter->setLongValue((*chunkVector)[i]);
+        chunkMessage->addPar(clientIDParameter);
+
+        sendWSM(chunkMessage);
+    }
+
+    //Sending final content chunk
+    std::string contentString = "content_chunk_-1";
+    WaveShortMessage* chunkMessage = baseChunkMessage->dup();
+
+    //Adding Sequence Number
+    cMsgPar* sequenceIDParameter = new cMsgPar(
+            MessageParameter::SEQUENCE_NUMBER.c_str());
+    sequenceIDParameter->setLongValue(-1);
+    chunkMessage->addPar(sequenceIDParameter);
+
+    sendWSM(chunkMessage);
+
+    connection->connectionStatus = ConnectionStatus::TRANSFER_WAITING_ACK;
+
+    startTimer(connectionID);
+    updateNodeColor();
+}
+
+//Completing transfer from remote node after all data is obtained
+void BaconServiceManager::completeRemoteDataTransfer(int connectionID) {
+    //Getting Connection
+    Connection_t* connection = getUpstreamConnection(connectionID);
+
+    //std::cout << "(SM) Connection " << connectionID << " for item <" << connection->requestPrefix << "> with node " << connection->providerAddress << " or " << connection->intermediateAddress << " or " << connection->clientAddress << " is now complete!.\n";
+    //std::cout.flush();
+
+    if (connection->clientAddress == myId || connection->serverAddress == myId) {
+        switch (connection->connectionStatus) {
+            case ConnectionStatus::RECEIVE_CLIENT: {
+                //Checking for duplicate behavior on -1 segment message
+
+                //Replying to content provider that we're good
+                t_channel channel = dataOnSch ? type_SCH : type_CCH;
+                WaveShortMessage * finalMessage = prepareWSM(MessageClass::DATA, dataLengthBits, channel, dataPriority, -1, 2);
+                finalMessage->setSenderAddress(myId);
+                finalMessage->setSenderPos(traci->getCurrentPosition());
+                //TODO AXE
+                //finalMessage->setRecipientAddress(connection->intermediateAddress);
+                finalMessage->setName(MessageClass::DATA_COMPLETE.c_str());
+                //Adding Message Prefix
+                cMsgPar* contentNameParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
+                contentNameParameter->setStringValue(connection->requestPrefix.c_str());
+                finalMessage->addPar(contentNameParameter);
+                //Adding Client ID
+                cMsgPar* clientIDParameter = new cMsgPar(MessageParameter::CLIENT.c_str());
+                clientIDParameter->setLongValue(connection->clientAddress);
+                finalMessage->addPar(clientIDParameter);
+                //Adding Connection ID
+                cMsgPar* connectionParameter = new cMsgPar(MessageParameter::ID.c_str());
+                connectionParameter->setLongValue(connection->upstreamConnectionID);
+                finalMessage->addPar(connectionParameter);
+                sendWSM(finalMessage);
+
+                //Removing Circle UI very quickly just so that we know that something was completed :P
+                findHost()->getDisplayString().updateWith("");
+                //Updating Connection Status
+                connection->connectionStatus = ConnectionStatus::DONE_RECEIVED;
+
+                //Adding content to cache and notifying client
+                addContentToCache(connectionID);
+                notifyClient(connection, MessageClass::DATA);
+
+                //std::cout << "(SM) <" << connectionID << "> transfer from <" << connection->providerAddress << "> complete with hopcounts <" << connection->upstreamHopCount << ";" << connection->downstreamHopCount << ">\n";
+                //std::cout.flush();
+
+
+                if (connection->upstreamHopCount != connection->downstreamHopCount) {
+                    std::cerr << "(SM) Upstream and Downstream values differ! <" << connection->upstreamHopCount << ";" << connection->downstreamHopCount << ">\n";
+                    std::cerr.flush();
+                }
+
+                stats->increaseHopCountResult(connection->downstreamHopCount);
+
+                //Checking if we have already attempted to recover a PIT entry request from oblivion
+                //If the transfer was already a PIT thing, we're good but hey! nice recovery
+                if (connection->replyFromPIT == false) {
+                    fulfillPendingInterest(connection->requestPrefix);
+                } else {
+                    std::cout << "(SM) FUCK YEAH! <3<3<3\n";
+                }
+                break;
+            }
+
+            case ConnectionStatus::TRANSFER_WAITING_ACK:
+                connection->connectionStatus = ConnectionStatus::DONE_PROVIDED;
+
+
+                //Checking if we need to delete our local copy after forwarding content (Cache coordination policy dependent)
+                if (inNetworkCaching == CacheCoordinationPolicy::MCD && connection->downstreamHopCount != 0) {
+                    removeContentFromCache(connectionID);
+                }
+                break;
+
+            case ConnectionStatus::DONE_RECEIVED:
+                //In theory this should already be good? so no dupes? Not sure. :/ fuck my logic, this is just confusing
+                std::cout << "(SM) Warning: This is a duplicate and we seem to have goofed very bad. #RIP code logic if we get this message\n";
+                std::cout.flush();
+                break;
+
+            default:
+                std::cout << "(SM) Warning: Unknown Connection status during Remote Data Transfer Completion.\n";
+                std::cout.flush();
+                break;
+        }
+        cancelTimer(connectionID);
+    } else {
+        EV << "(SM) Content is ready for retransmission to " << connection->clientAddress << ".\n";
+        EV.flush();
+
+        //Replying to content provider that we're good
+        t_channel channel = dataOnSch ? type_SCH : type_CCH;
+        WaveShortMessage * finalMessage = prepareWSM(MessageClass::DATA,
+                dataLengthBits, channel, dataPriority, -1, 2);
+        finalMessage->setSenderAddress(myId);
+        finalMessage->setSenderPos(traci->getCurrentPosition());
+        finalMessage->setRecipientAddress(connection->serverAddress);
+        finalMessage->setName(MessageClass::DATA_COMPLETE.c_str());
+        //Adding Message Prefix
+        cMsgPar* contentNameParameter = new cMsgPar(
+                MessageParameter::PREFIX.c_str());
+        contentNameParameter->setStringValue(connection->requestPrefix.c_str());
+        finalMessage->addPar(contentNameParameter);
+        //Adding Client ID
+        cMsgPar* clientIDParameter = new cMsgPar(
+                MessageParameter::CLIENT.c_str());
+        clientIDParameter->setLongValue(connection->clientAddress);
+        finalMessage->addPar(clientIDParameter);
+        //Adding Connection ID
+        cMsgPar* connectionParameter = new cMsgPar(
+                MessageParameter::ID.c_str());
+        connectionParameter->setLongValue(connection->upstreamConnectionID);
+        finalMessage->addPar(connectionParameter);
+        sendWSM(finalMessage);
+        cancelTimer(connectionID);
+
+        switch (inNetworkCaching) {
+            case NEVER:     //Never leave a copy
+                break;
+
+            case LCE:       //Always leave a copy
+                addContentToCache(connectionID);
+                break;
+
+            case LCD:       //Leave a copy on first hop down
+                if (connection->downstreamHopCount == 0) {
+                    //std::cout << "(SM) <" <<myId  << "> is Leaving Copy Down on first hop of downstream.\n";
+                    //std::cout.flush();
+                    addContentToCache(connectionID);
+                }
+                break;
+
+            case MCD:       //Move Copy Down
+                //We always get a copy (in this section of code), node above deletes his (delete local copy in senderComplete)
+                //std::cout << "(SM) <" <<myId  << ">  added content to cache and will delete it after downstream is complete.\n";
+                //std::cout.flush();
+                addContentToCache(connectionID);
+                break;
+
+            case PROB:{     //Copy to cache with probability (See probability variable)
+                double randomUniformValue = uniform(0,1);
+                if (cacheCopyProbability >= randomUniformValue) {
+                    addContentToCache(connectionID);
+                    //std::cout << "(SM) <" <<myId  << ">  Copying to Cache on success <" << cacheCopyProbability << "> over <" << randomUniformValue << ">\n";
+                    //std::cout.flush();
+                } else {
+                    //std::cout << "(SM) <" <<myId  << ">  No copy, probability failure of <" << cacheCopyProbability << "> over <" << randomUniformValue << ">\n";
+                    //std::cout.flush();
+                }
+                break;
+            }
+
+            case RC_ONE:    //Random Copy One
+                //TODO: (IMPLEMENT) Random Copy one -> Required additional message fields for control
+                std::cerr << "(SM) <" <<myId  << ">  Random Copy One not implemented!\n";
+                std::cerr.flush();
+                break;
+
+            case DISTANCE:{
+                double denseCacheProbability = connection->downstreamHopCount/(double)connection->upstreamHopCount;
+                double randomUniformValue = uniform(0,1);
+                if (cacheCopyProbability >= randomUniformValue) {
+                    addContentToCache(connectionID);
+                    //std::cout << "(SM) <" <<myId  << ">  Copying to Cache on success <" << denseCacheProbability << "> over <" << randomUniformValue << ">\n";
+                    //std::cout.flush();
+                } else {
+                    //std::cout << "(SM) <" <<myId  << ">  No copy, probability failure of <" << denseCacheProbability << "> over <" << randomUniformValue << ">\n";
+                    //std::cout.flush();
+                }
+                break;
+                }
+
+            default:
+                std::cerr << "(SM) Getting wrecked :/ w00p w00p!\n";
+                std::cerr.flush();
+                break;
+
+        }
+        //Continue Downstream
+        startRemoteDataForward(connectionID);
+
+        //Create new downstreams...
+        fulfillPendingInterest(connection->requestPrefix);
+    }
+
+    saveStatistics();
+    updateNodeColor();
+}
+
+//
+void BaconServiceManager::startDelayedResponse(WaveShortMessage* wsm) {
+    cArray parArray = wsm->getParList();
+    cMsgPar* connectionIDParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::ID.c_str()));
+    int connectionID = connectionIDParameter->longValue();
+
+    //TODO: UNAXE (Not Commented :/)
+    Connection_t* connection = getConnection(connectionID,-1);
+    if (connection == NULL) {
+        EV_ERROR << "(SM) Cannot start delayed response for connection that does not exist.\n";
+        EV_ERROR.flush();
+        return;
+    }
+
+    //Setting Fields for data transmission
+    Coord currentPosition = traci->getCurrentPosition();
+    connection->connectionStatus = ConnectionStatus::WAITING_FOR_BACKOFF;
+    connection->pendingMessage = wsm;
+    connection->serverAddress = myId;
+    connection->serverPosition = currentPosition;
+
+
+    //TODO AXE
+    //wsm->setRecipientAddress(connection->intermediateAddress);
+    wsm->setSenderAddress(myId);
+    wsm->setSenderPos(currentPosition);
+
+    //Getting Origin distance as random factor:
+    int distance = round(connection->clientPosition.distance(currentPosition));
+    double distanceDelay =  51.2 * distance * 0.000001 * 2; //Multiplying by 2 as our delays were sometimes very low
+
+    EV << "(SM) Started timer prior to data delivery for content ID " << connectionID << "\n";
+    EV.flush();
+
+    //std::cout << "(SM) <" << myId << "> transmission delay before sending a packet to <" << connection->intermediateAddress << " > is delay <" << distanceDelay << ">\n";
+
+
+    //TODO AXE
+    //std::cerr << "\t(SM) <" << myId << "> will likely provide <" << connection->intermediateAddress << "> with connectionID <" << connectionID << "> data\n";
+    //std::cerr.flush();
+
+    startTimer(connectionID,distanceDelay); //1e-6 (microsecond) * slot time * distance
+    return;
+}
+
+//Function called to outsorce content discovery, broadcasting an interest
+void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm) {
+    if (connection == NULL) {
+        return;
+    }
+
+    //Getting Parameters
+    wsm->setName(MessageClass::INTEREST.c_str());
+
+    if (dataOnSch) {
+        wsm->setChannelNumber(Channels::SCH1);
+    } else {
+        wsm->setChannelNumber(Channels::CCH);
+    }
+
+    //Setting parameters
+    wsm->setSenderPos(traci->getPositionAt(simTime()));
+    wsm->setSenderAddress(myId);
+
+    //Adding upstream hop count
+    wsm->removeObject(MessageParameter::HOPS_UP.c_str());   //Removing previous hopcount object
+    cMsgPar* upwardsDistance = new cMsgPar(MessageParameter::HOPS_UP.c_str());
+    upwardsDistance->setLongValue(connection->upstreamHopCount);
+    wsm->addPar(upwardsDistance);
+
+    //Setting Delay prior to network forward request
+    double randomDelay = uniform(0.0002,0.005);
+    sendDelayedDown(wsm,randomDelay);
+    updateNodeColor();
+    //*/
+}
+
+//
+void BaconServiceManager::rejectNetworkrequest(WaveShortMessage* msg) {
+    //Unwrapping contents of request
+    cArray parArray = msg->getParList();
+    cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::ID.c_str()));
+    int idValue = requestID->longValue();
+
+    Connection_t* connection = getUpstreamConnection(idValue);
+    if (connection == NULL) {
+        EV_ERROR << "(SM) Cannot Reject request for a Connection that does not exist.\n";
+        EV_ERROR.flush();
+        return;
+    }
+
+    EV << "(SM) Rejecting Remote Transfer ID <" << idValue << "> from node <" << msg->getSenderAddress() << ">.\n";
+    EV.flush();
+
+    Coord currentPosition = traci->getCurrentPosition();
+    msg->setRecipientAddress(msg->getSenderAddress());
+    msg->setSenderAddress(myId);
+    msg->setSenderPos(currentPosition);
+
+    //Reseting the response request because it seems it didnt work before? not sure...
+    msg->removeObject(MessageParameter::TYPE.c_str());
+    cMsgPar* classParameter = new cMsgPar(MessageParameter::TYPE.c_str());
+    classParameter->setStringValue(MessageClass::INTEREST_CANCEL.c_str());
+    msg->addPar(classParameter);
+    msg->setName(MessageClass::INTEREST_CANCEL.c_str());
+    sendWSM(msg);
+    updateNodeColor();
+}
+
+//
+void BaconServiceManager::acceptNetworkrequest(WaveShortMessage* msg) {
+    //Unwrapping contents of request
+    cArray parArray = msg->getParList();
+    cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(
+            MessageParameter::ID.c_str()));
+    int idValue = requestID->longValue();
+
+    Connection_t* connection = getUpstreamConnection(idValue);
+    if (connection == NULL) {
+        EV_ERROR  << "(SM) Cannot Accept request for a Connection that does not exist.\n";
+        EV_ERROR.flush();
+        return;
+    }
+
+    EV << "(SM) Accepting Remote Transfer from <" << msg->getSenderAddress() << ">.\n";
+    EV.flush();
+
+    Coord currentPosition = traci->getCurrentPosition();
+    connection->connectionStatus = ConnectionStatus::WAITING_FOR_CONTENT;
+    connection->serverAddress = msg->getSenderAddress();
+    connection->serverPosition = msg->getSenderPos();
+
+    msg->setRecipientAddress(msg->getSenderAddress());
+    msg->setSenderAddress(myId);
+    msg->setSenderPos(currentPosition);
+
+    //Reseting the response request because it seems it didnt work before? not sure...
+    msg->removeObject(MessageParameter::TYPE.c_str());
+    cMsgPar* classParameter = new cMsgPar(MessageParameter::TYPE.c_str());
+    classParameter->setStringValue(MessageClass::INTEREST_ACCEPT.c_str());
+    msg->addPar(classParameter);
+    msg->setName(MessageClass::INTEREST_ACCEPT.c_str());
+    sendWSM(msg);
+    updateNodeColor();
+}
+
+//Function that Sends Message directly to the Client
+void BaconServiceManager::sendToClient(WaveShortMessage *msg) {
+    updateNodeColor();
+    send(msg, "clientExchangeOut");
+}
+
+//Function that Sends Message directly to the Content Provider
+void BaconServiceManager::sendToContentProvider(WaveShortMessage *msg) {
+    updateNodeColor();
+    //TODO: UNAXE
+    //send(msg, "contentExchangeOut");
+}
+
+//
+void BaconServiceManager::notifyClient(Connection_t* connection,std::string connectionResult) {
+
+    if (connection->clientAddress != myId) {
+        std::cerr << "(SM) Ignoring Client Notification for remote request connection <" << connection->upstreamConnectionID << ">.\n";
+        std::cerr.flush();
+        return;
+    }
+
+    //creating client reply message
+    t_channel channel = dataOnSch ? type_SCH : type_CCH;
+    WaveShortMessage * clientReply = prepareWSM(MessageClass::DATA, dataLengthBits, channel, dataPriority, -1, 2);
+    clientReply->setSenderAddress(myId);
+    clientReply->setRecipientAddress(myId);
+    clientReply->setName(MessageClass::DATA.c_str());
+    clientReply->setKind(connection->connectionStatus);
+
+    //Adding Message Prefix
+    cMsgPar* contentNameParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
+    contentNameParameter->setStringValue(connection->requestPrefix.c_str());
+    clientReply->addPar(contentNameParameter);
+    //Adding Connection ID
+    cMsgPar* connectionParameter = new cMsgPar(MessageParameter::ID.c_str());
+    connectionParameter->setLongValue(connection->upstreamConnectionID);
+    clientReply->addPar(connectionParameter);
+    //Adding message result
+    cMsgPar* resultParameter = new cMsgPar(MessageParameter::STATUS.c_str());
+    resultParameter->setStringValue(connectionResult.c_str());
+    clientReply->addPar(resultParameter);
+
+    sendToClient(clientReply);
+}
+
+void BaconServiceManager::removeContentFromCache(int connectionID) {
+    Connection_t * connection = getUpstreamConnection(connectionID);
+    if (connection == NULL) {
+        EV_ERROR << "(SM) Error: Cannot add empty content to content cache.\n";
+        EV_ERROR.flush();
+        return;
+    }
+
+    //Replying to content provider that we're good
+    t_channel channel = dataOnSch ? type_SCH : type_CCH;
+    WaveShortMessage * newContentMessage = prepareWSM(MessageClass::DATA,
+            dataLengthBits, channel, dataPriority, -1, 2);
+    newContentMessage->setSenderAddress(myId);
+    newContentMessage->setRecipientAddress(myId);
+    newContentMessage->setName(MessageClass::DATA_EXLUDE.c_str());
+
+    //Adding Message Prefix
+    cMsgPar* contentNameParameter = new cMsgPar(
+            MessageParameter::PREFIX.c_str());
+    contentNameParameter->setStringValue(connection->requestPrefix.c_str());
+    newContentMessage->addPar(contentNameParameter);
+
+    //Adding Client ID
+    cMsgPar* clientIDParameter = new cMsgPar(MessageParameter::CLIENT.c_str());
+    clientIDParameter->setLongValue(myId);
+    newContentMessage->addPar(clientIDParameter);
+
+    sendToContentProvider(newContentMessage);
+}
+
+//
+void BaconServiceManager::addContentToCache(int connectionID) {
+
+    Connection_t * connection = getUpstreamConnection(connectionID);
+    if (connection == NULL) {
+        EV_ERROR << "(SM) Error: Cannot add empty content to content cache.\n";
+        EV_ERROR.flush();
+
+        std::cerr << "(SM) Error: Cannot add empty content to content cache.\n";
+        std::cerr.flush();
+        return;
+    }
+
+    std::cerr << "\t(SM) <" << myId << "> is suggesting that item <" << connection->requestPrefix << "> be added to cache.\n";
+    std::cerr.flush();
+
+    //Replying to content provider that we're good
+    t_channel channel = dataOnSch ? type_SCH : type_CCH;
+    WaveShortMessage * newContentMessage = prepareWSM(MessageClass::DATA,
+            dataLengthBits, channel, dataPriority, -1, 2);
+    newContentMessage->setSenderAddress(myId);
+    newContentMessage->setRecipientAddress(myId);
+    newContentMessage->setName(MessageClass::DATA_INCLUDE.c_str());
+
+    //Adding Message Prefix
+    cMsgPar* contentNameParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
+    contentNameParameter->setStringValue(connection->requestPrefix.c_str());
+    newContentMessage->addPar(contentNameParameter);
+
+    //Adding Client ID
+    cMsgPar* clientIDParameter = new cMsgPar(MessageParameter::CLIENT.c_str());
+    clientIDParameter->setLongValue(myId);
+    newContentMessage->addPar(clientIDParameter);
+
+    sendToContentProvider(newContentMessage);
+}
+
+//=============================================================
+// MESSAGE TRANSMISSION AND ARRIVAL FUNCTIONS
+//=============================================================
+
+//Function responsible for sending messages to lower layers
+void BaconServiceManager::sendWSM(WaveShortMessage* wsm) {
+    updateNodeColor();
+    if (isParking && !sendWhileParking) return;
+
+    //std::cout << "(SM) Delay: " << individualOffset << "\n";
+    sendDelayedDown(wsm, individualOffset);
+}
+
+//Function called on SelfMessages amongst others. Forwards to HandleLowerMsg() so message management can be centralized.
+//We override this function because VEINS has fucked up data typing policies and forces "Data" and "Beacon" types. Fuck that.
+void BaconServiceManager::handleMessage(cMessage *msg) {
+    EV << "(SM) handleMessage Got a Message.\n";
+    EV.flush();
+
+    //Handling Self-Timers before everything as self-timer messages are simpler and did not come from any interface but from ourselves
+    if (strcmp(msg->getName(), "cancelMessageTimer") == 0) {
+        EV_WARN << "(SM) We got a Timer Message!!!!\n";
+        EV_WARN.flush();
+
+        WaveShortMessage* wsm = convertCMessage(msg);
+        handleSelfTimer(wsm);
+        return;
+    }
+
+    handleLowerMsg(msg);
+}
+
+//Function called to handle ALL messages from lower layers
+void BaconServiceManager::handleLowerMsg(cMessage* msg) {
+    EV << "(SM) handleLowerMsg Got a Message.\n";
+    EV.flush();
+
+    //std::cout << "(SM) <" << myId << "> handleLowerMsg Literally just Got a Message.\n";
+    //std::cout.flush();
+
+    WaveShortMessage* wsm = convertCMessage(msg);
+    cGate* inputGate = wsm->getArrivalGate();
+
+    if (wsm->getRecipientAddress() != getParentModule()->getIndex() && wsm->getRecipientAddress() != -1) {
+        //EV << "(SM) Looks like this message from " << wsm->getSenderAddress() << " was not addressed to me (" << myId << ")... but to <" << wsm->getRecipientAddress() << ">\n";
+        //EV.flush();
+
+        delete (msg);
+        return;
+    }
+
+    //Checking Message Input Gate
+    //CLIENT LINK
+    if (inputGate->getBaseId() == clientExchangeIn) {
+        EV << "(SM) Incoming Message from Local Client, our IDs are <" << myId << "," << wsm->getSenderAddress() << ">.\n";
+        EV.flush();
+        wsm->setSenderAddress(myId); //Not sure why but at some point this was getting fucked up
+        onClientMessage(wsm);
+
+    //NETWORK LINK
+    } else if (inputGate->getBaseId() == lowerLayerIn) {
+        onNetworkMessage(wsm);
+
+    //OTHER PORT
+    } else {
+        EV_ERROR << "(SM) Error: Unknown Network Interface.\n";
+        EV_ERROR.flush();
+    }
+
+    updateNodeColor();
+}
+
+//=============================================================
+// MOBILITY & OTHER UNUSED FUNCTIONS
+//=============================================================
+
+//IGNORE : Function from Base Class
+void BaconServiceManager::onBeacon(WaveShortMessage* wsm) {
+    EV_WARN << "(SM) WARNING: OnBeacon Got a Message!\n";
+    EV_WARN.flush();
+    delete (wsm);
+}
+
+//IGNORE : Function from Base Class
+void BaconServiceManager::onData(WaveShortMessage* wsm) {
+    EV_WARN << "(SM) WARNING: OnData Got a Message!\n";
+    EV_WARN.flush();
+    delete (wsm);
+}
+
+//IGNORE : Function from Base Class
+void BaconServiceManager::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj) {
+    EV << "(SM) BaconServiceManager::receiveSignal Got A Signal?.";
+    EV.flush();
+
+    Enter_Method_Silent();
+    if (signalID == mobilityStateChangedSignal) {
+        handlePositionUpdate(obj);
+    } else if (signalID == parkingStateChangedSignal) {
+        handleParkingUpdate(obj);
+    }
+}
+
+//IGNORE : Function from Base Class
+void BaconServiceManager::handleParkingUpdate(cObject* obj) {
+}
+
+//IGNORE : Function from Base Class
+void BaconServiceManager::handlePositionUpdate(cObject* obj) {
+    BaseWaveApplLayer::handlePositionUpdate(obj);
+}
+
+//=============================================================
+// EXTRA FUNCTIONALITIES
+//=============================================================
+
+WaveShortMessage* BaconServiceManager::convertCMessage(cMessage* msg) {
+    WaveShortMessage* wsm = dynamic_cast<WaveShortMessage*>(msg);
+    ASSERT(wsm);
+    return wsm;
+}

@@ -1,0 +1,23 @@
+OMNeT++ Discrete Event Simulation  (C) 1992-2016 Andras Varga, OpenSim Ltd.
+Version: 5.0, build: 160414-aa4629c, edition: Academic Public License -- NOT FOR COMMERCIAL USE
+See the license for distribution terms and warranty disclaimer
+Setting up Qtenv...
+Loading NED files from ../../src/veins:  30
+Loading NED files from .:  0
+Loading NED files from /home/felipe/Documents/VEINS_5_slave/scenario:  1
+
+RUNTIME ERROR. A cRuntimeError exception is about to be thrown, and you
+requested (by setting debug-on-errors=true in the ini file) that errors
+abort execution and break into the debugger.
+
+You should now probably be running the simulation under gdb or another
+debugger. The simulation kernel will now raise a SIGINT signal which will
+get you into the debugger. If you are not running under a debugger, you can
+still use the core dump for post-mortem debugging. Once in the debugger,
+view the call stack (in gdb: "bt" command) to see the context of the
+runtime error.
+
+<!> Error in module (omnetpp::cModule) BaconScenario (id=1) during network setup: Submodule statistics: cannot resolve module type `BaconStatistics' (not in the loaded NED files?).
+
+TRAPPING on the exception above, due to a debug-on-errors=true configuration option. Is your debugger ready?
+FAILED: run aborted
