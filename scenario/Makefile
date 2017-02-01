@@ -1,8 +1,8 @@
 #
-# OMNeT++/OMNEST Makefile for veins-5
+# OMNeT++/OMNEST Makefile for veins
 #
 # This file was generated with the command:
-#  opp_makemake -f --deep --nolink -O out -X. -I/home/felipe/Dropbox/uOttawa/Research/Code/VEINS_5/src
+#  opp_makemake -f --deep --nolink -O out -X. -I/home/felipe/Simulation/BaconNet/src
 #
 
 # Output directory
@@ -60,7 +60,7 @@ smheaders:
 clean:
 	$(qecho) Cleaning...
 	$(Q)-rm -rf $O
-	$(Q)-rm -f veins-5 veins-5.exe libveins-5.so libveins-5.a libveins-5.dll libveins-5.dylib
+	$(Q)-rm -f veins veins.exe libveins.so libveins.a libveins.dll libveins.dylib
 
 cleanall: clean
 	$(Q)-rm -rf $(PROJECT_OUTPUT_DIR)

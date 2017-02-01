@@ -19,3 +19,6 @@ examples/**/valgrind.out
 scenario/line/results
 scenario/grid/results
 scenario/ottawa/results
+
+out/gcc-debug
+out/gcc-release

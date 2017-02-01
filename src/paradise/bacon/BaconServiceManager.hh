@@ -67,7 +67,7 @@ class BaconServiceManager : public BaseWaveApplLayer {
         bool sendWhileParking;
         int currentlyActiveConnections;
 
-        std::vector<cMessage*> cancelMessageTimer;
+        std::vector<cMessage*> cancelMessageTimerVector;
         std::list<Interest_t*> PIT;
         std::list<Connection_t*> connectionList;
 
