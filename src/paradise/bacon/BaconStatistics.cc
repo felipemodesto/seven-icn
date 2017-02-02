@@ -17,6 +17,7 @@ void BaconStatistics::initialize(int stage) {
     if (stage == 0) {
         hasStarted = false;
         hasStopped = false;
+        lastSecond = 0;
 
         collectingStatistics = par("collectingStatistics").boolValue();
         collectingRequestNames = par("collectingRequestNames").boolValue();

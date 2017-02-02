@@ -16,6 +16,7 @@ void BaconLibrary::initialize(int stage) {
     if (stage == 0) {
         zipfCaracterization = par("zipfCaracterization").doubleValue();
         multimediaContentSize = par("multimediaLibrarySize").longValue();
+        multimediaLibrary = NULL;
         buildContentList();
     }
 
