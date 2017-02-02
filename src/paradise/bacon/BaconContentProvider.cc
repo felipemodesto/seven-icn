@@ -401,6 +401,7 @@ void BaconContentProvider::buildContentLibrary() {
                 curIndex++;
             }
         }
+        delete[] inclusionList;
 
         //Adding Items from other categories
         for (auto it = multimediaLibrary.begin(); it != multimediaLibrary.end(); it++) {
