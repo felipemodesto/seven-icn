@@ -1,0 +1,9 @@
+OMNeT++ Discrete Event Simulation  (C) 1992-2016 Andras Varga, OpenSim Ltd.
+Version: 5.0, build: 160414-aa4629c, edition: Academic Public License -- NOT FOR COMMERCIAL USE
+See the license for distribution terms and warranty disclaimer
+Setting up Qtenv...
+Loading NED files from ../../src/veins:  30
+Loading NED files from .:  0
+Loading NED files from /home/felipe/Documents/VEINS_5_slave/scenario:  1
+
+End.
