@@ -111,41 +111,58 @@ void BaconServiceManager::saveStatistics() {
     //Saving individual vehicle statistics
     for (auto it = connectionList.begin(); it != connectionList.end();) {
         simtime_t difTime = simTime() - (*it)->requestTime;
+
+        Connection_t* con = (*it);
+
+        if (difTime.dbl() > (interestBroadcastTimeout * (maxAttempts * 2 + 2))) {
+            std::cerr << "(SM) Stale Request <" << con->requestID << ">\t Peer <" << con->peerID << ">\t Status <" << con->connectionStatus << ">\t Attempts <" << con->attempts << ">\t difTime <" << floor(difTime) << ">\n";
+            std::cerr.flush();
+        }
+
+        //Checking if the connection is marked as done
         if (ConnectionStatus::DONE_MIN < (*it)->connectionStatus && (*it)->connectionStatus < ConnectionStatus::DONE_MAX) {
 
             //Saving Statistics
             if ((*it)->peerID == myId) {
-
                 //Logging Hop Count for packages received correctly
                 if ((*it)->connectionStatus == ConnectionStatus::DONE_AVAILABLE || (*it)->connectionStatus == ConnectionStatus::DONE_RECEIVED ) {
                     stats->setHopsCount((*it)->downstreamHopCount);
                     stats->increaseHopCountResult((*it)->downstreamHopCount);
                 }
-
                 //TODO: Log all stats again!
             }
 
             //Deleting Connection Object
-            if ((*it)->connectionStatus != ConnectionStatus::DONE_PROVIDED) {
-                delete[] (*it)->chunkStatusList;
-                it = connectionList.erase(it);
-            } else {
-                if (difTime.dbl() > (interestBroadcastTimeout*maxAttempts + 1)) {
+            if ((*it)->connectionStatus == ConnectionStatus::DONE_PROVIDED) {
+                //We wait an additional bit of time for provided content in case clients
+                if (difTime.dbl() > (interestBroadcastTimeout*(maxAttempts + 1))) {
                     delete[] (*it)->chunkStatusList;
                     it = connectionList.erase(it);
                 } else {
                     it++;
                 }
+            } else {
+                delete[] (*it)->chunkStatusList;
+                it = connectionList.erase(it);
             }
+
         } else {
-            //Checking messages that don't have a "DONE" status and that have been in our list for a long time.
+            //Checking messages that don't have a "DONE" status and that have been in our list for a long time for leftovers, forcing a status update on them
+            if (difTime.dbl() >= (interestBroadcastTimeout*(maxAttempts + 3)) ) {
+                //delete[] (*it)->chunkStatusList;
+                //it = connectionList.erase(it);
+                switch((*it)->connectionStatus) {
+                    case ConnectionStatus::WAITING_FOR_ACCEPT:
+                        //TODO: (REVIEW) Review code so that this doesn't really happen anymore (Fix a broken cancel timer somewhere)
+                        (*it)->connectionStatus = ConnectionStatus::DONE_NO_CLIENT_REPLY;
+                        break;
 
-            if ((*it)->peerID == myId && difTime.dbl() > (interestBroadcastTimeout*maxAttempts + 2) ) {
-                std::cout << "\t(SM) OOH SHIT. OLD RESPONSES!!! <" << (*it)->connectionStatus << ">\n";
-                std::cout.flush();
-                //TODO: (DECIDE) if we're going to delete these entries or something...
+                    default:
+                        std::cerr << "(SM) Error: <" << myId << "> Stale Request <" << con->requestID << ">\t Peer <" << con->peerID << ">\t has Untreated Status <" << con->connectionStatus << ">\t Attempts <" << con->attempts << ">\t difTime <" << floor(difTime) << ">\n";
+                        std::cerr.flush();
+                        break;
+                }
             }
-
             it++;
         }
     }
@@ -326,7 +343,7 @@ bool BaconServiceManager::cancelTimer(Connection_t* connection) {
     return false;
 }
 
-//
+//Called after timer timeouts, manages
 void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
     //Pulling parameters from selfmessage to figure out what's going on
     cArray parArray = timerMessage->getParList();
@@ -355,6 +372,7 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
 
     //Now that we're dealing with it... let's cancel that timer
     //cancelTimer(connection);
+
 
     if (connection->attempts >= maxAttempts) {
         //TODO: (DECIDE) Will we cancel our thing after this number of attempts? Will we just ignore this timer?
@@ -385,7 +403,6 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
                 notifyOfContentAvailability(wsm,connection);
 
                 cancelTimer(connection);
-
                 saveStatistics();
 
             } else {
@@ -407,7 +424,9 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
             //Cleaning potential server and trying again
             pendingInterest->providingConnection = NULL;
             connection->connectionStatus = ConnectionStatus::WAITING_FOR_NETWORK;
+            connection->attempts = 1;
 
+            //Attempting new content request forward
             WaveShortMessage* wsm = getGenericMessage(connection);
             forwardContentSearch(wsm,connection);
             saveStatistics();
@@ -452,8 +471,6 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
         switch (connection->connectionStatus) {
             case ConnectionStatus::WAITING_FOR_NETWORK:
                 {
-                    //std::cout << "(SM) <" << myId << "> Re-forwarding content search after timeout <" << connection->peerID << ">\n";
-                    //std::cout.flush();
                     //Sending Message once again in hopes of receiving a response
                     WaveShortMessage* wsm = getGenericMessage(connection);
                     forwardContentSearch(wsm,connection);
@@ -464,15 +481,18 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
                 {
                     //This technically will never exist so we don't have to worry about local node stuff at this point
                     if (connection->peerID == myId) {
-                        std::cout << "(SM) <" << myId << "> Why is a local content waiting for accept again?\n";
-                        std::cout.flush();
+                        std::cerr << "(SM) Error: <" << myId << "> has local request with server status for remote node.\n";
+                        std::cerr.flush();
                     }
 
                     //Sending Message once again in hopes of receiving a response
                     WaveShortMessage* wsm = getGenericMessage(connection);
                     //connection->connectionStatus = ConnectionStatus::DONE_RECEIVED;
+                    //I already have an attempts++ as a general case
+                    //connection->attempts++;
                     wsm->setKind(ConnectionStatus::DONE_AVAILABLE);
                     notifyOfContentAvailability(wsm,connection);
+                    cancelTimer(connection);
                 }
                 break;
 
@@ -481,6 +501,7 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
                     int requestSize = (int) ceil(connection->requestedContent->contentSize / (double) dataLengthBits);
                     if (connection->obtainedSize == requestSize) {
                         completeRemoteDataTransfer(connection);
+                        cancelTimer(connection);
                     } else {
                         //Manually checking if chunks are missing
                         bool foundMissingChunk = false;
@@ -496,6 +517,7 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
                         if (!foundMissingChunk) {
                             //connection->connectionStatus == ConnectionStatus::DONE_RECEIVED;
                             completeRemoteDataTransfer(connection);
+                            cancelTimer(connection);
                         }
                     }
                 }
@@ -557,7 +579,14 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
                 //The next timer event should fix this.
                 if (connection->peerID == myId) {
                     connection->connectionStatus = ConnectionStatus::WAITING_FOR_NETWORK;
-                    startTimer(connection);
+                    WaveShortMessage* wsm = getGenericMessage(connection);
+                    forwardContentSearch(wsm,connection);
+                    //startTimer(connection);       //This has become redundant
+                } else {
+                    //If we're the server who has dealt with a connection that has looped back to idle due to errors or X, we'll just delete it.
+                    connection->connectionStatus = ConnectionStatus::DONE_NO_CLIENT_REPLY;
+                    removeFromInterest(connection->requestPrefix,connection->peerID);
+                    cancelTimer(connection);
                 }
                 break;
 
@@ -566,6 +595,7 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
                 std::cerr.flush();
 
                 connection->connectionStatus = ConnectionStatus::ERROR;
+                //cancelTimer(connection);
                 break;
         }
     }
@@ -628,6 +658,7 @@ void BaconServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
     if (wsm->getRecipientAddress() != -1 && wsm->getRecipientAddress() != myId) {
         //EV << "(SM) Ignoring message not addressed to me.\n";
         //EV.flush();
+        delete(wsm);
         return;
     }
 
@@ -653,6 +684,7 @@ void BaconServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
     } else {
         std::cerr << "(SM) Unknown Message Type <" << wsm->getName() << ">\n";
         std::cerr.flush();
+        delete(wsm);
     }
 }
 
@@ -669,6 +701,7 @@ void BaconServiceManager::handleInterestRejectMessage(WaveShortMessage* wsm) {
 
     if (downstreamConnection == NULL) {
         cancelTimer(downstreamConnection);
+        delete(wsm);
         return;
     }
 
@@ -677,6 +710,7 @@ void BaconServiceManager::handleInterestRejectMessage(WaveShortMessage* wsm) {
 
     //Canceling any related timers
     cancelTimer(downstreamConnection);
+    delete(wsm);
 }
 
 //
@@ -688,6 +722,7 @@ void BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
         strcmp(wsm->getName(), MessageClass::DATA_MISSING.c_str()) != 0) {
         std::cerr << "(SM) This is not an Accept!\n";
         std::cerr.flush();
+        delete(wsm);
         return;
     }
 
@@ -746,6 +781,8 @@ void BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
                //std::cout.flush();
                //TODO: (DECIDE) It seems that at this point we've already tried connecting to this client but our connection exceeded attempts and we gave up.
                //However our client is still trying. Decide if we want to proceed or ignore
+
+               delete(wsm);
                return;
            } else {
                //std::cerr << "(SM) <" << myId << "> Downstream Connection <" << idValue << "> with <" << wsm->getSenderAddress() << "> Does not exist, we do not have the content or people interested in it!\n";
@@ -782,24 +819,17 @@ void BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
         //We are on some other sort of fresh connection but i'm not sure whats up
         downstreamConnection->connectionStatus = ConnectionStatus::WAITING_FOR_ACCEPT;
         downstreamConnection->attempts = 1;
+        startTimer(downstreamConnection);
     }
 
     //We've been getting this kind of message so we're filtering them now
     if (downstreamConnection->connectionStatus != ConnectionStatus::WAITING_FOR_ACCEPT) {
-        //if (downstreamConnection->connectionStatus == ConnectionStatus::WAITING_FOR_NETWORK && cache->handleLookup(prefixValue) == true) {
-        //    std::cerr << "(SM) <" << myId << "> Well, we could technically provide this content but our state is <" << downstreamConnection->connectionStatus << ">!\n";
-        //    std::cerr.flush();
-        //} else {
-        //    //std::cerr << "(SM) <" << myId << "> Downstream Connection has a weird state <" << downstreamConnection->connectionStatus << ">!\n";
-        //    //std::cerr.flush();
-        //    //We do not have this content... We'll just ignore this request
-        //}
-
 
         if (downstreamConnection->connectionStatus == ConnectionStatus::TRANSFER_FORWARDING) {
             std::cout << "(SM) <" << myId << "> Yep, we're forwarding <" << downstreamConnection->requestID << "> to <" << downstreamConnection->peerID << ">. Forwarding gooood. Time: <" << simTime() << ">\n";
             std::cout.flush();
         } else {
+            delete(wsm);
             return;
         }
     }
@@ -871,6 +901,8 @@ void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
     if (strcmp(wsm->getName(), MessageClass::INTEREST_REPLY.c_str()) != 0) {
         std::cerr << "(SM) <" << myId << ">  THIS <" << wsm->getName() << "> IS NOT AN INTEREST MESSAGE!\n";
         std::cerr.flush();
+
+        delete(wsm);
         return;
     }
 
@@ -889,11 +921,12 @@ void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
     //    std::cout.flush();
     //}
 
-    //Checking if we already have an upstream connection for this interest (Possibly because we heard a loop
+    //Checking if we already have an upstream connection for this interest (Possibly because we heard a loop)
     Connection_t* upstreamConnection = getConnection(idValue,wsm->getSenderAddress());
     if (upstreamConnection != NULL){
        //Checking if this was a communication Cycle, if so fixing the broken stuff
        if (upstreamConnection->connectionStatus == ConnectionStatus::WAITING_FOR_NETWORK) {
+           //This is redundant but whatever, we're cleaning the connection object
            upstreamConnection->connectionStatus = ConnectionStatus::WAITING_FOR_NETWORK;
 
            upstreamConnection->lostSize = 0;
@@ -909,7 +942,9 @@ void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
                    upstreamConnection->chunkStatusList[i] = false;
                };
            }
-           cancelTimer(upstreamConnection);
+           //Not sure why this had CANCEL TIMER and not START TIMER, fixed.
+           //cancelTimer(upstreamConnection);
+           startTimer(upstreamConnection);
 
        } else if (upstreamConnection->connectionStatus == ConnectionStatus::WAITING_FOR_CONTENT) {
            //In this case, our peer node did not receive our message!
@@ -933,6 +968,8 @@ void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
        } else {
            //std::cerr << "(SM) <" << myId << "> Upstream Connection <" << upstreamConnection->requestID << "> to <" << upstreamConnection->peerID << "> regarding <" << upstreamConnection->requestedContent->contentPrefix << "> already exists. Current State is <" << upstreamConnection->connectionStatus << ">!\n";
            //std::cerr.flush();
+
+           delete(wsm);
            return;
        }
     } else {
@@ -959,7 +996,9 @@ void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
             if (pendingConnection->peerID == upstreamConnection->peerID) {
                 //std::cout << "(SM) <" << myId << "> It seems our peer <" << pendingConnection->peerID << "> got the content object before us and wants to provide us with it. Rubbing it in, eh?\n";
                 //std::cout.flush();
-                it = interest->pendingConnections.erase(it);
+                //it = interest->pendingConnections.erase(it);
+                removeFromInterest(interest->interestPrefix,upstreamConnection->peerID);
+                //TODO (REVIEW) See if this causes shit to go haywire
                 break;
             }
 
@@ -970,6 +1009,7 @@ void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
 
                 deleteInterest(prefixValue);
                 rejectNetworkrequest(wsm,upstreamConnection);
+                return;
             }
         } else {
             //If there is no actual connection regarding this pending interest. then whatever.
@@ -989,18 +1029,24 @@ void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
                 //std::cout << "B?\n";
                 //std::cout.flush();
                 acceptNetworkrequest(wsm,upstreamConnection);
+                return;
                 break;
 
             //"Else", where Reject the content request
             default:
                 rejectNetworkrequest(wsm,upstreamConnection);
+                return;
                 break;
         }
     } else {
         //std::cout << "C?\n";
         //std::cout.flush();
         acceptNetworkrequest(wsm,upstreamConnection);
+        return;
     }
+
+    //TODO: (EVALUATE) This probably causes crashes, right?
+    delete(wsm);
 }
 
 //
@@ -1011,6 +1057,7 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
     if (strcmp(wsm->getName(), MessageClass::INTEREST.c_str()) != 0) {
         std::cerr << "(SM) THIS IS NOT AN INTEREST MESSAGE!\n";
         std::cerr.flush();
+        delete(wsm);
         return;
     }
 
@@ -1037,11 +1084,14 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
            //    std::cerr << "(SM) This request should LITERALLY have been fulfilled earlier. WTF.\n";
            //    std::cerr.flush();
            //}
+            //I decided I should restart the timer as we've again become aware that this node is asking for stuff (timeout refresh)
+            startTimer(downstreamConnection);
         } else if (downstreamConnection->connectionStatus == ConnectionStatus::WAITING_FOR_ACCEPT || downstreamConnection->connectionStatus == ConnectionStatus::TRANSFER_WAITING_ACK || downstreamConnection->connectionStatus == ConnectionStatus::DONE_PROVIDED ) {
             //If we've tried communicating or even providing content to this node and things went south to the point where he gave up and tried again we're probably dealing with significant collisions, but sure, let's give this another try
             //std::cout << "(SM) We're probably dealing with A LOT of noise for connection <" << idValue << "> to peer <" << wsm->getSenderAddress() << ">.\n";
             //std::cout.flush();
             downstreamConnection->connectionStatus = ConnectionStatus::IDLE;
+            startTimer(downstreamConnection);
         } else if (downstreamConnection->connectionStatus == ConnectionStatus::WAITING_FOR_CONTENT || downstreamConnection->connectionStatus == ConnectionStatus::RECEIVE_CLIENT) {
            //If we're receiving a content but now get an interest from this node, we either assume that the node does not have the item or we just keep our state.
            //if we ignore that message we'll timeout and carry on normally.
@@ -1062,25 +1112,26 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
     } else {
         //Creating and setting parameters for a connection
         downstreamConnection = createServerSidedConnection(wsm);
+        downstreamMessageAlreadyExisted = false;
 
         if (downstreamConnection == NULL) {
-            std::cerr <<  "(SM) <" << myId << "> WTF. Connection <" << idValue << "> with <" << wsm->getSenderAddress() << ">. Time: <" << simTime() << ">\n";
+            std::cerr <<  "(SM) <" << myId << "> ERROR: Connection <" << idValue << "> with <" << wsm->getSenderAddress() << ">. Time: <" << simTime() << ">\n";
             std::cerr.flush();
+
+            delete(wsm);
             return;
         }
 
         downstreamConnection->connectionStatus = ConnectionStatus::WAITING_FOR_NETWORK;
-
-        //if (myId == 0) {
-        //    std::cout << "(SM) Created a connection for <" << prefixValue << "> in connection <" << idValue << "> from <" << wsm->getSenderAddress() << "> Here: <" << downstreamConnection << "> ;time: <" << simTime() << ">\n";
-        //    std::cout.flush();
-        //}
+        startTimer(downstreamConnection);
     }
 
     //If we failed to create an interest a field was possibly missing so we'll ignore this connection
     if (downstreamConnection == NULL) {
         //std::cerr << "(SM) Could not create an interest.\n";
         //std::cerr.flush();
+
+        delete(wsm);
         return;
     }
 
@@ -1116,12 +1167,15 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
 
             //As object is local we don't need to wait for network responses so we can cancel our timer
             cancelTimer(downstreamConnection);
+        } else {
+            startTimer(downstreamConnection);
         }
 
         //Notifying the client that we've got the content
         wsm->setKind(ConnectionStatus::DONE_AVAILABLE);
         notifyOfContentAvailability(wsm,downstreamConnection);
         saveStatistics();
+        return;
     } else {
         //Checking if we already have an interest for the given prefix
         Interest_t* interest = getInterest(prefixValue);
@@ -1134,9 +1188,19 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
                 std::cerr << "(SM) Error: Interest creation failed.\n";
                 std::cerr.flush();
                 startTimer(downstreamConnection);
+
+                delete(wsm);
                 return;
             }
             forwardContentSearch(wsm,downstreamConnection);
+
+            //Loging statistics here (we have similar code below) so we can return and have the general case delete the WSM object
+            if (downstreamConnection->peerID == myId) {
+                stats->increaseLocalCacheMisses();
+            } else {
+                stats->increaseRemoteCacheMisses();
+            }
+            return;
         } else {
             //If we already have a pending interest there is not much we can do at this point but wait for a potential reply.
             //TODO: (DECIDE) Use the existing knowledge of previous interests (time since last request) to rebroadcast interests, possibly reset some timers?
@@ -1169,6 +1233,7 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
         }
     }
     updateNodeColor();
+    delete(wsm);
 }
 
 //Function called upon data delivery
@@ -1184,22 +1249,23 @@ void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
     if (connection == NULL) {
         //std::cerr << "(SM) Error: <" << myId << "> Initiating remote data transfer for connection ID that does not exist <" << connectionID << ";" << wsm->getSenderAddress() << ">.\n";
         //std::cerr.flush();
-        //This case means that we got the content, resolved all transmissions but something made it to our provider who sent us shit again...
-        //This is kind of unnecessary but whetever
+        //This case means that we got the content, resolved all transmissions but something made it to our provider sent us content again...
+        //This is kind of unnecessary but whatever
+        delete (wsm);
         return;
     }
 
     //Canceling existing timer to proceed with communication
     cancelTimer(connection);
 
-
     //Checking if we're receiving outdated/duplicated contents for a connection we've already closed down
     if (connection->connectionStatus == ConnectionStatus::DONE_RECEIVED) {
         std::cerr << "(SM) Warning: <" << myId << "> We're getting data on a complete connection. Maybe this is redundant? check timers!\n";
         std::cerr.flush();
+
+        delete (wsm);
         return;
     }
-
 
     //Checking for first chunk arrival
     //We include the IDLE state as pseudo-complete messages might have timer idled but should be fine, these are just duplicate chunks
@@ -1210,6 +1276,8 @@ void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
         //It seems roles have been reversed and we don't give a fuck
         //std::cerr << "(SM) Error: <" << myId << "> Receiving Client connection <" << connection->requestID << "> to <" << connection->peerID << "> is in a weird state <" << connection->connectionStatus << ">.\n";
         //std::cerr.flush();
+
+        delete (wsm);
         return;
     }
 
@@ -1244,6 +1312,7 @@ void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
             //std::cout.flush();
 
             requestChunkRetransmission(connection);
+            delete(wsm);
             return;
         }
     } else {
@@ -1268,11 +1337,11 @@ void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
 
             completeRemoteDataTransfer(connection);
         } else {
-            EV << "(SM) Obtained \"final\" Chunk Segment " << sequenceNumber
-              << " from Connection " << connectionID << " totaling "
-              << connection->obtainedSize << " out of " << requestSize
-              << " total chunks. All we need now is the confirmation chunk.\n";
-            EV.flush();
+            //EV << "(SM) Obtained \"final\" Chunk Segment " << sequenceNumber
+            //  << " from Connection " << connectionID << " totaling "
+            //  << connection->obtainedSize << " out of " << requestSize
+            //  << " total chunks. All we need now is the confirmation chunk.\n";
+            //EV.flush();
 
             //std::cout << "(SM) <" << myId << "> awaits END chunk for Connection <" << connectionID << ">\n";
             //std::cout.flush();
@@ -1281,11 +1350,11 @@ void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
             startTimer(connection);
         }
     } else {
-        EV << "(SM) Obtained Chunk Segment " << sequenceNumber
-              << " from Connection " << connectionID << " totaling "
-              << connection->obtainedSize << " out of " << requestSize
-              << " total chunks.\n";
-        EV.flush();
+        //EV << "(SM) Obtained Chunk Segment " << sequenceNumber
+        //      << " from Connection " << connectionID << " totaling "
+        //      << connection->obtainedSize << " out of " << requestSize
+        //      << " total chunks.\n";
+        //EV.flush();
 
         //cancelTimer(connection->connectionID);
         startTimer(connection);
@@ -1303,6 +1372,8 @@ void BaconServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Con
     if (connection == NULL) {
         std::cerr << "(SM) <" << myId << "> Error: Connection on NotifyContentAvailability is Null.\n";
         std::cerr.flush();
+
+        delete(wsm);
         return;
     }
 
@@ -1374,6 +1445,8 @@ void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection
     if (connection == NULL) {
         std::cerr << "(SM) <" << myId << "> Error: Connection on ForwardContentSearch is NULL.\n";
         std::cerr.flush();
+
+        delete(wsm);
         return;
     }
 
@@ -1383,8 +1456,10 @@ void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection
     //Checking maximum hop count prior to transmission
     if (connection->upstreamHopCount > 15) {
         //connection->connectionStatus = ConnectionStatus::DONE_UNAVAILABLE;
-        //std::cout << "(SM) <" << myId << "> Reached Maximum hopcount (10) for connection <" << connection->requestID << ">.\n";
+        //std::cout << "(SM) <" << myId << "> Reached Maximum hopcount (15) for connection <" << connection->requestID << ">.\n";
         //std::cout.flush();
+        cancelTimer(connection);
+        connection->connectionStatus = ConnectionStatus::DONE_UNAVAILABLE;
         delete(wsm);
         return;
     }
@@ -1439,6 +1514,8 @@ void BaconServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection
     if (connection == NULL) {
         std::cerr << "(SM) Error: Cannot Accept remote data transfer for connection that does not exist.\n";
         std::cerr.flush();
+
+        delete(wsm);
         return;
     }
 
@@ -1450,6 +1527,7 @@ void BaconServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection
     if (connection->chunkStatusList == NULL) {
         std::cerr << "(SM) Error: Chunk status list for connection does not exist.\n";
         std::cerr.flush();
+        delete(wsm);
         return;
     }
 
@@ -1513,6 +1591,7 @@ void BaconServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection
 
     //connection->attempts++;
     startTimer(connection);
+    //delete(wsm);
 }
 
 //Function called to reject a proposal for content offered by a remote server
@@ -1526,6 +1605,7 @@ void BaconServiceManager::rejectNetworkrequest(WaveShortMessage* wsm, Connection
     if (connection == NULL) {
         EV_ERROR << "(SM) Cannot Reject request for a Connection that does not exist.\n";
         EV_ERROR.flush();
+        delete(wsm);
         return;
     }
 
@@ -1552,6 +1632,7 @@ void BaconServiceManager::rejectNetworkrequest(WaveShortMessage* wsm, Connection
     //TODO: (DECIDE) if we should set a timer to inform that we're ignoring an interest cancel message
     //connection->attempts++;
     //startTimer(connection);
+
 }
 
 //Function called by transmitting node whenever it gets a data_missing message (notification of missing chunks)
@@ -1622,8 +1703,6 @@ void BaconServiceManager::transmitDataChunks(Connection_t* connection, std::vect
 
     sendWSM(chunkMessage);
 
-    //std::cout << "(SM) <" << myId << "> Connection <" << connection->requestID << "> to <" << connection->peerID << "> Status is now PROVIDED.\n";
-    //std::cout.flush();
     connection->connectionStatus = ConnectionStatus::TRANSFER_WAITING_ACK;
 
     updateNodeColor();
@@ -2096,7 +2175,6 @@ Connection_t* BaconServiceManager::createClientSidedConnection(WaveShortMessage 
         };
     }
 
-
     //Adding Connection to Connection List
     connectionList.push_front(newConnection);
 
@@ -2441,7 +2519,8 @@ void BaconServiceManager::handleLowerMsg(cMessage* msg) {
     WaveShortMessage* wsm = convertCMessage(msg);
     cGate* inputGate = wsm->getArrivalGate();
 
-    if (wsm->getRecipientAddress() != myId && wsm->getRecipientAddress() != -1) {
+    int recepient = wsm->getRecipientAddress();
+    if (recepient != myId && recepient != -1) {
         delete (msg);
         return;
     }
@@ -2449,8 +2528,8 @@ void BaconServiceManager::handleLowerMsg(cMessage* msg) {
     //Checking Message Input Gate
     //CLIENT LINK
     if (inputGate->getBaseId() == clientExchangeIn) {
-        wsm->setSenderAddress(myId); //Not sure why but at some point this was getting fucked up
-        onNetworkMessage(wsm);      //We're treating client messages as network messages cause they technically behave the same and the only difference is how we reply (we skip steps with local clients)
+        wsm->setSenderAddress(myId);    //Something was causing this to happen so we'll deal with it
+        onNetworkMessage(wsm);          //We're treating client messages as network messages cause they technically behave the same and the only difference is how we reply (we skip steps with local clients)
 
     //NETWORK LINK
     } else if (inputGate->getBaseId() == lowerLayerIn) {
@@ -2458,7 +2537,7 @@ void BaconServiceManager::handleLowerMsg(cMessage* msg) {
 
     //OTHER PORT
     } else {
-        EV_ERROR << "(SM) Error: Unknown Network Interface.\n";
+        std::cerr << "(SM) Error: Unknown Network Interface.\n";
         EV_ERROR.flush();
     }
 

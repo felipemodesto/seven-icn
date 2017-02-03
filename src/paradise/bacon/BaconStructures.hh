@@ -23,6 +23,7 @@
 #include <cstring>
 #include <math.h>
 #include <list>
+#include <ctime>
 
 //#include <paradise/bacon/BaconLibrary.hh>
 //#include <paradise/bacon/BaconServiceManager.hh>
