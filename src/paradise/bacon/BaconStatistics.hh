@@ -24,6 +24,7 @@ protected:
     BaconStatistics* stats;
 
     //Data Collection Configuration Setup
+    clock_t begin = clock();
     double statisticsStartTime;     //Collection Start Time
     double statisticsStopTime;      //Collection Stop Time
     bool hasStarted;

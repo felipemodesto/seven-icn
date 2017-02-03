@@ -21,7 +21,8 @@
 cd /home/felipe/Simulation/BaconNet/scenario/grid
 #
 #Memory Leak & Profile
-valgrind --tool=memcheck --leak-check=yes --leak-check=full --log-file="../../memcheck.output.log" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Center -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../out/gcc-debug/src/veins --record-eventlog=false --debug-on-errors=false omnetpp_grid.ini
+valgrind --tool=memcheck --leak-check=yes --leak-check=full --leak-resolution=high --log-file="../../memcheck.log.out" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Center -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false omnetpp_grid.ini
+#
 #
 #Memory Allocation mapping
-#valgrind --tool=massif --massif-out-file="../../massif.output.log" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Center -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../out/gcc-debug/src/veins --record-eventlog=false --debug-on-errors=false omnetpp_grid.ini
+#valgrind --tool=massif --massif-out-file="../../massif.log.out" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Center -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false omnetpp_grid.ini
