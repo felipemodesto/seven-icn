@@ -112,12 +112,11 @@ void BaconServiceManager::saveStatistics() {
     for (auto it = connectionList.begin(); it != connectionList.end();) {
         simtime_t difTime = simTime() - (*it)->requestTime;
 
-        Connection_t* con = (*it);
-
-        if (difTime.dbl() > (interestBroadcastTimeout * (maxAttempts * 2 + 2))) {
-            std::cerr << "(SM) Stale Request <" << con->requestID << ">\t Peer <" << con->peerID << ">\t Status <" << con->connectionStatus << ">\t Attempts <" << con->attempts << ">\t difTime <" << floor(difTime) << ">\n";
-            std::cerr.flush();
-        }
+        //Connection_t* con = (*it);
+        //if (difTime.dbl() > (interestBroadcastTimeout * (maxAttempts * 2 + 2))) {
+        //    std::cerr << "(SM) Stale Request <" << con->requestID << ">\t Peer <" << con->peerID << ">\t Status <" << con->connectionStatus << ">\t Attempts <" << con->attempts << ">\t difTime <" << floor(difTime) << ">\n";
+        //    std::cerr.flush();
+        //}
 
         //Checking if the connection is marked as done
         if (ConnectionStatus::DONE_MIN < (*it)->connectionStatus && (*it)->connectionStatus < ConnectionStatus::DONE_MAX) {
@@ -158,8 +157,10 @@ void BaconServiceManager::saveStatistics() {
                         break;
 
                     default:
-                        std::cerr << "(SM) Error: <" << myId << "> Stale Request <" << con->requestID << ">\t Peer <" << con->peerID << ">\t has Untreated Status <" << con->connectionStatus << ">\t Attempts <" << con->attempts << ">\t difTime <" << floor(difTime) << ">\n";
-                        std::cerr.flush();
+                        (*it)->connectionStatus = ConnectionStatus::ERROR;
+                        startTimer(*it);
+                        //std::cerr << "(SM) Error: <" << myId << "> Stale Request <" << con->requestID << ">\t Peer <" << con->peerID << ">\t has Untreated Status <" << con->connectionStatus << ">\t Attempts <" << con->attempts << ">\t difTime <" << floor(difTime) << ">\n";
+                        //std::cerr.flush();
                         break;
                 }
             }

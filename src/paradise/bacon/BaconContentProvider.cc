@@ -25,8 +25,8 @@ void BaconContentProvider::initialize(int stage) {
 
         contentLibrary = NULL;
 
-        EV << "(CP) Built a Library of size " << librarySize << ".\n";
-        EV.flush();
+        //EV << "(CP) Built a Library of size " << librarySize << ".\n";
+        //EV.flush();
     }
 
     if (stage == 1) {
@@ -365,7 +365,7 @@ void BaconContentProvider::buildContentLibrary() {
     if (availableMultimediaObjects == -1) {
         //Adding Items from other categories
 
-        //std::cout << "(CP) <" << myId << "> Adding EVERYTHING to Library.\n";
+        std::cout << "(CP) <" << myId << "> is a Multimedia Server.\n";
         for (auto it = multimediaLibrary.begin(); it != multimediaLibrary.end(); it++) {
             //std::cout << "\t\\--> Adding <" << it->contentPrefix << ">to Library.\n";
             addContentToLibrary(&*it);
