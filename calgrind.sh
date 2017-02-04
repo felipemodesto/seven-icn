@@ -12,17 +12,17 @@
 #==13471== Memcheck, a memory error detector
 #==13471== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
 #==13471== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
-#==13471== Command: /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 0 -u Cmdenv -c Center -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../out/gcc-debug/src/veins --record-eventlog=false --debug-on-errors=false omnetpp_grid.ini
+#==13471== Command: /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 0 -u Cmdenv -c Center -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../out/gcc-debug/src/veins --record-eventlog=false --debug-on-errors=false baconnet.ini
 #==13471==
 #
 #
-#valgrind --tool=massif --massif-out-file="massif.output.log" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Center -n examples/veins:..:src/paradise:src/veins --image-path=images -l out/gcc-debug/src/veins --record-eventlog=false --debug-on-errors=false scenario/grid/omnetpp_grid.ini
+#valgrind --tool=massif --massif-out-file="massif.output.log" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Center -n examples/veins:..:src/paradise:src/veins --image-path=images -l out/gcc-debug/src/veins --record-eventlog=false --debug-on-errors=false scenario/grid/baconnet.ini
 #
-cd /home/felipe/Simulation/BaconNet/scenario/grid
+cd /home/felipe/Simulation/BaconNet/scenario/unified
 #
 #Memory Leak & Profile
-#valgrind --tool=memcheck --leak-check=yes --leak-check=full --leak-resolution=high --log-file="../../memcheck.log.out" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Center -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false omnetpp_grid.ini
+valgrind --tool=memcheck --leak-check=yes --leak-check=full --leak-resolution=high --log-file="../../memcheck.log.out" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Line_Edge -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false baconnet.ini
 #
 #
 #Memory Allocation mapping
-valgrind --tool=massif --massif-out-file="../../massif.log.out" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Center -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false omnetpp_grid.ini
+#valgrind --tool=massif --massif-out-file="../../massif.log.out" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 0 -u Cmdenv -c Line_Edge -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false baconnet.ini
