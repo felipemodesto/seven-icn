@@ -21,8 +21,8 @@
 cd /home/felipe/Simulation/BaconNet/scenario/unified
 #
 #Memory Leak & Profile
-valgrind --tool=memcheck --leak-check=yes --leak-check=full --leak-resolution=high --log-file="../../memcheck.log.out" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Line_Edge -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false baconnet.ini
+valgrind --tool=memcheck --leak-check=yes --leak-check=full --leak-resolution=high --log-file="../../memcheck.log.out" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Ottawa_150 -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false baconnet.ini
 #
 #
 #Memory Allocation mapping
-#valgrind --tool=massif --massif-out-file="../../massif.log.out" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 0 -u Cmdenv -c Line_Edge -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false baconnet.ini
+#valgrind --tool=massif --massif-out-file="../../massif.log.out" /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 0 -u Cmdenv -c Ottawa_150 -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false baconnet.ini
