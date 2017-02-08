@@ -90,14 +90,13 @@ class BaconServiceManager : public BaseWaveApplLayer {
         virtual int numInitStages () const {
             return 2;
         }
-
-        void saveStatistics();                                                          //STATISTICS COLLECTION AND MEMORY MANAGEMENT FUNCTION
         void updateNodeColor();                                                         //UPDATES DEBUG CIRCLE COLOR BASED ON CLIENTSTATUS
 
         Connection_t* createGenericConnection(Content_t* content);                                                 //Create a Generic Connection Item
         Connection_t* createClientSidedConnection(WaveShortMessage* wsm);                                   //Creates a connection based on request messages both local and remote
         Connection_t* createServerSidedConnection(WaveShortMessage* wsm);                                   //Creates a connection based on request messages both local and remote
         Connection_t* getConnection(long requestID, int peerID);                                            //Gets information for a given connection
+        void cleanConnections();                                                        //STATISTICS COLLECTION AND MEMORY MANAGEMENT FUNCTION
 
         Interest_t* getInterest(std::string interest);
         bool createInterest(std::string interestPrefix, int senderAddress);
