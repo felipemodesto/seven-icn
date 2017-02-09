@@ -1234,8 +1234,8 @@ void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
 
     //Checking if we're receiving outdated/duplicated contents for a connection we've already closed down
     if (connection->connectionStatus == ConnectionStatus::DONE_RECEIVED) {
-        std::cerr << "(SM) Warning: <" << myId << "> We're getting data on a complete connection. Maybe this is redundant? check timers!\n";
-        std::cerr.flush();
+        //std::cerr << "(SM) Warning: <" << myId << "> We're getting data on a complete connection. Maybe this is redundant? check timers!\n";
+        //std::cerr.flush();
 
         delete (wsm);
         return;
