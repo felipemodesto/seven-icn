@@ -161,7 +161,7 @@ void BaconServiceManager::cleanConnections() {
                         if (curCon->chunkStatusList != NULL) delete[] curCon->chunkStatusList;
                         //curCon->requestPrefix.clear();
                         it = connectionList.erase(it);
-                        //delete(curCon);
+                        delete(curCon);
                         break;
 
                     default:
@@ -348,7 +348,11 @@ bool BaconServiceManager::cancelTimer(Connection_t* connection) {
         }
     }
 
-    EV_WARN << "(SM) Warning: did not find the requested timer.\n";
+    if (stats->isTerminated() || !stats->allowedToRun()) {
+        return true;
+    }
+
+    EV_WARN << "(SM) Warning: did not find the requested timer during live simulation section.\n";
     EV_WARN.flush();
 
     return false;
@@ -1080,6 +1084,7 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
            //std::cerr << "\n\n(SM) <" << myId << "> Downstream Connection <" << downstreamConnection->requestID << "> with <" << downstreamConnection->peerID << "> already exists with wonky status <" << downstreamConnection->connectionStatus << ">!\n";
            //std::cerr.flush();
            downstreamConnection->connectionStatus = ConnectionStatus::ERROR;
+           startTimer(downstreamConnection);
            delete(wsm);
            return;
         }

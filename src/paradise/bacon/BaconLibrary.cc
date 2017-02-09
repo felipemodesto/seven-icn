@@ -38,6 +38,7 @@ void BaconLibrary::initialize(int stage) {
 
 //Finalization Function (not a destructor!)
 void BaconLibrary::finish() {
+    multimediaLibrary->clear();
 }
 
 //
@@ -50,7 +51,7 @@ void BaconLibrary::buildContentList() {
     std::cout.flush();
 
     currentIndex = 0;
-    WATCH(currentIndex);
+    //WATCH(currentIndex);
 
     //ContentCategoryDistribution_t* contentCategories[libraryCategoriesSize];
 
@@ -99,8 +100,6 @@ void BaconLibrary::buildContentList() {
     }
     multimediaCummulativeProbability = std::vector<double> (multimediaContentSize);
 
-    //std::cout << "(Lib) #CDF Values for Zipf=" << zipfCaracterization << "\n";
-    //std::cout.flush();
 
     //Loading Multimedia Objects
     for (int j = 0; j < multimediaContent.averageCount ; j++) {
@@ -132,20 +131,6 @@ void BaconLibrary::buildContentList() {
         }
         multimediaCummulativeProbability[j] = CDF;
     }
-
-    /*/
-    //Outputting To File
-    std::string resultOutputName;
-    resultOutputName = "results/zipf_" + std::to_string(zipfCaracterization) + ".csv";
-    FILE * pFile;
-    pFile = fopen ( resultOutputName.c_str() , "w");
-    fprintf(pFile, "#rank,CDF\n");
-
-    for (int j = 0; j < multimediaContent.averageCount ; j++) {
-        fprintf(pFile, "%i,%f\n",(j+1),multimediaCummulativeProbability[j]);
-    }
-    fclose(pFile);
-    //*/
 
     std::cout << "(Lib) Content Library is ready.. Size: " << (multimediaContentSize) << "\n";
     std::cout.flush();
