@@ -97,7 +97,7 @@ FRINGE_FACTOR=1      #PROPORTION OF TRIPS THAT START IN AN EDGE/LEAF
 #NUMBER_OF_TRIPS=20    	#MAXIMUM NUMBER OF VEHICLES AT THE SAME TIME
 SIMULATION_LENGTH=1600 	#SIMULATION LENGTH
 MIN_TRIP_LENGTH=0     	#MINIMUM STRAIGHT LINE DISTANCE
-MIN_EDGES=10      		#MINIMUM NUMBER OF EDGES VEHICLE HAS TO TRAVEL
+MIN_EDGES=50      		#MINIMUM NUMBER OF EDGES VEHICLE HAS TO TRAVEL
 TIME_STEP=0.1      		#SIMULATION TIMESTEP
 INTER_VEHICLE_SPAWN_PERIOD=0.1
 VEHICLE_SPAWN_START_TIME=0
@@ -132,7 +132,7 @@ if [ -e /etc/arch-release ]; then
 elif [ "fedora" = "$(hostname)" ]; then
   echo "Environment set to [    Fedora    ]"
   PYTHON_PATH="/home/felipe/Simulation/sumo-0.25.0/tools/"
-elif [ "OptiPlex" = "$(hostname)" ] || [ "OptiPlex-7010" = "$(hostname)" ]; then
+elif [ "OptiPlex" = "$(hostname)" ] || [ "OptiPlex-7010" = "$(hostname)" ] || [ "OptiPlex-7010-hamid" = "$(hostname)" ]; then
   echo "Environment set to [    Ubuntu    ]"
   PYTHON_PATH="/home/felipe/Simulation/sumo-0.25.0/tools"
   RANDOM_TRIP_FILE=${PYTHON_PATH}"/randomTrips.py"
@@ -263,10 +263,12 @@ printf "Printing Routes to Trips..."
 python2 ${ROUTE_TRIP_FILE} ${ROUTE_FILE}
 echo " \\--> done."
 
+#### Removing Redundant clean osm file now that we are done
+rm ${OSM_CLEAN_FILE}
 
-echo "Opening Simulation Scenario in SUMO GUI..."
 #### Run SUMO-GUI
-${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false -S true &
-echo " \\--> done."
+#echo "Opening Simulation Scenario in SUMO GUI..."
+#${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false -S true &
+#echo " \\--> done."
 
 # vim:set ts=2 sw=2 et:
