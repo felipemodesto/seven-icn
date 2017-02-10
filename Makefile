@@ -7,6 +7,8 @@ else
     ADDL_TARGETS += run debug memcheck
 endif
 
+MODE=release
+
 # default target
 all: src/Makefile $(ADDL_TARGETS)
 	@cd src && $(MAKE)
