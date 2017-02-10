@@ -1,0 +1,89 @@
+==21504== Callgrind, a call-graph generating cache profiler
+==21504== Copyright (C) 2002-2015, and GNU GPL'd, by Josef Weidendorfer et al.
+==21504== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==21504== Command: /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 20 -u Cmdenv -c Line_Edge -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false baconnet.ini
+==21504== Parent PID: 28935
+==21504== 
+==21504== For interactive control, run 'callgrind_control -h'.
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==21504== 
+==21504== Events    : Ir
+==21504== Collected : 1083432264857
+==21504== 
+==21504== I   refs:      1,083,432,264,857
+o 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a54000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a54000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a4f000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4afb000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a5a000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a5a000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a5a000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a62000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a62000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a62000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a54000
+==18846== brk segment overflow in thread #1: can't grow to 0x4a3b000
+==18846== 
+==18846== Events    : Ir
+==18846== Collected : 2486998821835
+==18846== 
+==18846== I   refs:      2,486,998,821,835
