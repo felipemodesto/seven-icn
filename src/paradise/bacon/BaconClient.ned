@@ -26,9 +26,13 @@ import org.car2x.veins.modules.application.ieee80211p.BaseWaveApplLayer;
 simple BaconClient extends BaseWaveApplLayer {
     parameters:
     	@class(BaconClient);
-		double minimumRequestDelay  = default(0); 		//Minimum time until Content Request
-		double maximumRequestDelay  = default(10); 		//Maximum time until Content Request
-		double locationTimerDelay  = default(1); 		//Maximum time until Content Request
+		double minimumRequestDelay  = default(0); 				//Minimum time in between requests
+		double maximumRequestDelay  = default(0);				//Maximum time in between requests
+		double requestTimeout = default(2s) @unit(s);			//Time limit after which request is considered for "no response"
+		double locationTimerDelay  = default(1s) @unit(s);		//Maximum time until Content Request
+		
+		int maxOpenRequests = default(20);				//Maximum number of unanswered requests a node can have at the same time
+		
 		double multimediaInterest = default(1);			//Interest in Multimedia Content
 		double trafficInterest = default(1);			//Interest in Road Traffic Content
 		double networkInterest = default(1);			//Interest in Network Content

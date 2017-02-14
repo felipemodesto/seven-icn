@@ -33,7 +33,6 @@ void BaseWaveApplLayer::initialize(int stage) {
 		myId = getParentModule()->getIndex();
 
 		headerLength = par("headerLength").longValue();
-		double maxOffset = par("maxOffset").doubleValue();
 		sendBeacons = par("sendBeacons").boolValue();
 		beaconLengthBits = par("beaconLengthBits").longValue();
 		beaconPriority = par("beaconPriority").longValue();
@@ -43,7 +42,10 @@ void BaseWaveApplLayer::initialize(int stage) {
 		dataOnSch = par("dataOnSch").boolValue();
 		dataPriority = par("dataPriority").longValue();
 
+		/*
+        double maxOffset = par("maxOffset").doubleValue();
 		sendBeaconEvt = new cMessage("beacon evt", SEND_BEACON_EVT);
+	    //sendBeaconEvt = new WaveShortMessage("beacon evt", SEND_BEACON_EVT);
 
 		//simulate asynchronous channel access
 		double offSet = dblrand() * (par("beaconInterval").doubleValue()/2);
@@ -54,7 +56,10 @@ void BaseWaveApplLayer::initialize(int stage) {
 
 		if (sendBeacons) {
 			scheduleAt(simTime() + offSet, sendBeaconEvt);
+		} else {
+		    delete(sendBeaconEvt);
 		}
+		*/
 
 	}
 }
@@ -100,7 +105,6 @@ void BaseWaveApplLayer::handlePositionUpdate(cObject* obj) {
 }
 
 void BaseWaveApplLayer::handleLowerMsg(cMessage* msg) {
-
 	WaveShortMessage* wsm = dynamic_cast<WaveShortMessage*>(msg);
 	ASSERT(wsm);
 

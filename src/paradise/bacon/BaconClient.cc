@@ -31,11 +31,14 @@ void BaconClient::initialize(int stage) {
             minimumRequestDelay = par("minimumRequestDelay").doubleValue();
             maximumRequestDelay = par("maximumRequestDelay").doubleValue();
             locationTimerDelay = par("locationTimerDelay").doubleValue();
+            requestTimeout = par("requestTimeout").doubleValue();
 
             multimediaInterest = par("multimediaInterest").doubleValue();
             trafficInterest = par("trafficInterest").doubleValue();
             networkInterest = par("networkInterest").doubleValue();
             emergencyInterest = par("emergencyInterest").doubleValue();
+
+            maxOpenRequests = par("maxOpenRequests").doubleValue();
 
             GoodReplyRequests = 0;
             BadReplyRequests = 0;
@@ -120,7 +123,7 @@ void BaconClient::initialize(int stage) {
             cModule *modlib = sim->getModuleByPath("BaconScenario.library");
             library = check_and_cast<BaconLibrary *>(modlib);
 
-            pendingRequest = NULL;
+            //pendingRequest = NULL;
             contentTimerMessage = NULL;
 
             //Won't start timer for server nodes
@@ -211,11 +214,13 @@ void BaconClient::refreshDisplay() const {
 }
 //*/
 
+//
 void BaconClient::resetLocationTimer() {
     if (runtimeTimer == NULL) return;
     scheduleAt(simTime() + 1, runtimeTimer);
 }
 
+//
 void BaconClient::notifyLocation() {
     //Getting Vehicle's current position
     Coord currPos = traci->getCurrentPosition();
@@ -233,29 +238,31 @@ void BaconClient::notifyLocation() {
     resetLocationTimer();
 }
 
+//
 void BaconClient::startNewMessageTimer() {
     startNewMessageTimer(requestTimer);
     stats->keepTime();
 }
 
+//
 void BaconClient::startNewMessageTimer(simtime_t timerTime) {
     requestTimer = uniform(minimumRequestDelay,maximumRequestDelay);
-    if (pendingRequest != NULL) {
-        if ( pendingRequest->contentStatus == ContentStatus::SERVED ) {
-            std::cout << "(SM) This should have been Cleared. o.õ\n";
-            std::cout.flush();
-            completedRequests.push_front(pendingRequest);
-            //delete(pendingRequest);
-            pendingRequest = NULL;
-        }
-        //else {
-        //    EV << "Request has not been fulfilled and will be kept in queue.\n";
-        //    EV.flush();
-        //}
 
-        //std::cout << "(Cl) <" << myId << "> Request has not been fulfilled and will be kept in queue :/.\n";
-        //std::cout.flush();
-    }
+    //Old method used to check if we had an ongoing request to stop us from having multiple
+    //For now we will ALWAYS start a new request timer
+    //if (pendingRequest != NULL) {
+    //    if ( pendingRequest->contentStatus == ContentStatus::SERVED ) {
+    //        std::cout << "(SM) This should have been Cleared. o.õ\n";
+    //        std::cout.flush();
+    //        completedRequests.push_front(pendingRequest);
+    //        //delete(pendingRequest);
+    //        pendingRequest = NULL;
+    //    }
+    //    //else {
+    //    //    EV << "Request has not been fulfilled and will be kept in queue.\n";
+    //    //    EV.flush();
+    //    //}
+    //}
 
     if (contentTimerMessage == NULL) {
         contentTimerMessage = new cMessage("contentTimerMessage");
@@ -271,54 +278,75 @@ void BaconClient::startNewMessageTimer(simtime_t timerTime) {
 // CONTENT REQUEST MANIPULATION FUNCTIONS
 //=============================================================
 
-void BaconClient::startContentRequest(cMessage *msg) {
-    EV << "(Cl) Starting new content Request.\n";
-    EV.flush();
+void BaconClient::cleanRequestList() {
+    //Checking Ongoing Connections
+    for(auto it = ongoingRequests.begin(); it != ongoingRequests.end();) {
+        //Checking if the request has gone super stale
+        if ((*it)->requestTime + requestTimeout < simTime()) {
+            (*it)->contentStatus = ContentStatus::UNSERVED;
+            (*it)->fullfillTime = simTime();
+            backloggedRequests.push_front(*it);
 
-    if (!stats->allowedToRun()) {
-        EV << "(Cl) Needs more Chill (restarting Message Timer).\n";
-        EV.flush();
-
-        startNewMessageTimer();
-        return;
-    }
-
-    if (msg != NULL) {
-        delete(msg);
-        msg = NULL;
-        contentTimerMessage = NULL;
-    }
-
-    if (minimumRequestDelay == -1 && maximumRequestDelay == -1) {
-        //Being a Server we don't give a fuck
-        return;
-    }
-
-    //Checking if we have a pending request
-    if (pendingRequest != NULL && (pendingRequest->contentStatus != ContentStatus::SERVED)) {
-        //TODO: (DECIDE) if we should cancel previous request upon getting a new request while waiting for unserved content
-        //EV_WARN << "(Cl) Warning: New Request was canceled due to presence of ongoing request.\n";
-        //EV_WARN.flush();
-
-        //std::cout << "(Cl) <" << myId << "> Warning: New Request was canceled due to presence of ongoing request <" << pendingRequest->pendingID << "> for <" << pendingRequest->contentPrefix << "> started at <" << pendingRequest->requestTime << ">.\n";
-        //std::cout.flush();
-
-        simtime_t responseDelay = simTime() - pendingRequest->requestTime;
-        if (responseDelay.dbl() < 10) {
-            //std::cout << "-";
+            NoReplyRequests++;
+            it = ongoingRequests.erase(it);
         } else {
-            //std::cout << "X";
+            it++;
         }
+    }
 
-        startNewMessageTimer();
+    //Checking Stale/Backlogged Connections
+    for(auto it = backloggedRequests.begin(); it != backloggedRequests.end();) {
+        //Checking if the request has gone super stale
+        if ((*it)->requestTime + (10*requestTimeout) < simTime()) {
+            //Removing super stale request
+            it = backloggedRequests.erase(it);
+        } else {
+            it++;
+        }
+    }
+
+    //Checking complete Connections
+    for(auto it = completedRequests.begin(); it != completedRequests.end();) {
+        //Checking if the request has gone super stale
+        if ((*it)->requestTime + (10*requestTimeout) < simTime()) {
+            //Removing super stale request
+            it = completedRequests.erase(it);
+        } else {
+            it++;
+        }
+    }
+}
+
+//
+void BaconClient::startContentRequest() {
+
+    //Checking if we're in a ready communication state
+    if (!stats->allowedToRun()) {
+        //EV << "(Cl) Needs more Chill (restarting Message Timer).\n";
+        //EV.flush();
+        //startNewMessageTimer();
         return;
     }
 
+    //Checking if we are a server
+    if (minimumRequestDelay == -1 && maximumRequestDelay == -1) {
+        //Being a Server we don't request content
+        return;
+    }
 
-    //std::cout << "(Cl) +Starting Content Request.\n";
+    cleanRequestList();
 
-    //Reseting Timer for the next request
-    requestTimer = uniform(minimumRequestDelay,maximumRequestDelay);
+    //TODO: (DECIDE) Decide if we should limit concurrent requests at the client level
+    if ((int)ongoingRequests.size() >= (int)maxOpenRequests) {
+        //std::cout << "\t(Cl)\t<" << myId << "> FAT.\n";
+        //std::cout.flush();
+        startNewMessageTimer();
+        return;
+    }
+    //else {
+    //    std::cout << "\t(Cl)\t<" << myId << "> GROW <" << ongoingRequests.size() << ">.\n";
+    //    std::cout.flush();
+    //}
 
     t_channel channel = dataOnSch ? type_SCH : type_CCH;
     WaveShortMessage * requestMessage = prepareWSM(MessageClass::INTEREST, headerLength, channel, dataPriority, -1, 2);
@@ -339,7 +367,6 @@ void BaconClient::startContentRequest(cMessage *msg) {
     if (contentRequestInterstType < trafficInterest) {
         //Setting request parameters
         requestedContent = 1;
-        //opp_warning("Requesting Traffic Info!");
         contentClass = library->getContentClass(ContentClass::TRAFFIC);
 
         //Attaching location info to message
@@ -365,20 +392,11 @@ void BaconClient::startContentRequest(cMessage *msg) {
     } else if (contentRequestInterstType < trafficInterest + networkInterest + multimediaInterest ) {
         requestedContent = 0;
 
-        //std::cout << "Step 01\n";
-        //std::cout.flush();
-
         double randomIndex = uniform(0,1);
         requestedContent = library->getIndexForDensity(randomIndex);
 
-        //std::cout << "Step 02\n";
-        //std::cout.flush();
-
         //opp_warning("Requesting Multimedia Info!");
         contentClass = library->getContentClass(ContentClass::MULTIMEDIA);
-
-        //std::cout << "Step 03\n";
-        //std::cout.flush();
 
     } else {
         //TODO (IMPLEMENT) Emergency request Events
@@ -391,17 +409,11 @@ void BaconClient::startContentRequest(cMessage *msg) {
     }
 
     //Copying data from currentRequest to our PendingRequest (I don't know an easier way to memcopy the object pointed by an iterator, please bear with me on this one
-    pendingRequest = new PendingContent_t();
+    PendingContent_t* pendingRequest = new PendingContent_t();
     pendingRequest->contentClass = curRequest->contentClass;
     pendingRequest->contentStatus = curRequest->contentStatus;
     pendingRequest->contentPrefix = curRequest->contentPrefix;
-
-    //These parameters should be 0 as the client does not necessarily know the requirements of the data transfer... or does he?
-    pendingRequest->contentSize = curRequest->contentSize;
-    //pendingRequest->contentPopularity = curRequest->contentPopularity;
-    //pendingRequest->contentPriority = curRequest->contentPriority;
-
-    //Setting Request Times
+    pendingRequest->contentSize = -1;   //We don't necessarily know what the size of the content item is
     pendingRequest->requestTime = simTime();
     pendingRequest->fullfillTime = SimTime::ZERO;   //We set it to zero so we know this can't have happened
     int messageID = library->getRequestIndex();
@@ -409,13 +421,15 @@ void BaconClient::startContentRequest(cMessage *msg) {
 
     //If by some weird reason we got a null object then we'll discard and try again later
     if (pendingRequest == NULL) {
-        EV << "(Cl) Got broken Request for request Index <" + std::to_string(requestedContent) + ">";
-        EV.flush();
-
-        //Starting a new timer
-        startNewMessageTimer();
+        std::cerr << "(Cl) Error: <" << myId << "> Generated broken Request for request Index <" + std::to_string(requestedContent) + ">";
+        std::cerr .flush();
         return;
     }
+
+    //Adding new request to our request list
+    ongoingRequests.push_back(pendingRequest);
+
+    //std::cout << "^";
 
     //Content Type
     cMsgPar* contentTypeParameter = new cMsgPar(MessageParameter::CLASS.c_str());
@@ -467,30 +481,21 @@ void BaconClient::startContentRequest(cMessage *msg) {
     requestMessage->setSenderPos(traci->getPositionAt(simTime()));
     requestMessage->setSenderAddress(myId);
 
-    EV << "(Cl) Starting Request for Content <" << contentNameParameter->stringValue() << "> with ID <" << messageID << ">\n";
-    EV.flush();
-
-    //if (myId == 6) {
-    //    std::cout << "(Cl) <" << myId << "> is Starting a Request for <" << contentNameParameter->stringValue() << "> with ID <" << messageID << "> at <" << simTime() << ">\n";
-    //    std::cout.flush();
-    //}
-
-    //std::cout << "(Cl) <" << myId << "> is Starting a Request for <" << contentNameParameter->stringValue() << "> with ID <" << messageID << "> at <" << simTime() << ">\n";
-    //std::cout.flush();
-
     //Logging the statistics about the content request about to be made
     stats->logContentRequest(pendingRequest->contentPrefix);
 
     //Sending request
     sendWSM(requestMessage);
-
-    //Creating timer for next request
-    startNewMessageTimer();
 }
 
+//
 void BaconClient::handleMessage(cMessage *msg) {
     if ( msg == contentTimerMessage ) {
-        startContentRequest(msg);
+        //Starting a new request
+        startContentRequest();
+
+        //Creating timer for next request
+        startNewMessageTimer();
     } else if (msg == runtimeTimer) {
         notifyLocation();
     } else {
@@ -515,27 +520,18 @@ void BaconClient::sendToServiceManager(cMessage *msg) {
 /**/
 //Generic Broadcast Message Transmission Function
 void BaconClient::sendMessage(std::string messageContent) {
-    t_channel channel = dataOnSch ? type_SCH : type_CCH;
-    WaveShortMessage* wsm = prepareWSM("generic", dataLengthBits, channel, dataPriority, -1, 2);
-    wsm->setWsmData(messageContent.c_str());
-    sendWSM(wsm);
+    std::cerr << "(Cl) Error: sendMessage method should not be called in the Client Class!\n";
+    std::cerr.flush();
 }
 
-//IGNORE
+//Generic funciton called upon receiving a beacon message - AKA : IGNORE Clients do not implement this feature
 void BaconClient::onBeacon(WaveShortMessage* wsm) {
-    //CANNOT DELETE MESSAGE HERE AS BASE WAVE LAYER DOES THIS ;/
-    //delete(wsm);
+    std::cerr << "(Cl) Error: onBeacon method should not be called in the Client Class!\n";
+    std::cerr.flush();
 }
 
+//
 void BaconClient::onData(WaveShortMessage* wsm) {
-    EV << "(Cl) We got a message of Type "<< wsm->getName() << ".\n";
-    EV.flush();
-
-        //std::cout << "(Cl) <" << myId << "> We got a message of Type "<< wsm->getName() << ".\n";
-    //std::cout.flush();
-
-    PendingContent_t* artificialPending = NULL;
-
     cArray parArray = wsm->getParList();
     cMsgPar* prefixPar = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
     cMsgPar* idPar = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
@@ -548,125 +544,102 @@ void BaconClient::onData(WaveShortMessage* wsm) {
     }
     prefixString.erase(std::remove(prefixString.begin(), prefixString.end(), '\"'), prefixString.end());
 
+    //bool foundBacklog = false;
+    bool foundRequest = false;
+    PendingContent_t* desiredRequest = NULL;
 
-    //if (myId == 6) {
-    //    std::cout << "(CL) <" << myId << "> Yeah, we got a message with kind <" << wsm->getKind() << "> and Name <"<< wsm->getName() << "> for Prefix <" << prefixString << ">.\n";
-    //    std::cout.flush();
-    //}
+    //Searching for the request in our list of ongoing requests
+    for (auto it = ongoingRequests.begin(); it != ongoingRequests.end();) {
+        if ( prefixString.compare((*it)->contentPrefix) == 0 && requestID == (*it)->pendingID ) {
+            foundRequest = true;
+            desiredRequest = *it;
 
-    bool foundBacklog = false;
+            it = ongoingRequests.erase(it);
+            break;
+        } else {
+            it++;
+        }
+    }
 
     //If the current respond does not match to the current pending request (given it exists)
-    if (pendingRequest == NULL || prefixString.compare(pendingRequest->contentPrefix) != 0) {
-        for (auto it = backloggedRequests.begin(); it != backloggedRequests.end(); it++) {
+    if (!foundRequest) {
+        for (auto it = backloggedRequests.begin(); it != backloggedRequests.end();) {
             //std::cerr << "\t<" << it->contentPrefix << ">.\n";
             if (prefixString.compare((*it)->contentPrefix) == 0 && requestID == (*it)->pendingID) {
-                foundBacklog = true;
+                foundRequest = true;
+                desiredRequest = *it;
                 stats->increasedBackloggedResponses();
 
-                artificialPending = pendingRequest;
-                pendingRequest = *it;
+                if ((*it)->contentStatus != ContentStatus::UNSERVED) {
+                    std::cerr << "(Cl) Error: Found Request for <" << prefixString << "> on backlog list.\n";
+                    std::cerr.flush();
+                }
 
-                std::cerr << "(Cl) Error: Found Request for <" << prefixString << "> on backlog list.\n";
-                std::cerr.flush();
-
-                //Removing found backlogged item from backlog list
                 it = backloggedRequests.erase(it);
                 break;
+            } else {
+                it++;
             }
         }
     }
 
-    //If we haven't found the request in the backlog, maybe it's a duplicate positive response
-    if (!foundBacklog) {
+    //If we haven't found the request in the backlog, the only locally available option is in the complete list
+    if (!foundRequest) {
         for (auto it = completedRequests.begin(); it != completedRequests.end(); it++) {
             if (prefixString.compare((*it)->contentPrefix) == 0 && requestID == (*it)->pendingID) {
-                foundBacklog = true;
-                //std::cerr << "(Cl) Got a duplicate positive response for <" << prefixString << ">.\n";
-                //std::cerr.flush();
-                //delete(wsm);
-
-                if (pendingRequest != NULL) {
-                    std::cerr << "(Cl) <" <<  myId << "> We found a backlogged request for this content prefix <" << prefixString << "> matching a positive request\n";
-                    std::cerr.flush();
-                }
-
+                //We should be fine here, as we have confirmed having received the content we don't care about its future
+                foundRequest = true;
+                desiredRequest = *it;
                 return;
             }
         }
     }
-    //else {
-    //    std::cerr << "(Cl) \t We have a backlog.\n";
-    //    std::cerr.flush();
-    //}
 
-    //else if (pendingRequest != NULL) {
-    //    std::cerr << "\t<" << prefixString << " == " << pendingRequest->contentPrefix << ">.\n";
-    //    std::cerr.flush();
-    //}
+    //Checking if we simply don't have this request anywhere, which is pretty wtf to be honest and would imply a logic error in the service manager
+    if (desiredRequest == NULL) {
+        std::cerr << "(Cl) Error: We got data but had no pending requests! Check ServiceManager for potential Network Data being routed to local client.\n";
+        std::cerr.flush();
 
-    if (pendingRequest == NULL) {
-        EV_ERROR << "(Cl) Error: We got data but had no pending requests! Check ServiceManager for potential Network Data being routed to local client.\n";
-        EV_ERROR.flush();
-
-        if (!foundBacklog) {
+        if (!foundRequest) {
             std::cerr << "\t(Cl) Error: <" << myId << "> We got the following response <" << wsm->getName() << ";" << wsm->getKind() << "> but had no pending requests for <" << prefixString << ">!\n\tPlease Check ServiceManager for potential Network Data being routed to local client.\n";
             std::cerr.flush();
             return;
         }
     }
 
-
-    //if (myId == 6) {
-    //    std::cout << "(CL) <" << myId << "> Client got some sort of response for request <" << pendingRequest->contentPrefix << ">, is it a backlog? <" << foundBacklog << ">.\n";
-    //    std::cout.flush();
-    //}
-
     //Checking the message type
     if (strcmp(wsm->getName(),MessageClass::INTEREST.c_str()) == 0 ) {
-        EV << "(Cl) Got Lookup Response.\n";
-        EV.flush();
-
-        std::cerr << "(Cl) Error: Lookup Responses should not have INTEREST replies to client...\n";
+        std::cerr << "(Cl) Error: Lookup Responses should be of type DATA (or similar replies to client...\n";
         std::cerr.flush();
+        return;
+    }
 
-    }//Transfer Response with "data" to be sent
-    else if (strcmp(wsm->getName(),MessageClass::DATA.c_str()) == 0 ) {
-        EV << "(Cl) Content Request was served with status <" << wsm->getKind() << "> (might have been canceled, but the cycle is done).\n";
-        EV.flush();
+    if (strcmp(wsm->getName(),MessageClass::DATA.c_str()) == 0 ) {
 
-        pendingRequest->fullfillTime = simTime();
+        desiredRequest->fullfillTime = simTime();
+        SimTime difTime = desiredRequest->fullfillTime - desiredRequest->requestTime;
+
+        //Marking the request as served, as we are getting rid of it
+        desiredRequest->contentStatus = ContentStatus::SERVED;
 
         switch( wsm->getKind() ) {
             case ConnectionStatus::DONE_AVAILABLE:
             case ConnectionStatus::DONE_RECEIVED:
                 {
                     GoodReplyRequests++;
-                    pendingRequest->contentStatus = ContentStatus::SERVED;  //For "Please start next request" purpose only
                     stats->increasePacketsSent();
 
-                    SimTime difTime = pendingRequest->fullfillTime - pendingRequest->requestTime;
+                    //std::cout << "+";
                     double difDouble = difTime.dbl();
-
-                    if (difTime <= maximumRequestDelay) {
+                    if (difTime <= requestTimeout) {
                         stats->addcompleteTransmissionDelay(difDouble);
                     } else {
                         stats->addincompleteTransmissionDelay(difDouble);
+                        //std::cout << "(Cl) <" << myId << "> Message was \"technically\" delivered but took too long. Took: <" << to_string(difDouble) << ">\n";
+                        //std::cout.flush();
                     }
                     //Logging Time it took for communication
-                    completedRequests.push_front(pendingRequest);
-
-
-                    //std::cout << difTime.dbl() << "\n";
-                    //std::cout.flush();
-
-                    //std::cout << "(Cl) <" << myId << "> got <" << wsm->getKind() << "> aka good transfer for <" << prefixString << ">.\n";
-                    //std::cout.flush();
-
-                    //std::cout << "(Cl) Request <" << pendingRequest->pendingID << "> result is <OBTAINED>.\n";
-                    //std::cout.flush();
-
-                    pendingRequest = NULL;
+                    completedRequests.push_front(desiredRequest);
                 }
                 break;
 
@@ -674,75 +647,36 @@ void BaconClient::onData(WaveShortMessage* wsm) {
             case ConnectionStatus::DONE_NO_DATA:
                 {
                     NoReplyRequests++;
-                    pendingRequest->contentStatus = ContentStatus::SERVED;  //For "Please start next request" purpose only
                     stats->increasePacketsUnserved();
 
-                    SimTime difTime = pendingRequest->fullfillTime - pendingRequest->requestTime;
+                    //std::cout << "?";
                     double difDouble = difTime.dbl();
                     stats->addincompleteTransmissionDelay(difDouble);
 
                     //Adding an incomplete transfer to our backlogged list for future tests
-                    backloggedRequests.push_front(pendingRequest);
-
-                    //std::cout << "(Cl) <" << myId << "> got a <" << wsm->getKind() << "> aka bad transfer for <" << prefixString << ">.\n";
-                    //std::cout.flush();
-
-                    //std::cout << "(Cl) Request <" << pendingRequest->pendingID << "> result is <NOT_FOUND>.\n";
-                    //std::cout.flush();
-
-                    pendingRequest = NULL;
+                    backloggedRequests.push_front(desiredRequest);
                 }
                 break;
 
             case ConnectionStatus::DONE_PARTIAL:
                 {
                     BadReplyRequests++;
-                    pendingRequest->contentStatus = ContentStatus::SERVED;  //For "Please start next request" purpose only
                     stats->increasePacketsLost();
 
+                    //std::cout << "-";
                     //Adding an incomplete transfer to our backlogged list for future tests
-                    backloggedRequests.push_front(pendingRequest);
+                    backloggedRequests.push_front(desiredRequest);
 
-                    SimTime difTime = pendingRequest->fullfillTime - pendingRequest->requestTime;
                     double difDouble = difTime.dbl();
                     stats->addincompleteTransmissionDelay(difDouble);
-
-                    //std::cout << "(Cl) <" << myId << "> got <" << wsm->getKind() << "> no transfer for <" << prefixString << ">.\n";
-                    //std::cout.flush();
-
-                    //std::cout << "(Cl) Request <" << pendingRequest->pendingID << "> result is <PARTIAL>.\n";
-                    //std::cout.flush();
-
-                    pendingRequest = NULL;
                 }
                 break;
 
             default:
-                EV_WARN << "(Cl) Warning: Unknown communication result.\n";
-                EV_WARN.flush();
-
-                pendingRequest->contentStatus = ContentStatus::SERVED;  //For "Please start next request" purpose only
-
-                //std::cout << "(Cl) FUCK ME SIDEWAYS, <" << myId << "> got <" << wsm->getKind() << "> THIS MAKES NO SENSE o.o.\n";
-                //std::cout.flush();
+                std::cerr << "(Cl) Error: <" << myId << "> Client Response state invalid. State received <" << wsm->getKind() << "> Note: THIS MAKES NO SENSE o.o.\n";
+                std::cerr.flush();
                 break;
         }
-
-        //Clearing Pending Request (I'm not sure why I cant free if getting from the Iterator object, as I technically copy the original address?)
-        //if (!foundBacklog) delete(pendingRequest);
-        //pendingRequest = NULL;
-
-        //If the backlogged item was found while we had another pending communication, we'll put it back in place
-        if (artificialPending != NULL) {
-            pendingRequest = artificialPending;
-            std::cout << "(Cl) <" << myId << "> We have artificial pending. :/\n";
-            std::cout.flush();
-        }
-
-        //recordScalar("goodRequests",GoodReplyRequests);
-        //recordScalar("badRequests",BadReplyRequests);
-        //recordScalar("noRequests",NoReplyRequests);
-        startNewMessageTimer();
     } else {
         std::cout << "(Cl) THIS SHOULD NOT HAPPEN <" << wsm->getName() << ">\n";
         std::cout.flush();

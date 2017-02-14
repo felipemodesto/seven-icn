@@ -73,8 +73,8 @@ void BaconStatistics::keepTime() {
         double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
         begin = end;
 
-        std::cout << "(St) Current Time is: " << lastSecond << " \t CPU Time: " << round(elapsed_secs) << " sec(s)\n";
-        std::cout.flush();
+        //std::cout << "(St) Current Time is: " << lastSecond << " \t CPU Time: " << round(elapsed_secs) << " sec(s)\n";
+        //std::cout.flush();
 
         if (hasStarted && !hasStopped) statisticsTimekeepingVect.record( (lastSecond - statisticsStartTime) / (double) (statisticsStopTime - statisticsStartTime) );
     }

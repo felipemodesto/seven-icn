@@ -51,8 +51,16 @@ class BaconServiceManager : public BaseWaveApplLayer {
         BaconLibrary* library;
         BaconContentProvider* cache;
 
+        WaveShortMessage* sendBeaconEvt;
+
         //Configurable Parameters (omnetpp.ini)
+        uint64_t bitrate;
+        double windowTimeSlotDuration;                  //
         int maxAttempts;
+        double minimumForwardDelay;
+        double maximumForwardDelay;
+
+        int slidingWindowSize;
         double interestBroadcastTimeout;                //Time before an interest broadcast is timed out
         double transferTimeoutTime;                     //Time before transfer timer is timed out (Timer Stuff)
         double maxSimultaneousConnections;              //Number of simultaneous connected allowed for a node (-1 == Infinite)
@@ -67,9 +75,16 @@ class BaconServiceManager : public BaseWaveApplLayer {
         bool sendWhileParking;
         int currentlyActiveConnections;
 
+        std::list<double> networkLoadWindow;
+        double currentNetworkLoad;
+        double instantNetworkLoad;
+        double averageNetworkLoad;
+
         std::vector<cMessage*> cancelMessageTimerVector;
         std::list<Interest_t*> PIT;
         std::list<Connection_t*> connectionList;
+        std::list<Neighbor_t> neighborList;
+        std::list<NetworkPacket_t> packetList;
 
         //Statistics
         int totalChunksRetransmited;
@@ -121,6 +136,9 @@ class BaconServiceManager : public BaseWaveApplLayer {
         void runCachePolicy(Connection_t* connection);                                      //
         void addContentToCache(Connection_t* connection);                                   //CALLED TO ADD DATA FROM TRANSFER TO CACHE
         void removeContentFromCache(Connection_t* connection);                              //CALLED TO REMOVE DATA FROM TRANSFER FROM CACHE
+        void refreshNeighborhood();                                                          //
+        bool addNeighbor(WaveShortMessage *msg);                                            //
+        void logNetworkmessage(WaveShortMessage *msg);                                      //
 
         //Handlers for incoming shit
         void handleInterestRejectMessage(WaveShortMessage* wsm);
@@ -144,7 +162,9 @@ class BaconServiceManager : public BaseWaveApplLayer {
 
         //Outgoing Message Functions
         void sendWSM(WaveShortMessage* wsm) override;           //FORWARD MESSAGE TO NETWORK INTERFACE VIA EXCHANGE INTERFACE
+        void sendWSM(WaveShortMessage* wsm, double delay);      //FORWARD MESSAGE TO NETWORK INTERFACE VIA EXCHANGE INTERFACE
         void sendToClient(WaveShortMessage *wsm);               //FORWARD MESSAGE TO CLIENT VIA CLIENT EXCHANGE INTERFACE
+        void sendBeacon();                                      //GENERIC BEACON BROADCAST MESSAGE GENERATOR
 
         //BaseWaveApplicationLayer Functions we don't really care about right now
         virtual void onBeacon(WaveShortMessage* wsm);

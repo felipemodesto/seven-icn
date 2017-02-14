@@ -129,10 +129,7 @@ TRIP_FILE="$RANDOM_TRIP_FILE"
 if [ -e /etc/arch-release ]; then
     # ArchLinux. Sane system, so assume everything is in PATH already.
     echo "Environment set to [    ArchLinux    ]"
-elif [ "fedora" = "$(hostname)" ]; then
-  echo "Environment set to [    Fedora    ]"
-  PYTHON_PATH="/home/felipe/Simulation/sumo-0.25.0/tools/"
-elif [ "OptiPlex" = "$(hostname)" ] || [ "OptiPlex-7010" = "$(hostname)" ] || [ "OptiPlex-7010-hamid" = "$(hostname)" ]; then
+elif [ "Brick" = "$(hostname)" ] ||[ "OptiPlex" = "$(hostname)" ] || [ "OptiPlex-7010" = "$(hostname)" ] || [ "OptiPlex-7010-hamid" = "$(hostname)" ]; then
   echo "Environment set to [    Ubuntu    ]"
   PYTHON_PATH="/home/felipe/Simulation/sumo-0.25.0/tools"
   RANDOM_TRIP_FILE=${PYTHON_PATH}"/randomTrips.py"
@@ -153,7 +150,7 @@ else
   echo "  \\--> Current Hostname is: <$(hostname)>"
   #"${SUMO_HOMEX:?WARNING, SUMO_HOME is not set, abording simulation.}"
   if [ -z "$SUMO_HOME" ]; then
-    echo "SUMO_HOME is not set, script cannot proceed until you get your shit together."
+    echo "SUMO_HOME is not set, script cannot proceed without minimal setup."
     exit 1
   else
     PYTHON_PATH="$SUMO_HOME/tools"
@@ -267,8 +264,8 @@ echo " \\--> done."
 rm ${OSM_CLEAN_FILE}
 
 #### Run SUMO-GUI
-#echo "Opening Simulation Scenario in SUMO GUI..."
-#${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false -S true &
-#echo " \\--> done."
+echo "Opening Simulation Scenario in SUMO GUI..."
+${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false -S true &
+echo " \\--> done."
 
 # vim:set ts=2 sw=2 et:
