@@ -25,7 +25,7 @@ simple BaconContentProvider {
     	@class(BaconContentProvider);
 
 		int cacheReplacementPolicy = default(0);					//Max Replacement Policy : Enum = { RANDOM = 0, LRU = 1, FIFO = 2, BIG = 3, MULT_FIRST = 4, GPS_FIRST = 5 }
-		int availableMultimediaObjects = default(50);				//Initial number of content items available in cache
+		int startingCache = default(50);							//Initial number of content items available in cache
 		int maxCachedContents = default(100);						//Maximum Cache Size
 		
     //gates:

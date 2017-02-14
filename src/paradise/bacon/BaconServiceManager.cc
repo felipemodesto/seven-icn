@@ -72,7 +72,6 @@ void BaconServiceManager::initialize(int stage) {
             currentNetworkLoad = 0;
             averageNetworkLoad = 0;
 
-
             updateNodeColor();
 
             //Set Parking state change listener on current car Object
@@ -86,8 +85,6 @@ void BaconServiceManager::initialize(int stage) {
             stats = check_and_cast<BaconStatistics *>(sim->getModuleByPath("BaconScenario.statistics"));
             library = check_and_cast<BaconLibrary *>(sim->getModuleByPath("BaconScenario.library"));
             cache = check_and_cast<BaconContentProvider *>(getParentModule()->getSubmodule("content"));
-
-            //Mac1609_4 macLayer = getParentModule()->getSubmodule("nic")->getSubmodule("mac1609_4");
 
             //Adding vehicle to statistics
             stats->increaseActiveVehicles();
@@ -1371,7 +1368,7 @@ void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
 
 //Function called to reply an interest message of content availability
 void BaconServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Connection_t* connection) {
-    //std::cout << "(SM) <" << myId << "> is notifying Connection <" << connection->requestID << "> to <" << connection->peerID << "> of content status: <" << connection->connectionStatus << "> Time: <" << simTime() << ">\n";
+    //std::cout << "(SM) <" << myId << ">\tNotifying <" << connection->peerID << ">\tit has <" << connection->requestPrefix << ">\tTime: <" << simTime() << ">\n";
     //std::cout.flush();
 
     //std::cout << "V";
@@ -2218,6 +2215,7 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
     switch (connection->connectionStatus) {
         //Client Side State
         case ConnectionStatus::DONE_RECEIVED: {
+                /*
                 //If our caching policy is the distributed popularity estimation method, we need remote information which we pass here
                 if (cache->getCachePolicy() == CacheReplacementPolicy::FREQ_POPULARITY) {
                     if (connection->remoteHopUseCount > 1 && cache->brokenlocalPopularityCacheDecision(connection)) {
@@ -2227,7 +2225,7 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
                         break;
                     }
                 }
-
+                */
                 switch (inNetworkCaching) {
                     case NEVER:     //Never leave a copy
                         break;
@@ -2525,10 +2523,10 @@ void BaconServiceManager::refreshNeighborhood() {
     }
     averageNetworkLoad = averageNetworkLoad/networkLoadWindow.size();
 
-    if (stats->allowedToRun()) {
-        std::cout << "\t(SM) <" << myId << ">\tI:<" << to_string(instantNetworkLoad) << "%>\tA:<" << averageNetworkLoad << "%>\t<" << to_string(currentNetworkLoad/(double)(1000000)) << "Mbps>\t <" << packetList.size() << "Msgs>\n";
-        std::cout.flush();
-    }
+    //if (stats->allowedToRun()) {
+    //    std::cout << "\t(SM) <" << myId << ">\tI:<" << to_string(instantNetworkLoad) << "%>\tA:<" << averageNetworkLoad << "%>\t<" << to_string(currentNetworkLoad/(double)(1000000)) << "Mbps>\t <" << packetList.size() << "Msgs>\n";
+    //    std::cout.flush();
+    //}
 }
 
 //
@@ -2608,7 +2606,7 @@ void BaconServiceManager::sendBeacon() {
 
     //Adding Local Load Perception
     cMsgPar* loadParameter = new cMsgPar(MessageParameter::LOAD.c_str());
-    loadParameter->setLongValue(0);
+    loadParameter->setLongValue(instantNetworkLoad);
     beaconMessage->addPar(loadParameter);
 
     //Adding -1 as a representation of no request ID

@@ -27,5 +27,13 @@ simple BaconLibrary {
 	parameters:
     	@class(BaconLibrary);
 		double zipfCaracterization = default(0);	   	//P Value Characterization for Zipf Function
-		int multimediaLibrarySize = default(100);		//Number of Items in Multimedia Library
+		int sizeTransit = default(10240);				//Size of Items in Transit Object Library
+		int sizeNetwork = default(10240);				//Size of Items in Network Related Library
+		int sizeMultimedia = default(10240);			//Size of Items in Multimedia Library
+		int libraryTransit = default(1000);				//Number of Items in Transit Object Library
+		int libraryNetwork = default(1000);				//Number of Items in Network Related Library
+		int libraryMultimedia = default(1000);			//Number of Items in Multimedia Library
+		int priorityTransit = default(1);				//Priority of Items in Transit Object Library
+		int priorityNetwork = default(2);				//Priority of Items in Network Related Library
+		int priorityMultimedia = default(3);			//Priority of Items in Multimedia Library
 }

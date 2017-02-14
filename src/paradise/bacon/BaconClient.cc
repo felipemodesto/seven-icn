@@ -135,10 +135,6 @@ void BaconClient::initialize(int stage) {
                 //We're a server. Should we do something?
             }
 
-            //Creating Backlog list of items
-            //backloggedRequests = new std::list<PendingContent_t*>();
-            //completedRequests = new std::list<PendingContent_t*>();
-
             runtimeTimer = NULL;
             //Checking if we're recording location
             if (stats->recordingPosition()) {
@@ -319,12 +315,8 @@ void BaconClient::cleanRequestList() {
 
 //
 void BaconClient::startContentRequest() {
-
     //Checking if we're in a ready communication state
     if (!stats->allowedToRun()) {
-        //EV << "(Cl) Needs more Chill (restarting Message Timer).\n";
-        //EV.flush();
-        //startNewMessageTimer();
         return;
     }
 
@@ -338,15 +330,9 @@ void BaconClient::startContentRequest() {
 
     //TODO: (DECIDE) Decide if we should limit concurrent requests at the client level
     if ((int)ongoingRequests.size() >= (int)maxOpenRequests) {
-        //std::cout << "\t(Cl)\t<" << myId << "> FAT.\n";
-        //std::cout.flush();
         startNewMessageTimer();
         return;
     }
-    //else {
-    //    std::cout << "\t(Cl)\t<" << myId << "> GROW <" << ongoingRequests.size() << ">.\n";
-    //    std::cout.flush();
-    //}
 
     t_channel channel = dataOnSch ? type_SCH : type_CCH;
     WaveShortMessage * requestMessage = prepareWSM(MessageClass::INTEREST, headerLength, channel, dataPriority, -1, 2);
@@ -356,18 +342,39 @@ void BaconClient::startContentRequest() {
     double contentRequestInterstType = uniform(0, contentInterest);
     int contentClass = 0;
     Content_t* curRequest;
+    int requestedContentIndex = 0;
 
     //WE'll use the following sequence / ranges:
     //      TRAFFIC                 NETWORK                 MULTIMEDIA
     //range 0-->traffic / traffic-->traffic+network / traffic+network->sum
-    std::list<Content_t> completeLibrary = library->getMultimediaContentList();
-    int requestedContent = 1;
+    std::list<Content_t>* appropriateLibrary;
 
     //TRAFFIC
     if (contentRequestInterstType < trafficInterest) {
+        appropriateLibrary = library->getTrafficContentList();
+        contentClass = library->getContentClass(ContentClass::TRAFFIC);
+        double randomIndex = uniform(0,1);
+        requestedContentIndex = library->getIndexForDensity(randomIndex,ContentClass::TRAFFIC);
+
+    //NETWORK
+    } else if (contentRequestInterstType < trafficInterest + networkInterest ) {
+        appropriateLibrary = library->getNetworkContentList();
+        contentClass = library->getContentClass(ContentClass::NETWORK);
+        double randomIndex = uniform(0,1);
+        requestedContentIndex = library->getIndexForDensity(randomIndex,ContentClass::NETWORK);
+
+    //MULTIMEDIA
+    } else if (contentRequestInterstType < trafficInterest + networkInterest + multimediaInterest ) {
+        appropriateLibrary = library->getNetworkContentList();
+        contentClass = library->getContentClass(ContentClass::MULTIMEDIA);
+        double randomIndex = uniform(0,1);
+        requestedContentIndex = library->getIndexForDensity(randomIndex,ContentClass::MULTIMEDIA);
+
+    } else {
+        //TODO (IMPLEMENT) Emergency and GPS related request Events
+        /*
         //Setting request parameters
         requestedContent = 1;
-        contentClass = library->getContentClass(ContentClass::TRAFFIC);
 
         //Attaching location info to message
         //Veins::TraCIMobility* mobility =  check_and_cast<Veins::TraCIMobility*>(getParentModule()->getSubmodule("veinsmobility"));
@@ -381,30 +388,12 @@ void BaconClient::startContentRequest() {
         cMsgPar* locationParameter = new cMsgPar(MessageParameter::COORDINATES.c_str());
         locationParameter->setStringValue(coordString.c_str());
         requestMessage->addPar(locationParameter);
-
-    //NETWORK
-    } else if (contentRequestInterstType < trafficInterest + networkInterest ) {
-        requestedContent = 2;
-        //opp_warning("Requesting Network Info!");
-        contentClass = library->getContentClass(ContentClass::NETWORK);
-
-    //MULTIMEDIA
-    } else if (contentRequestInterstType < trafficInterest + networkInterest + multimediaInterest ) {
-        requestedContent = 0;
-
-        double randomIndex = uniform(0,1);
-        requestedContent = library->getIndexForDensity(randomIndex);
-
-        //opp_warning("Requesting Multimedia Info!");
-        contentClass = library->getContentClass(ContentClass::MULTIMEDIA);
-
-    } else {
-        //TODO (IMPLEMENT) Emergency request Events
+        */
     }
 
-    int itemCounter = 0;
     //Looking for item in content library
-    for (auto it = completeLibrary.begin(); itemCounter < requestedContent; it++, itemCounter++) {
+    int itemCounter = 0;
+    for (auto it = appropriateLibrary->begin(); itemCounter < requestedContentIndex; it++, itemCounter++) {
         curRequest = &*it;
     }
 
@@ -421,15 +410,16 @@ void BaconClient::startContentRequest() {
 
     //If by some weird reason we got a null object then we'll discard and try again later
     if (pendingRequest == NULL) {
-        std::cerr << "(Cl) Error: <" << myId << "> Generated broken Request for request Index <" + std::to_string(requestedContent) + ">";
+        std::cerr << "(Cl) Error: <" << myId << "> Generated broken Request for Object <" + pendingRequest->contentPrefix + ">";
         std::cerr .flush();
         return;
     }
 
+    //std::cout << "(Cl) <" << myId << "> NR for <" << pendingRequest->contentPrefix << "> of class <" << static_cast<int>(pendingRequest->contentClass) << "> Time<" << simTime() << ">\n";
+    //std::cout.flush();
+
     //Adding new request to our request list
     ongoingRequests.push_back(pendingRequest);
-
-    //std::cout << "^";
 
     //Content Type
     cMsgPar* contentTypeParameter = new cMsgPar(MessageParameter::CLASS.c_str());
@@ -442,19 +432,14 @@ void BaconClient::startContentRequest() {
     requestMessage->addPar(contentNameParameter);
 
     //Adding Priority for Content
-    //cMsgPar* priorityParameter = new cMsgPar(MessageParameter::PRIORITY.c_str());
-    //priorityParameter->setLongValue(pendingRequest->contentPriority);
-    //requestMessage->addPar(priorityParameter);
+    cMsgPar* priorityParameter = new cMsgPar(MessageParameter::PRIORITY.c_str());
+    priorityParameter->setLongValue(static_cast<int>(pendingRequest->priority));
+    requestMessage->addPar(priorityParameter);
 
     //Adding Size for Content
     cMsgPar* sizeParameter = new cMsgPar(MessageParameter::SIZE.c_str());
     sizeParameter->setLongValue(pendingRequest->contentSize);
     requestMessage->addPar(sizeParameter);
-
-    //Adding Popularity for Content
-    cMsgPar* popularityParameter = new cMsgPar(MessageParameter::POPULARITY.c_str());
-    popularityParameter->setLongValue(pendingRequest->contentSize);
-    requestMessage->addPar(popularityParameter);
 
     //Adding User ID
     cMsgPar* clientIDParameter = new cMsgPar(MessageParameter::PEER_ID.c_str());
@@ -532,6 +517,15 @@ void BaconClient::onBeacon(WaveShortMessage* wsm) {
 
 //
 void BaconClient::onData(WaveShortMessage* wsm) {
+
+    //Checking the message type
+    if (strcmp(wsm->getName(),MessageClass::INTEREST.c_str()) == 0 ) {
+        std::cerr << "(Cl) Error: Lookup Responses should be of type DATA (or similar replies to client...\n";
+        std::cerr.flush();
+        return;
+    }
+
+    //Getting parameters from message
     cArray parArray = wsm->getParList();
     cMsgPar* prefixPar = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
     cMsgPar* idPar = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
@@ -607,12 +601,6 @@ void BaconClient::onData(WaveShortMessage* wsm) {
         }
     }
 
-    //Checking the message type
-    if (strcmp(wsm->getName(),MessageClass::INTEREST.c_str()) == 0 ) {
-        std::cerr << "(Cl) Error: Lookup Responses should be of type DATA (or similar replies to client...\n";
-        std::cerr.flush();
-        return;
-    }
 
     if (strcmp(wsm->getName(),MessageClass::DATA.c_str()) == 0 ) {
 
@@ -638,6 +626,10 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                         //std::cout << "(Cl) <" << myId << "> Message was \"technically\" delivered but took too long. Took: <" << to_string(difDouble) << ">\n";
                         //std::cout.flush();
                     }
+
+                    std::cout << "(Cl) <" << myId << ">\tGot <" << desiredRequest->contentPrefix << ">\tAt <" << simTime() << ">\n";
+                    std::cout.flush();
+
                     //Logging Time it took for communication
                     completedRequests.push_front(desiredRequest);
                 }
