@@ -17,16 +17,13 @@ void BaconContentProvider::initialize(int stage) {
         myId = getParentModule()->getIndex();
 
         cachePolicy = static_cast<CacheReplacementPolicy>(par("cacheReplacementPolicy").longValue());
-        availableMultimediaObjects = par("availableMultimediaObjects").doubleValue();
+        startingCache = par("startingCache").doubleValue();
         maxCachedContents = par("maxCachedContents").longValue();
 
         librarySize = 0;
         WATCH(librarySize);
 
         contentLibrary = NULL;
-
-        //EV << "(CP) Built a Library of size " << librarySize << ".\n";
-        //EV.flush();
     }
 
     if (stage == 1) {
@@ -58,7 +55,7 @@ void BaconContentProvider::runCacheReplacement(){
     //std::cout.flush();
 
     if (maxCachedContents == -1) {
-        std::cout << "(CP) <" << myId << "> We have infinite Cache. This is not relevant <3.\n";
+        //std::cout << "(CP) <" << myId << "> We have infinite Cache. This is not relevant <3.\n";
         return;
     }
 
@@ -345,6 +342,9 @@ void BaconContentProvider::buildContentLibrary() {
     if (contentLibrary != NULL) return;
     contentLibrary = new std::list<Content_t>();
 
+    //std::cout << "<" << myId << "> Building Library <" << startingCache << ">.\n";
+    //std::cout.flush();
+
     if (library == NULL) {
         std::cerr << "(CP) Error: Global Content Library module reference is null.\n";
         std::cerr.flush();
@@ -352,47 +352,61 @@ void BaconContentProvider::buildContentLibrary() {
     }
 
     //Building our Content Library from the complete library
-    std::list<Content_t> multimediaLibrary = library->getMultimediaContentList();
-    //double multimediaContentAvailabilityRate = (double)availableMultimediaObjects/(double)completeLibrary.size();
-    int librarySize = multimediaLibrary.size();
 
-    EV << "(CP) Statistical Probability rate for any Multimedia Content Item is: " << availableMultimediaObjects/(double)librarySize << "\n";
-    EV.flush();
-
-    //std::cout << "(CP) <" << myId << "> Building Content Library.\n";
-    //std::cout.flush();
-
-    if (availableMultimediaObjects == -1) {
+    if (startingCache == -1) {
         //Adding Items from other categories
+        std::cout << "(CP) <" << myId << "> is a Content Server.\n";
+        std::cout.flush();
 
-        std::cout << "(CP) <" << myId << "> is a Multimedia Server.\n";
-        for (auto it = multimediaLibrary.begin(); it != multimediaLibrary.end(); it++) {
+        std::list<Content_t>* multimediaLibrary = library->getMultimediaContentList();
+        std::list<Content_t>* networkLibrary = library->getNetworkContentList();
+        std::list<Content_t>* trafficLibrary = library->getTrafficContentList();
+
+        for (auto it = multimediaLibrary->begin(); it != multimediaLibrary->end(); it++) {
             //std::cout << "\t\\--> Adding <" << it->contentPrefix << ">to Library.\n";
             addContentToLibrary(&*it);
         }
-        //std::cout.flush();
 
-    } else {
+        for (auto it = networkLibrary->begin(); it != networkLibrary->end(); it++) {
+            //std::cout << "\t\\--> Adding <" << it->contentPrefix << ">to Library.\n";
+            addContentToLibrary(&*it);
+        }
+
+        for (auto it = trafficLibrary->begin(); it != trafficLibrary->end(); it++) {
+            //std::cout << "\t\\--> Adding <" << it->contentPrefix << ">to Library.\n";
+            addContentToLibrary(&*it);
+        }
+
+        librarySize = multimediaLibrary->size() + networkLibrary->size() + trafficLibrary->size();
+
+    } else if (startingCache > 0) {
+        std::cout << "(CP) <" << myId << "> has pre-cached content. Selecting randomly.\n";
+        std::cerr << "(CP) Error: This method was de-implemented due to ontent fragmentation.\n";
+
+        /*
         //Marking all items as unavailable in order to include exactly the desired number of items (plus the other category items)
-        bool* inclusionList = new bool[librarySize];
-        for (int i = 0 ; i < librarySize ; i++) {
+        bool* inclusionList = new bool[fullLibrary.size()];
+        for (int i = 0 ; i < fullLibrary.size() ; i++) {
             inclusionList[i] = false;
         }
 
-        for (int i = 0 ; i < availableMultimediaObjects ; i++) {
+        //Iterating for the size of the pre-cache
+        for (int i = 0 ; i < startingCache ; i++) {
             int curIndex = 0;
             bool foundItem = false;
             int desIndex = 0;
+
+            //Randomly attempting to add item to our cache
             while (!foundItem) {
-                desIndex = uniform(0, multimediaLibrary.size());
+                desIndex = uniform(0, fullLibrary.size());
                 if (inclusionList[desIndex] == false) {
                     inclusionList[desIndex] = true;
                     foundItem = true;
                 }
             }
 
-            //Adding Multimedia Objects
-            for (auto it = multimediaLibrary.begin(); it != multimediaLibrary.end(); it++) {
+            //Adding Objects to the Local Content Library (based on the item selected - marked as true)
+            for (auto it = fullLibrary.begin(); it != fullLibrary.end(); it++) {
                 if (curIndex == desIndex) {
                     std::cout << "(CP) <" << myId << "> is adding content object <" << (*it).contentPrefix << "> to its initial library.\n";
                     addContentToLibrary(&*it);
@@ -402,42 +416,13 @@ void BaconContentProvider::buildContentLibrary() {
             }
         }
         delete[] inclusionList;
-
-        //Adding Items from other categories
-        for (auto it = multimediaLibrary.begin(); it != multimediaLibrary.end(); it++) {
-            if (it->contentClass != ContentClass::MULTIMEDIA) {
-                addContentToLibrary(&*it);
-                break;
-            }
-        }
+        */
     }
 
     //std::cout << "(CP) <" << myId << "> Library is setup.\n";
     //std::cout.flush();
 }
 
-//
-/*
-void BaconContentProvider::handleMessage(cMessage *msg) {
-    EV << "(CP) Received a Content Request Message: <" << msg->getName() << ">\n";
-    EV.flush();
-
-    //Checking for Lookup Requests
-    if (MessageClass::INTEREST.compare(msg->getName()) == 0 ) {
-        handleLookup(msg);
-    } else if (MessageClass::DATA.compare(msg->getName()) == 0 ) {
-        handleDataTransfer(msg);
-    } else if (MessageClass::DATA_INCLUDE.compare(msg->getName()) == 0 ) {
-        addToLibrary(msg);
-        increaseUseCount(msg);
-    } else if (MessageClass::DATA_EXLUDE.compare(msg->getName()) == 0 ) {
-        removeContentFromLibrary(msg);
-    } else {
-        EV_WARN << "(CP) Warning: Unknown Message type incoming << " << msg->getName() << ".\n";
-        EV_WARN.flush();
-    }
-}
-*/
 
 //Pseudosetter
 void BaconContentProvider::increaseUseCount(cMessage *msg) {
@@ -463,12 +448,6 @@ void BaconContentProvider::increaseUseCount(int addedUses, std::string prefix) {
         if (prefix.compare(it->contentPrefix) == 0) {
             it->useCount += addedUses;
             it->lastAccessTime = simTime();
-
-            //if (it->useCount > 1) {
-                //std::cout << "(CP) <" << myId << ">\tIncreased Use count for <" << it->contentPrefix << "> to\t<" << it->useCount << ">\n";
-                //std::cout.flush();
-            //}
-
             return;
         } else {
             //std::cerr << "\t "<< it->contentPrefix << "\n";
@@ -508,22 +487,16 @@ void BaconContentProvider::addToLibrary(cMessage *msg) {
         nameValue = nameValue.substr(1,nameValue.length()-2);   //No fucking idea why but strings added as parameters get extra quotes around them. WTF
     }
 
-    //std::cout << "(CP) Content \"" << nameValue << "\" was added to cache.\n";
-    //std::cout.flush();
-
     addContentToLibrary(library->getContent(nameValue));
 }
 
 //Function meant to handle Content Lookup Requests
 bool  BaconContentProvider::handleLookup(std::string nameValue) {
-    /**/
+    //Removing '"'s from text
     std::string lookupValue = nameValue;
     if (nameValue.c_str()[0] == '\"') {
         lookupValue = nameValue.substr(1,nameValue.length()-2);   //No fucking idea why but strings added as parameters get extra quotes around them. WTF
     }
-
-    EV << "(CP) Handling Lookup for <" << lookupValue << ">.\n";
-    EV.flush();
 
     buildContentLibrary();
     if (contentLibrary == NULL) {
@@ -532,65 +505,62 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
         return false;
     }
 
+    //std::cout << "(CP) <" << myId << "> Checking Availability of <" << lookupValue << ">\n";
+    //std::cout.flush();
+
     //Looking for item in content library
     for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
         int comparison = it->contentPrefix.compare(lookupValue);
 
         if (comparison == 0) {
-            //If the required information is TRAFFIC information then we'll look at our GPS position. If our position is identical to the request its local data and we treat it as unavailable because the purpose of this request is to obtain information about adjacent vehicles
+             if (it->contentClass == ContentClass::GPS_DATA) {
+                 //TODO: (IMPLEMENT) If working with TRAFFIC information, we'll require coordinate values to be part of the name... so deal with this in the future :D
+                 /*
+                 cMsgPar* requestLocation = static_cast<cMsgPar*>(parArray.get(MessageParameter::COORDINATES.c_str()));
 
-            //std::cout << "(CP) Technically we found the content so we will return true.\n";
-            //std::cout.flush();
+                 //Checking for valid location
+                 if (requestLocation == NULL) {
+                     //opp_error("Traffic request has no coordinates associated with it!");
+                     EV << "(CP) Warning: Traffic request has no coordinates associated with it!";
+                     return false;
+                 }
 
-            switch(it->contentClass) {
-                case ContentClass::TRAFFIC: {
-                        //TODO: (IMPLEMENT) If working with TRAFFIC information, we'll require coordinate values to be part of the name... so deal with this in the future :D
-                        /*
-                        cMsgPar* requestLocation = static_cast<cMsgPar*>(parArray.get(MessageParameter::COORDINATES.c_str()));
+                 //Splitting String
+                 std::string coordinates = requestLocation->str();
 
-                        //Checking for valid location
-                        if (requestLocation == NULL) {
-                            //opp_error("Traffic request has no coordinates associated with it!");
-                            EV << "(CP) Warning: Traffic request has no coordinates associated with it!";
-                            return false;
-                        }
+                 //Getting current location
+                 Coord currPos = traci->getCurrentPosition();
+                 std::string providerCoordinates = "\"" + std::to_string(floor(currPos.x)) + ";" + std::to_string(floor(currPos.y)) + ";" + std::to_string(floor(currPos.z)) + "\"";
 
-                        //Splitting String
-                        std::string coordinates = requestLocation->str();
+                 //Comparing Locations to check if we are the same vehicle
+                 if (providerCoordinates.compare(requestLocation->str()) == 0) {
+                     return false;
+                 } else {
+                     //opp_warning("OMG, SOMEONE ELSE JUST TOTES ASKED US FOR OUR TRAFFIC INFO OMG.");
+                     //TODO (IMPLEMENT) location based evaluation for GPS location requests
+                     return true;
+                 }
+                 */
+                 std::cerr << "(CP) Error: GPS Location dependent solution is not implemented\n";
+                 std::cerr.flush();
+                 return false;
+             }
+             //std::cout << "\t \\--> Found it.\n";
+             //std::cout.flush();
 
-                        //Getting current location
-                        Coord currPos = traci->getCurrentPosition();
-                        std::string providerCoordinates = "\"" + std::to_string(floor(currPos.x)) + ";" + std::to_string(floor(currPos.y)) + ";" + std::to_string(floor(currPos.z)) + "\"";
-
-                        //Comparing Locations to check if we are the same vehicle
-                        if (providerCoordinates.compare(requestLocation->str()) == 0) {
-                            return false;
-                        } else {
-                            //opp_warning("OMG, SOMEONE ELSE JUST TOTES ASKED US FOR OUR TRAFFIC INFO OMG.");
-                            //TODO (IMPLEMENT) location based evaluation for GPS location requests
-                            return true;
-                        }
-                        */
-                    }
-                case ContentClass::MULTIMEDIA:
-                    //TODO: (DECIDE) if we're going to do anything else special
-                    return true;
-
-                default:
-                    return false;
-                    break;
-            }
-            break;
+             //In general, if we found our item, we have it. (See implementation for GPS location data
+             return true;
         }
     }
+    //If the item was not found
     return false;
 }
 
 //Getter to classify node as either server or client (servers don't have cache limitation applied during computation)
 bool BaconContentProvider::isServer() {
-    //TODO: (REVIEW) Make this more maliable depending on content class (?)
+    //TODO: (REVIEW) Make this more malleable depending on content class (?)
     //Having all items implies being a server, which we use to log server based statistics
-    if (availableMultimediaObjects == -1) {
+    if (startingCache == -1) {
         return true;
     }
     return false;
@@ -600,34 +570,6 @@ bool BaconContentProvider::isServer() {
 CacheReplacementPolicy BaconContentProvider::getCachePolicy() {
     return cachePolicy;
 }
-
-//(BROKEN - Sequential Downhops will cache same item, should consider distance since last cache) Decision algorithm function whether item should be cached
-bool BaconContentProvider::brokenlocalPopularityCacheDecision(Connection_t* connection) {
-    if (cachePolicy == CacheReplacementPolicy::FREQ_POPULARITY) {
-        int sum = 0;
-        int minUseCount = contentLibrary->size() > 0 ? INT_MAX : -1;
-        //Looking for Item
-        for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
-            sum += it->useCount;
-            //Replacing minimum use count
-            if (it->useCount < minUseCount) {
-                minUseCount = it->useCount;
-            }
-            //minUseCount = it->useCount < minUseCount ? it->useCount : minUseCount;
-        }
-        double averagePopularity = sum > 0 ? floor(double(sum/(double)contentLibrary->size())) : 1;
-        double estimatedResult = averagePopularity > 0 ? double(floor(log2(connection->remoteHopUseCount))/(double)averagePopularity) : 0;
-        //std::cout << "< sum >< cacheSize >< minUseCount >< averagePopularity > < incomingHopCount >< remoteUseCount >\n";
-        //std::cout << "  <" << sum << ">\t<" << maxCachedContents << ">\t\t<" << minUseCount << ">\t\t<" << averagePopularity << ">\t\t\t<" << connection->downstreamHopCount << ">\t\t\t<" << connection->remoteHopUseCount << ">\n";
-        //std::cout << "  <" << estimatedResult << ">\n\n";
-        if (minUseCount < connection->remoteHopUseCount || estimatedResult > 1) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
 
 //Decision algorithm function whether item should be cached
 bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection) {
@@ -667,5 +609,38 @@ bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection
     }
 
     //std::cout << "\t< NO >\t\tTime:<" << simTime() << ">\n\n";
+    return false;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//(BROKEN - Sequential Downhops will cache same item, should consider distance since last cache) Decision algorithm function whether item should be cached
+bool BaconContentProvider::brokenlocalPopularityCacheDecision(Connection_t* connection) {
+    std::cerr << "(CP) Error: This should not be used!\n";
+    std::cerr.flush();
+
+    if (cachePolicy == CacheReplacementPolicy::FREQ_POPULARITY) {
+        int sum = 0;
+        int minUseCount = contentLibrary->size() > 0 ? INT_MAX : -1;
+        //Looking for Item
+        for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
+            sum += it->useCount;
+            //Replacing minimum use count
+            if (it->useCount < minUseCount) {
+                minUseCount = it->useCount;
+            }
+            //minUseCount = it->useCount < minUseCount ? it->useCount : minUseCount;
+        }
+        double averagePopularity = sum > 0 ? floor(double(sum/(double)contentLibrary->size())) : 1;
+        double estimatedResult = averagePopularity > 0 ? double(floor(log2(connection->remoteHopUseCount))/(double)averagePopularity) : 0;
+        //std::cout << "< sum >< cacheSize >< minUseCount >< averagePopularity > < incomingHopCount >< remoteUseCount >\n";
+        //std::cout << "  <" << sum << ">\t<" << maxCachedContents << ">\t\t<" << minUseCount << ">\t\t<" << averagePopularity << ">\t\t\t<" << connection->downstreamHopCount << ">\t\t\t<" << connection->remoteHopUseCount << ">\n";
+        //std::cout << "  <" << estimatedResult << ">\n\n";
+        if (minUseCount < connection->remoteHopUseCount || estimatedResult > 1) {
+            return true;
+        }
+    }
     return false;
 }

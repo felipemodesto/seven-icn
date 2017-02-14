@@ -42,11 +42,33 @@ protected:
     long int currentIndex;
 
     std::list<Content_t>* multimediaLibrary;
-    std::vector<double> multimediaCummulativeProbability;
+    std::list<Content_t>* networkLibrary;
+    std::list<Content_t>* trafficLibrary;
+    //std::list<Content_t>* fullLibrary;          //Duplicate reference to objects from other categories
+
+    std::vector<double> multimediaCummulativeProbabilityCurve;
+    std::vector<double> networkCummulativeProbabilityCurve;
+    std::vector<double> trafficCummulativeProbabilityCurve;
+
+    std::vector<double> buildCategoryLibrary(int count, int byteSize, ContentPriority priority, ContentClass category, std::string classPrefix);
     void buildContentList();
 
     double zipfCaracterization = 0;
-    int multimediaContentSize = 50000;     //Category Wise
+    int sizeMultimedia = 1024;          //Packet size
+    int sizeNetwork = 1024;             //Packet size
+    int sizeTransit = 1024;             //Packet size
+
+    int libraryTransit = 10000;         //Library size
+    int libraryNetwork = 10000;         //Library size
+    int libraryMultimedia = 10000;      //Library size
+
+    ContentPriority priorityTransit;            //Priority
+    ContentPriority priorityNetwork;            //Priority
+    ContentPriority priorityMultimedia;         //Priority
+
+    std::string transitPrefix;
+    std::string networkPrefix;
+    std::string multimediaPrefix;
 
     BaconStatistics* stats;
 
@@ -56,10 +78,12 @@ public:
 
     long int getCurrentIndex();                      //For Statistics & Maximum Count Use
     long int getRequestIndex();                      //Returns next index (sequence ID) in global request list numbering scheme (to avoid doubles)
-    virtual std::list<Content_t> getMultimediaContentList();
-    virtual Content_t* getContent(std::string prefix);
+    Content_t* getContent(std::string prefix);
+    std::list<Content_t>* getMultimediaContentList();
+    std::list<Content_t>* getTrafficContentList();
+    std::list<Content_t>* getNetworkContentList();
 
-    int getIndexForDensity(double value);
+    int getIndexForDensity(double value, ContentClass contentClass);
     int getContentClass(ContentClass cClass);
 };
 

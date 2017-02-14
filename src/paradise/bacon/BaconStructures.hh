@@ -31,13 +31,19 @@
 #include <veins/modules/application/ieee80211p/BaseWaveApplLayer.h>
 #include <veins/modules/messages/WaveShortMessage_m.h>
 
-
 using Veins::TraCIMobility;
 using Veins::AnnotationManager;
 
-enum class ContentClass         {MULTIMEDIA = 1, TRAFFIC = 2, NETWORK = 3, EMERGENCY_SERVICE = 4};
-enum class ContentPopularity    {MANDATORY, POPULAR, AVERAGE, UNPOPULAR, PRIVATE};
+enum class ContentPriority      {PRIORITY_EMERGENCY = 0, PRIORITY_HIGH = 1, PRIORITY_MEDIUM = 2, PRIORITY_LOW = 3, PRIORITY_PRIVATE = 4};
 enum class ContentStatus        {UNSERVED, LOCAL, UNAVAILABLE, AVAILABLE, STALE, PARCIAL, PRIVATE, LIVE_FEED, SERVED};
+
+enum class ContentClass {
+    MULTIMEDIA = 1,
+    TRAFFIC = 2,
+    NETWORK = 3,
+    EMERGENCY_SERVICE = 4,
+    GPS_DATA = 5
+};
 
 enum CacheCoordinationPolicy {
     NEVER = 0,                      //NEVER KEEP COPY (Nodes never keep copy of messages sent in their downstream)
@@ -63,7 +69,7 @@ enum CacheReplacementPolicy {
     GPS_FIRST = 7,                  //REPLACE GPS dependent data first (LRU within group)
 
     GOD_POPULARITY = 10,            //God-like Global Knowledge based Coordination
-    FREQ_POPULARITY = 20,           //Coordinate Frequency observation based popularity Replacement
+    //FREQ_POPULARITY = 20,           //Coordinate Frequency observation based popularity Replacement
 };
 
 enum ConnectionStatus {
@@ -156,7 +162,8 @@ struct NetworkPacket_t {
 struct Content_t {
     ContentClass contentClass;              //Type of Content
     ContentStatus contentStatus;            //Status of Content
-    long popularityRanking;                 //Content Class Specific Ranking (1 = top rank, highest probability)
+    ContentPriority priority;               //Content Class Specific Ranking (1 = top rank, highest probability)
+    long popularityRanking;                 //Content Popularity
     long contentSize;                       //Content Size in Bytes
     long useCount;                          //Number of times content was "requested" while in a Library
     std::string contentPrefix;              //String name representation of content prefix
@@ -223,10 +230,9 @@ public:
 //Information structure that contains properties of a Category Type
 struct ContentCategoryDistribution_t {
     ContentClass category;
-    long averageByteSize;                   //Average size of elements in category
-    long averageCount;                      //Average number of items
-    long averagePriority;                   //Priority of packets in category (1-100)
-    ContentPopularity averagePopularity;    //Average Popularity of items
+    long byteSize;                          //Average size of elements in category
+    long count;                             //Average number of items
+    ContentPriority priority;               //Priority of packets in category
 };
 
 struct Interest_t {

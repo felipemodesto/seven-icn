@@ -55,7 +55,7 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         int librarySize;
 
         CacheReplacementPolicy cachePolicy;
-        int availableMultimediaObjects;
+        int startingCache;
         int maxCachedContents;
 
         BaconServiceManager* manager;
