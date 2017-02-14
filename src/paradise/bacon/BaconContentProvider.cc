@@ -220,7 +220,7 @@ void BaconContentProvider::runCacheReplacement(){
                     }
                 }
 
-                //TODO: This is inneficient and I should rewrite for a single-loop
+                //TODO: (REVIEW) This is inneficient and I should rewrite for a single-loop
                 for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
                 if (it->popularityRanking == largestRanking) {
                         //std::cout <<  "(CP) Removing item <" << it->contentPrefix << "> with Popularity : <" << to_string(it->popularityRanking) << ">\n";
@@ -573,7 +573,7 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
                         */
                     }
                 case ContentClass::MULTIMEDIA:
-                    //TODO: Decide if we're going to do anything else special
+                    //TODO: (DECIDE) if we're going to do anything else special
                     return true;
 
                 default:
@@ -588,7 +588,7 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
 
 //Getter to classify node as either server or client (servers don't have cache limitation applied during computation)
 bool BaconContentProvider::isServer() {
-    //TODO: Make this more maliable depending on content class (?)
+    //TODO: (REVIEW) Make this more maliable depending on content class (?)
     //Having all items implies being a server, which we use to log server based statistics
     if (availableMultimediaObjects == -1) {
         return true;

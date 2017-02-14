@@ -25,13 +25,6 @@
 #include <list>
 #include <ctime>
 
-//#include <paradise/bacon/BaconLibrary.hh>
-//#include <paradise/bacon/BaconServiceManager.hh>
-//#include <paradise/bacon/BaconStatistics.hh>
-
-//#include <paradise/bacon/BaconStatistics.hh>
-//class BaconStatistics;
-
 #include <veins/modules/mobility/traci/TraCIMobility.h>
 #include <veins/modules/world/annotations/AnnotationManager.h>
 
@@ -101,15 +94,21 @@ enum ConnectionStatus {
     DONE_NO_CLIENT_REPLY = 62,  //CLIENT HAS NOT REPLIED TO CONTENT TRANSFER PROPOSAL
     DONE_PROVIDED = 63,         //PROVIDED CONTENT TO CLIENT (SERVER ONLY)
     DONE_REJECTED = 64,         //CLIENT ACTIVELY REJECTED CONNECTIVITY (GOT CONTENT FROM SOMEWHERE ELSE?)
-    DONE_AVAILABLE = 65,
+    DONE_AVAILABLE = 65,        //CONTENT IS AVAILABLE ATM
     DONE_UNAVAILABLE = 66,      //CONTENT UNAVAILABLE (NO REPLY TO CLIENT)
     DONE_NO_DATA = 67,          //CONNECTION CREATED BUT NO DATA RECEIVED
     DONE_PARTIAL = 68,          //PARTIAL DATA RECEIVED
-    DONE_MAX = 69,
+    DONE_NETWORK_BUSY = 69,     //NETWORK STATUS PREVENTED THIS REQUEST FROM TAKING PLACE
+    DONE_MAX = 79,
+};
+
+enum NetworkLoadStatus {
+    LOW_LOAD, MEDIUM_LOAD, HIGH_LOAD, EMERGENCY_LOAD
 };
 
 class MessageClass {
     public:
+        static const std::string SELF_TIMER;        //General self-timer
         static const std::string INTEREST;          //Content Lookup
         static const std::string INTEREST_REPLY;    //Content Lookup Reply
         static const std::string INTEREST_ACCEPT;   //Content Lookup Reply
@@ -121,6 +120,7 @@ class MessageClass {
         static const std::string DATA_INCLUDE;      //Cache Data Inclusion Message
         static const std::string DATA_EXLUDE;       //Cache Data Exclusion Message
         static const std::string BEACON;            //Generic Data message used by Veins Wave Class
+        static const std::string SELF_BEACON_TIMER; //
 };
 
 /**
@@ -137,6 +137,21 @@ class IMobileNode
     virtual double getTxRange() const  = 0;
 };
 
+//Neighbor Representation
+struct Neighbor_t {
+    long neighborID;
+    Coord neighborPosition;
+    simtime_t firstContact;
+    simtime_t lastContact;
+    long neighborCentrality;        //Number of neighbors neighbor reported having
+    NetworkLoadStatus load;
+};
+
+struct NetworkPacket_t {
+    simtime_t arrival;
+    long bitSize;
+};
+
 //Information Structure that contains the "description" of a piece of content
 struct Content_t {
     ContentClass contentClass;              //Type of Content
@@ -149,6 +164,7 @@ struct Content_t {
     //simtime_t expireTime;                 //Time in which object will become Stale
 };
 
+//Variation of a general content object used by Clients to track status of object requests
 struct PendingContent_t : Content_t {
     int pendingID;                          //ID for pending request
     simtime_t requestTime;                  //Time in which content was requested
@@ -200,6 +216,8 @@ public:
     static const std::string HOPS_DOWN;         //Calculated Hop Count for current transmission Downstream
     static const std::string HOPS_UP;           //Calculated Hop Count for current transmission Upstream
     static const std::string REQUESTS_AT_SOURCE;//Number of requests at source
+    static const std::string CENTRALITY;        //Degree of Centrality (Neighborhood Size)
+    static const std::string LOAD;              //Load Perception
 };
 
 //Information structure that contains properties of a Category Type

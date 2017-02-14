@@ -97,10 +97,11 @@ class BaconClient : public BaseWaveApplLayer {
         int clientExchangeIn;           //Input from Service Manager
         int clientExchangeOut;          //Output to Service Manager
 
-        double locationTimerDelay;       //Time between calls for location
-
+        int maxOpenRequests;
+        double locationTimerDelay;      //Time between calls for location
         double minimumRequestDelay;     //Minimum time until Content Request
         double maximumRequestDelay;     //Maximum time until Content Request
+        double requestTimeout;          //
 
         double multimediaInterest;      //Interest in Multimedia Content
         double trafficInterest;         //Interest in Road Traffic Information Content
@@ -115,9 +116,10 @@ class BaconClient : public BaseWaveApplLayer {
         double lastX;
         double lastY;
 
-        PendingContent_t* pendingRequest;//Current Pending Request
-        std::list<PendingContent_t*> backloggedRequests; //List of content to which a negative reply was given, hopefully so that we can track late responses somehow
-        std::list<PendingContent_t*> completedRequests; //List of content to which a possitive reply was given, so we can track duplicate responses
+        //PendingContent_t* pendingRequest;//Current Pending Request
+        std::list<PendingContent_t*> ongoingRequests;       //List of ongoing Requests
+        std::list<PendingContent_t*> backloggedRequests;    //List of content to which a negative reply was given, hopefully so that we can track late responses somehow
+        std::list<PendingContent_t*> completedRequests;     //List of content to which a positive reply was given, so we can track duplicate responses
 
     protected:
 
@@ -129,6 +131,7 @@ class BaconClient : public BaseWaveApplLayer {
         //==========================================//
         virtual void resetLocationTimer();                          //RESETS THE TIMER DELAY FOR LOCATION TIMER MESSAGE
         virtual void notifyLocation();                              //NOTIFIES STATISTICS CLASS OF POSITION (SHOULD BE CALLED EVERY SECOND)
+        void cleanRequestList();                                    //Deletes old entries from our request lists
         //==========================================//
         void onBeacon(WaveShortMessage* wsm)  override;             //ON WSM BEACON MESSAGE
         void onData(WaveShortMessage* wsm)  override;               //ON WSM DATA MESSAGE
@@ -139,11 +142,9 @@ class BaconClient : public BaseWaveApplLayer {
         //==========================================//
         void startNewMessageTimer(simtime_t timerTime);
         void startNewMessageTimer();
-        void startContentRequest(cMessage *msg);
+        void startContentRequest();
         void handleMessage(cMessage *msg)  override;                //CALLBACK FROM SELF MESSAGE, GENERALLY USED AS RANDOM TIMER CALLBACK
         void sendToServiceManager(cMessage *msg);
-
-
 };
 
 

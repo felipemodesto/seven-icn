@@ -34,6 +34,12 @@ simple BaconServiceManager extends BaseWaveApplLayer {
     	double cacheCopyProbability  = default(0.5);		//in-network probabilistic cache replacement probability
     	double interestBroadcastTimeout = default(2);		//Time before an interest broadcast is timed out
     	int maxAttempts = default(3);						//Maximum number of attempts with failure before we give up on a connection
+        double windowSlotSize = default(1s) @unit(s); 		//Duration of a time slot
+		double minimumForwardDelay = default(0s) @unit(s); 	//Minimum Request Forward Delay
+		double maximumForwardDelay = default(0s) @unit(s); 	//Maximum Request Forward Delay
+        double bitrate @unit(bps) = default(18 Mbps);		//NOTE: This has to match the value in the MAC1609_4 module or things will break
+    	
+    	int slidingWindowSize = default (1);				//Sliding Window for Data Rate (seconds)
     	
         @signal[parkingStateChanged](type="BaseMobility");
     gates:       
