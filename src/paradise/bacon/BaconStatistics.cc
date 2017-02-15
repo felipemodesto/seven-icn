@@ -779,8 +779,8 @@ void BaconStatistics::increaseFulfilledInterests() {
 void BaconStatistics::logInstantLoad(int node, double load) {
     if (!shouldRecordData()) return;
     LoadAtTime_t newLoad;
-    if (load < 0) load = 0;
-    if (load > 1) load = 1;
+    //if (load < 0) load = 0;
+    //if (load > 1) load = 1;
     newLoad.loadValue = load;
     newLoad.vehicleId = node;
     newLoad.simTime = simTime();
@@ -790,8 +790,8 @@ void BaconStatistics::logInstantLoad(int node, double load) {
 void BaconStatistics::logAverageLoad(int node, double load) {
     if (!shouldRecordData()) return;
     LoadAtTime_t newLoad;
-    if (load < 0) load = 0;
-    if (load > 1) load = 1;
+    //if (load < 0) load = 0;
+    //if (load > 1) load = 1;
     newLoad.loadValue = load;
     newLoad.vehicleId = node;
     newLoad.simTime = simTime();
