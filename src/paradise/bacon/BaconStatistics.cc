@@ -274,13 +274,13 @@ void BaconStatistics::stopStatistics() {
         pFile = fopen ( networkInstantLoadStatisticsFile, "w");
         fprintf(pFile, "#time,id,load\n");
         for(auto iterator = instantLoadList.begin(); iterator != instantLoadList.end(); iterator++) {
-            fprint(pFile,"%f,%i,%f",iterator->simTime,iterator->vehicleId,iterator->loadValue);
+            fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
         }
         fclose(pFile);
         pFile = fopen ( networkAverageLoadStatisticsFile, "w");
         fprintf(pFile, "#time,id,load\n");
         for(auto iterator = averageLoadList.begin(); iterator != averageLoadList.end(); iterator++) {
-            fprint(pFile,"%f,%i,%f",iterator->simTime,iterator->vehicleId,iterator->loadValue);
+            fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
         }
         fclose(pFile);
     //}
@@ -703,6 +703,16 @@ void BaconStatistics::increaseEmergencyMessagesLost() {
     emergencyUnservedPacketVect.record(emergencyUnservedPackets);
 }
 
+void BaconStatistics::increaseEmergencyChunksLost() {
+    BaconStatistics::emergencyLostChunks++;
+
+    if (!shouldRecordData()) return;
+    emergencyLostChunkVect.record(emergencyLostChunks);
+}
+
+
+
+
 void BaconStatistics::increaseLocalLateCacheHits() {
     BaconStatistics::localCacheLateHits++;
 
@@ -769,6 +779,8 @@ void BaconStatistics::increaseFulfilledInterests() {
 void BaconStatistics::logInstantLoad(int node, double load) {
     if (!shouldRecordData()) return;
     LoadAtTime_t newLoad;
+    if (load < 0) load = 0;
+    if (load > 1) load = 1;
     newLoad.loadValue = load;
     newLoad.vehicleId = node;
     newLoad.simTime = simTime();
@@ -778,6 +790,8 @@ void BaconStatistics::logInstantLoad(int node, double load) {
 void BaconStatistics::logAverageLoad(int node, double load) {
     if (!shouldRecordData()) return;
     LoadAtTime_t newLoad;
+    if (load < 0) load = 0;
+    if (load > 1) load = 1;
     newLoad.loadValue = load;
     newLoad.vehicleId = node;
     newLoad.simTime = simTime();

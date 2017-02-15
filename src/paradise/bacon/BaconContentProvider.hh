@@ -79,7 +79,7 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         int getUseCount(std::string prefix);                    //Get the current use count for an object
         CacheReplacementPolicy getCachePolicy();                //Getter for the cache policy
 
-        bool brokenlocalPopularityCacheDecision(Connection_t* connection);    //Decision algorithm function whether item should be cached
+        //bool brokenlocalPopularityCacheDecision(Connection_t* connection);    //Decision algorithm function whether item should be cached
         bool localPopularityCacheDecision(Connection_t* connection);    //Decision algorithm function whether item should be cached
 
 
