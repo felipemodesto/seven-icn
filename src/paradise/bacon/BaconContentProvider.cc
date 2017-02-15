@@ -150,7 +150,6 @@ void BaconContentProvider::runCacheReplacement(){
             }
 
             //LEAST FREQUENTLY USED
-            case FREQ_POPULARITY:
             case LFU:
             {
                 //std::cout << "(CP) Running LFU Cache Replacement.\n";
@@ -617,6 +616,7 @@ bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //(BROKEN - Sequential Downhops will cache same item, should consider distance since last cache) Decision algorithm function whether item should be cached
+/*
 bool BaconContentProvider::brokenlocalPopularityCacheDecision(Connection_t* connection) {
     std::cerr << "(CP) Error: This should not be used!\n";
     std::cerr.flush();
@@ -644,3 +644,4 @@ bool BaconContentProvider::brokenlocalPopularityCacheDecision(Connection_t* conn
     }
     return false;
 }
+*/

@@ -2524,6 +2524,10 @@ void BaconServiceManager::refreshNeighborhood() {
     }
     averageNetworkLoad = averageNetworkLoad/networkLoadWindow.size();
 
+    //Logging Statistics
+    stats->logAverageLoad(myId,averageNetworkLoad);
+    stats->logInstantLoad(myId,instantNetworkLoad);
+
     //if (stats->allowedToRun()) {
     //    std::cout << "\t(SM) <" << myId << ">\tI:<" << to_string(instantNetworkLoad) << "%>\tA:<" << averageNetworkLoad << "%>\t<" << to_string(currentNetworkLoad/(double)(1000000)) << "Mbps>\t <" << packetList.size() << "Msgs>\n";
     //    std::cout.flush();
