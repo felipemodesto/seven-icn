@@ -35,7 +35,7 @@ void BaconServiceManager::initialize(int stage) {
             maxSimultaneousConnections = par("maxSimultaneousConnections").doubleValue();
 
             cacheCopyProbability = par("cacheCopyProbability").doubleValue();
-            inNetworkCaching = static_cast<CacheCoordinationPolicy>(par("inNetworkCaching").longValue());
+            inNetworkCaching = static_cast<CacheInNetworkCoordPolicy>(par("inNetworkCaching").longValue());
 
             slidingWindowSize = par("slidingWindowSize").longValue();
             minimumForwardDelay = par("minimumForwardDelay").doubleValue();
@@ -44,6 +44,7 @@ void BaconServiceManager::initialize(int stage) {
             interestBroadcastTimeout = par("interestBroadcastTimeout").doubleValue();
             windowTimeSlotDuration = par("windowSlotSize").doubleValue();
             bitrate = par("bitrate").longValue();
+            requestPriority = par("requestPriority").boolValue();
 
             //Getting TraCI Manager (SUMO Connection & Annotations Ready)
             traci = TraCIMobilityAccess().get(getParentModule());
@@ -2338,7 +2339,7 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
         //Checking for potential cache operation requirements from a server standpoint
         case ConnectionStatus::DONE_PROVIDED:
             //Checking if we need to delete our local copy after forwarding content (Cache coordination policy dependent)
-            if (inNetworkCaching == CacheCoordinationPolicy::MCD && connection->downstreamHopCount != 0) {
+            if (inNetworkCaching == CacheInNetworkCoordPolicy::MCD && connection->downstreamHopCount != 0) {
                 removeContentFromCache(connection);
             }
             break;
@@ -2679,19 +2680,9 @@ void BaconServiceManager::handleLowerMsg(cMessage* msg) {
 
 //IGNORE : Function from Base Class
 void BaconServiceManager::onBeacon(WaveShortMessage* wsm) {
-    EV_WARN << "(SM) WARNING: OnBeacon Got a Message!\n";
-    EV_WARN.flush();
-
-    //std::cout <<"(SM) <" << myId << "> Got Beacon Message from <" << wsm->getSenderAddress() << ">\n";
-    //std::cout.flush();
-
-    //if (wsm->getSenderAddress() == 12) {
-    //    std::cout << "(SM) \\--> CENTER JUST GAVE US BEACON AT <" << simTime() << ">\n";
-    //    std::cout.flush();
-    //}
-
+    //EV_WARN << "(SM) WARNING: OnBeacon Got a Message!\n";
+    //EV_WARN.flush();
     addNeighbor(wsm);
-
     delete (wsm);
 }
 

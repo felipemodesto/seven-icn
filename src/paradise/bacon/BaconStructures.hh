@@ -45,7 +45,7 @@ enum class ContentClass {
     GPS_DATA = 5
 };
 
-enum CacheCoordinationPolicy {
+enum CacheInNetworkCoordPolicy {
     NEVER = 0,                      //NEVER KEEP COPY (Nodes never keep copy of messages sent in their downstream)
     LCE = 1,                        //LEAVE COPY EVERYWHERE (All nodes keep a copy of the cached object, even those that are not part of the route)
     LCD = 2,                        //LEAVE COPY DOWN (Only leave copy in direct downstream - Only the first node in the downstream path keeps a copy)
@@ -141,6 +141,12 @@ class IMobileNode
     virtual double getLatitude() const  = 0;
     virtual double getLongitude() const = 0;
     virtual double getTxRange() const  = 0;
+};
+
+struct LoadAtTime_t {
+    int vehicleId;
+    simtime_t simTime;
+    double loadValue;
 };
 
 //Neighbor Representation

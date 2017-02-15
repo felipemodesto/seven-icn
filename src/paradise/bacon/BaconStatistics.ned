@@ -33,4 +33,6 @@ simple BaconStatistics {
 		double statisticsStopTime  = default(100); 		//Final moment until which statistics are collected
 		string locationStatisticsFile  = default("heatmap.csv");
 		string contentNameStatisticsFile  = default("library.csv");
+		string networkInstantLoadStatisticsFile  = default("instantLoad.csv");
+		string networkAverageLoadStatisticsFile  = default("windowLoad.csv");
 }
