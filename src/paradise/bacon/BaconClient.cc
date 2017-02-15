@@ -126,7 +126,7 @@ void BaconClient::initialize(int stage) {
             //pendingRequest = NULL;
             contentTimerMessage = NULL;
 
-            //Won't start timer for server nodes
+            //Won't start timer for server nodes or if we're one of those nodes that doesn't make its own requests (MULE)
             if (minimumRequestDelay != -1 && maximumRequestDelay != -1) {
                 //Starting First Request for after warmup time
                 simtime_t firstTimerTime = uniform(minimumRequestDelay,maximumRequestDelay);
@@ -365,7 +365,7 @@ void BaconClient::startContentRequest() {
 
     //MULTIMEDIA
     } else if (contentRequestInterstType < trafficInterest + networkInterest + multimediaInterest ) {
-        appropriateLibrary = library->getNetworkContentList();
+        appropriateLibrary = library->getMultimediaContentList();
         contentClass = library->getContentClass(ContentClass::MULTIMEDIA);
         double randomIndex = uniform(0,1);
         requestedContentIndex = library->getIndexForDensity(randomIndex,ContentClass::MULTIMEDIA);
@@ -416,6 +416,9 @@ void BaconClient::startContentRequest() {
     }
 
     //std::cout << "(Cl) <" << myId << "> NR for <" << pendingRequest->contentPrefix << "> of class <" << static_cast<int>(pendingRequest->contentClass) << "> Time<" << simTime() << ">\n";
+    //std::cout.flush();
+
+    //std::cout << "(Cl) <" << contentRequestInterstType << ">\t->\t<" << pendingRequest->contentPrefix << ">\n";
     //std::cout.flush();
 
     //Adding new request to our request list
@@ -517,7 +520,6 @@ void BaconClient::onBeacon(WaveShortMessage* wsm) {
 
 //
 void BaconClient::onData(WaveShortMessage* wsm) {
-
     //Checking the message type
     if (strcmp(wsm->getName(),MessageClass::INTEREST.c_str()) == 0 ) {
         std::cerr << "(Cl) Error: Lookup Responses should be of type DATA (or similar replies to client...\n";
@@ -584,6 +586,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                 //We should be fine here, as we have confirmed having received the content we don't care about its future
                 foundRequest = true;
                 desiredRequest = *it;
+                //We don't do anything extra fancy here cause we're done, our packet is complete and we don't have to re-mark it as complete
                 return;
             }
         }
@@ -607,9 +610,6 @@ void BaconClient::onData(WaveShortMessage* wsm) {
         desiredRequest->fullfillTime = simTime();
         SimTime difTime = desiredRequest->fullfillTime - desiredRequest->requestTime;
 
-        //Marking the request as served, as we are getting rid of it
-        desiredRequest->contentStatus = ContentStatus::SERVED;
-
         switch( wsm->getKind() ) {
             case ConnectionStatus::DONE_AVAILABLE:
             case ConnectionStatus::DONE_RECEIVED:
@@ -621,14 +621,13 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     double difDouble = difTime.dbl();
                     if (difTime <= requestTimeout) {
                         stats->addcompleteTransmissionDelay(difDouble);
-                    } else {
-                        stats->addincompleteTransmissionDelay(difDouble);
-                        //std::cout << "(Cl) <" << myId << "> Message was \"technically\" delivered but took too long. Took: <" << to_string(difDouble) << ">\n";
-                        //std::cout.flush();
+                        stats->increaseMessagesSent(desiredRequest->contentClass);
                     }
-
-                    std::cout << "(Cl) <" << myId << ">\tGot <" << desiredRequest->contentPrefix << ">\tAt <" << simTime() << ">\n";
-                    std::cout.flush();
+                    else {
+                        std::cout << "(Cl) Warning: Stale Response with delay: <" << difDouble << ">\n";
+                        std::cout.flush();
+                        //stats->addincompleteTransmissionDelay(difDouble);
+                    }
 
                     //Logging Time it took for communication
                     completedRequests.push_front(desiredRequest);
@@ -644,6 +643,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     //std::cout << "?";
                     double difDouble = difTime.dbl();
                     stats->addincompleteTransmissionDelay(difDouble);
+                    stats->increaseMessagesUnserved(desiredRequest->contentClass);
 
                     //Adding an incomplete transfer to our backlogged list for future tests
                     backloggedRequests.push_front(desiredRequest);
@@ -658,6 +658,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     //std::cout << "-";
                     //Adding an incomplete transfer to our backlogged list for future tests
                     backloggedRequests.push_front(desiredRequest);
+                    stats->increaseMessagesLost(desiredRequest->contentClass);
 
                     double difDouble = difTime.dbl();
                     stats->addincompleteTransmissionDelay(difDouble);
@@ -669,6 +670,10 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                 std::cerr.flush();
                 break;
         }
+
+        //Marking the request as served, as we are done with it
+        desiredRequest->contentStatus = ContentStatus::SERVED;
+
     } else {
         std::cout << "(Cl) THIS SHOULD NOT HAPPEN <" << wsm->getName() << ">\n";
         std::cout.flush();

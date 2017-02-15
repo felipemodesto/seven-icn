@@ -27,6 +27,8 @@ void BaconStatistics::initialize(int stage) {
 
         locationStatisticsFile = par("locationStatisticsFile").stringValue();
         contentPopularityStatisticsFile = par("contentNameStatisticsFile").stringValue();
+        networkInstantLoadStatisticsFile = par("networkInstantLoadStatisticsFile").stringValue();
+        networkAverageLoadStatisticsFile = par("networkAverageLoadStatisticsFile").stringValue();
 
         startStatistics();
     }
@@ -73,8 +75,8 @@ void BaconStatistics::keepTime() {
         double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
         begin = end;
 
-        //std::cout << "(St) Current Time is: " << lastSecond << " \t CPU Time: " << round(elapsed_secs) << " sec(s)\n";
-        //std::cout.flush();
+        std::cout << "(St) Current Time is: " << lastSecond << " \t CPU Time: " << round(elapsed_secs) << " sec(s)\n";
+        std::cout.flush();
 
         if (hasStarted && !hasStopped) statisticsTimekeepingVect.record( (lastSecond - statisticsStartTime) / (double) (statisticsStopTime - statisticsStartTime) );
     }
@@ -264,6 +266,24 @@ void BaconStatistics::stopStatistics() {
         }
         fclose(pFile);
     }
+
+
+    //If we're logging vehicle positions, we'll save a log csv file with our position matrix
+    //if (recordingNetworkLoad) {
+        FILE * pFile;
+        pFile = fopen ( networkInstantLoadStatisticsFile, "w");
+        fprintf(pFile, "#time,id,load\n");
+        for(auto iterator = instantLoadList.begin(); iterator != instantLoadList.end(); iterator++) {
+            fprint(pFile,"%f,%i,%f",iterator->simTime,iterator->vehicleId,iterator->loadValue);
+        }
+        fclose(pFile);
+        pFile = fopen ( networkAverageLoadStatisticsFile, "w");
+        fprintf(pFile, "#time,id,load\n");
+        for(auto iterator = averageLoadList.begin(); iterator != averageLoadList.end(); iterator++) {
+            fprint(pFile,"%f,%i,%f",iterator->simTime,iterator->vehicleId,iterator->loadValue);
+        }
+        fclose(pFile);
+    //}
 
     //Recording Scalar Variables
     recordScalar("packetsSent",packetsSent);
@@ -487,6 +507,98 @@ void BaconStatistics::increaseServerCacheHits() {
     serverHitVect.record(serverCacheHits);
 }
 
+void BaconStatistics::increaseMessagesSent(ContentClass contentClass) {
+    switch(contentClass) {
+        case ContentClass::MULTIMEDIA:
+            increaseMultimediaMessagesSent();
+            break;
+        case ContentClass::NETWORK:
+            increaseNetworkMessagesSent();
+            break;
+        case ContentClass::TRAFFIC:
+            increaseTrafficMessagesSent();
+            break;
+        case ContentClass::EMERGENCY_SERVICE:
+            increaseEmergencyMessagesSent();
+            break;
+        default:
+            std::cerr << "(St) Error: Invalid Class for increaseMessageSent()\n";
+            std::cerr.flush();
+            break;
+    }
+}
+
+
+void BaconStatistics::increaseMessagesLost(ContentClass contentClass) {
+    switch(contentClass) {
+        case ContentClass::MULTIMEDIA:
+            increaseMultimediaMessagesLost();
+            break;
+        case ContentClass::NETWORK:
+            increaseNetworkMessagesLost();
+            break;
+        case ContentClass::TRAFFIC:
+            increaseTrafficMessagesLost();
+            break;
+        case ContentClass::EMERGENCY_SERVICE:
+            increaseEmergencyMessagesLost();
+            break;
+        default:
+            std::cerr << "(St) Error: Invalid Class for increaseMessageLost()\n";
+            std::cerr.flush();
+            break;
+    }
+}
+
+
+void BaconStatistics::increaseMessagesUnserved(ContentClass contentClass) {
+    switch(contentClass) {
+        case ContentClass::MULTIMEDIA:
+            increaseMultimediaMessagesUnserved();
+            break;
+        case ContentClass::NETWORK:
+            increaseNetworkMessagesUnserved();
+            break;
+        case ContentClass::TRAFFIC:
+            increaseTrafficMessagesUnserved();
+            break;
+        case ContentClass::EMERGENCY_SERVICE:
+            increaseEmergencyMessagesUnserved();
+            break;
+        default:
+            std::cerr << "(St) Error: Invalid Class for increaseMessageUnserved()\n";
+            std::cerr.flush();
+            break;
+    }
+}
+
+
+void BaconStatistics::increaseChunkLost(ContentClass contentClass) {
+    switch(contentClass) {
+        case ContentClass::MULTIMEDIA:
+            increaseMultimediaChunksLost();
+            break;
+        case ContentClass::NETWORK:
+            increaseNetworkChunksLost();
+            break;
+        case ContentClass::TRAFFIC:
+            increaseTrafficChunksLost();
+            break;
+        case ContentClass::EMERGENCY_SERVICE:
+            increaseEmergencyChunksLost();
+            break;
+        default:
+            std::cerr << "(St) Error: Invalid Class for increaseChunkLost()\n";
+            std::cerr.flush();
+            break;
+    }
+}
+
+
+
+
+
+
 void BaconStatistics::increaseMultimediaMessagesSent() {
     BaconStatistics::multimediaSentPackets++;
 
@@ -652,6 +764,24 @@ void BaconStatistics::increaseFulfilledInterests() {
 
     if (!shouldRecordData()) return;
     fulfilledInterestVect.record(fulfilledInterests);
+}
+
+void BaconStatistics::logInstantLoad(int node, double load) {
+    if (!shouldRecordData()) return;
+    LoadAtTime_t newLoad;
+    newLoad.loadValue = load;
+    newLoad.vehicleId = node;
+    newLoad.simTime = simTime();
+    instantLoadList.push_front(newLoad);
+}
+
+void BaconStatistics::logAverageLoad(int node, double load) {
+    if (!shouldRecordData()) return;
+    LoadAtTime_t newLoad;
+    newLoad.loadValue = load;
+    newLoad.vehicleId = node;
+    newLoad.simTime = simTime();
+    averageLoadList.push_front(newLoad);
 }
 
 void BaconStatistics::addcompleteTransmissionDelay(double delay) {

@@ -83,8 +83,13 @@ protected:
     //std::map<int,omnetpp::cOutVector> hopDistanceVectorMap;
     std::list<omnetpp::cOutVector*> hopDistanceVectorMap;
 
+    std::list<LoadAtTime_t> instantLoadList;
+    std::list<LoadAtTime_t> averageLoadList;
+
     const char * locationStatisticsFile;
     const char * contentPopularityStatisticsFile;
+    const char * networkInstantLoadStatisticsFile;
+    const char * networkAverageLoadStatisticsFile;
 
     omnetpp::cLongHistogram packetsSentHist;
     omnetpp::cLongHistogram packetsForwardedHist;
@@ -168,6 +173,9 @@ public:
     void startStatistics();                  //Soft Class Initializer
     void stopStatistics();                   //Soft Class Destructor
 
+    void logInstantLoad(int node, double load);
+    void logAverageLoad(int node, double load);
+
     void logPosition(double x, double y);               //Vehicles record their position every second of simulation
     void logContentRequest(std::string contentName);    //Recording the name of each item requested
 
@@ -184,25 +192,33 @@ public:
 
     void increaseServerCacheHits();
 
-    void increaseActiveVehicles();          //Increase the number of active Vehicles by 1 (new vehicle spawned)
-    void decreaseActiveVehicles();          //Decrease the number of active Vehicles by 1 (vehicle "deleted" / journey complete)
+    void increaseActiveVehicles();              //Increase the number of active Vehicles by 1 (new vehicle spawned)
+    void decreaseActiveVehicles();              //Decrease the number of active Vehicles by 1 (vehicle "deleted" / journey complete)
 
+    void increaseMessagesSent(ContentClass cClass);
     void increaseMultimediaMessagesSent();
-    void increaseMultimediaMessagesUnserved();
-    void increaseMultimediaMessagesLost();
-    void increaseMultimediaChunksLost();
     void increaseTrafficMessagesSent();
-    void increaseTrafficMessagesUnserved();
-    void increaseTrafficMessagesLost();
-    void increaseTrafficChunksLost();
     void increaseNetworkMessagesSent();
-    void increaseNetworkMessagesUnserved();
-    void increaseNetworkMessagesLost();
-    void increaseNetworkChunksLost();
     void increaseEmergencyMessagesSent();
-    void increaseEmergencyMessagesUnserved();
+
+    void increaseMessagesLost(ContentClass cClass);
+    void increaseMultimediaMessagesLost();
+    void increaseTrafficMessagesLost();
+    void increaseNetworkMessagesLost();
     void increaseEmergencyMessagesLost();
+
+
+    void increaseMessagesUnserved(ContentClass cClass);
+    void increaseTrafficMessagesUnserved();
+    void increaseMultimediaMessagesUnserved();
+    void increaseNetworkMessagesUnserved();
+    void increaseEmergencyMessagesUnserved();
+
+    void increaseChunkLost(ContentClass cClass);
+    void increaseTrafficChunksLost();
+    void increaseNetworkChunksLost();
     void increaseEmergencyChunksLost();
+    void increaseMultimediaChunksLost();
 
     void increaseLocalLateCacheHits();
     void increaseLocalCacheHits();

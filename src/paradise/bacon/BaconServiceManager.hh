@@ -59,13 +59,14 @@ class BaconServiceManager : public BaseWaveApplLayer {
         int maxAttempts;
         double minimumForwardDelay;
         double maximumForwardDelay;
+        bool requestPriority;
 
         int slidingWindowSize;
         double interestBroadcastTimeout;                //Time before an interest broadcast is timed out
         double transferTimeoutTime;                     //Time before transfer timer is timed out (Timer Stuff)
         double maxSimultaneousConnections;              //Number of simultaneous connected allowed for a node (-1 == Infinite)
         double cacheCopyProbability;                    //Cache copy probability for probabilistic cache in-network caching policy
-        CacheCoordinationPolicy inNetworkCaching;       //Configuration which enables/disables in-network caching
+        CacheInNetworkCoordPolicy inNetworkCaching;       //Configuration which enables/disables in-network caching
 
         //Networking Parameters
         int clientExchangeIn;                           //Input from Service Manager
