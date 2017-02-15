@@ -2522,7 +2522,7 @@ void BaconServiceManager::refreshNeighborhood() {
     for(auto it = networkLoadWindow.begin(); it != networkLoadWindow.end();it++) {
         averageNetworkLoad += (*it);
     }
-    averageNetworkLoad = averageNetworkLoad/networkLoadWindow.size();
+    averageNetworkLoad = averageNetworkLoad/(double)networkLoadWindow.size();
 
     //Logging Statistics
     stats->logAverageLoad(myId,averageNetworkLoad);
