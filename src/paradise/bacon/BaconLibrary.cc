@@ -86,21 +86,21 @@ void BaconLibrary::buildContentList() {
     trafficContent.byteSize = sizeTransit;
     trafficContent.count = libraryTransit;
     trafficContent.priority = priorityTransit;
-    transitPrefix = "t/";
+    transitPrefix = "t";
 
     //Setting Networking Content Parameters
     networkContent.category = ContentClass::NETWORK;
     networkContent.byteSize = sizeNetwork;
     networkContent.count = libraryNetwork;
     networkContent.priority = priorityNetwork;
-    networkPrefix = "n/";
+    networkPrefix = "n";
 
     //Setting Multimedia Content Parameters
     multimediaContent.category = ContentClass::MULTIMEDIA;
     multimediaContent.byteSize = sizeMultimedia;
     multimediaContent.count = libraryMultimedia;
     multimediaContent.priority = priorityMultimedia;
-    multimediaPrefix = "m/";
+    multimediaPrefix = "m";
 
     //Adding elements to list
     //contentCategories[0] = &trafficContent;                                 //Adding Traffic to our category list
@@ -144,7 +144,7 @@ std::vector<double> BaconLibrary::buildCategoryLibrary(int count, int byteSize, 
         newContent.contentClass = category;
         newContent.contentSize = byteSize;
         newContent.contentStatus = ContentStatus::AVAILABLE;
-        newContent.contentPrefix = classPrefix + std::to_string(j+1);
+        newContent.contentPrefix = classPrefix + "/" + std::to_string(j+1);
         newContent.useCount = 0;
         newContent.lastAccessTime = 0;
 
@@ -217,7 +217,7 @@ Content_t* BaconLibrary::getContent(std::string contentPrefix) {
     }
 
     //Splitting into Substring to get classification
-    std::string category = contentPrefix.substr(0, contentPrefix.find("/")) + "/";
+    std::string category = contentPrefix.substr(0, contentPrefix.find("/"));
     std::list<Content_t>* correctLibrary;
 
     if (category.compare(transitPrefix) == 0) {

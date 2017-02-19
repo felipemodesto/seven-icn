@@ -44,7 +44,7 @@ void BaconServiceManager::initialize(int stage) {
             interestBroadcastTimeout = par("interestBroadcastTimeout").doubleValue();
             windowTimeSlotDuration = par("windowSlotSize").doubleValue();
             bitrate = par("bitrate").longValue();
-            requestPriority = par("requestPriority").boolValue();
+            priorityPolicy = static_cast<AccessRestrictionPolicy>(par("priorityPolicy").longValue());
 
             //Getting TraCI Manager (SUMO Connection & Annotations Ready)
             traci = TraCIMobilityAccess().get(getParentModule());
@@ -70,8 +70,21 @@ void BaconServiceManager::initialize(int stage) {
             totalContentUnavailableResponses = 0;
             PITRetries = 0;
             currentlyActiveConnections = 0;
-            currentNetworkLoad = 0;
-            averageNetworkLoad = 0;
+
+            currentBitLoad = 0;
+            averageBitLoad = 0;
+            instantBitLoad = 0;
+
+            transitBitLoad = 0;
+            networkBitLoad = 0;
+            multimediaBitLoad = 0;
+
+            WATCH(currentBitLoad);
+            WATCH(transitBitLoad);
+            WATCH(networkBitLoad);
+            WATCH(multimediaBitLoad);
+
+            networkLoadStatus = NetworkLoadStatus::LOW_LOAD;
 
             updateNodeColor();
 
@@ -696,7 +709,31 @@ WaveShortMessage* BaconServiceManager::getGenericMessage(Connection_t* connectio
 //Function called whenever we get a message coming from the network interfaces
 void BaconServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
 
+    //Checking if we are the recipient
     if (wsm->getRecipientAddress() != -1 && wsm->getRecipientAddress() != myId) {
+        //TODO: FINISH IMPLEMENTING PACKET OVERHEARING!!!
+        /*
+        //Checking if this is a data object
+        if (strcmp(wsm->getName(), MessageClass::DATA.c_str()) == 0) {
+            string prefixString = static_cast<cMsgPar*>(wsm->getParList().get(MessageParameter::PREFIX.c_str()))->str();
+            if (prefixString.c_str()[0] == '\"') {
+                prefixString = prefixString.substr(1, prefixString.length() - 2);
+            }
+            prefixString.erase(std::remove(prefixString.begin(), prefixString.end(), '\"'), prefixString.end());
+            for(auto it = PIT.begin(); it != PIT.end();it++) {
+                if ((*it)->interestPrefix.compare(prefixString) == 0) {
+                    std::cout << "(SM) <" << myId << "> We are overhearing a data object for something we want!\n";
+                    std::cout.flush();
+                    break;
+                }
+                //else {
+                //    std::cout << "(SM) <" << myId << "> Nope <" << prefixString << "> != <" << (*it)->interestPrefix << "> !\n";
+                //    std::cout.flush();
+                //}
+            }
+            //cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
+        }
+        */
         delete(wsm);
         return;
     }
@@ -1073,6 +1110,43 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
     //    std::cout << "(SM) <" << myId << "> We have the Desired Object <" << prefixValue << "> for connection <" << idValue << "> from <" << wsm->getSenderAddress() << "> time: <" << simTime() << ">\n";
     //    std::cout.flush();
     //}
+
+    //If we have a priority/content restriction policy we check if it will be applied to this interest request
+    if (priorityPolicy == AccessRestrictionPolicy::FORWARD_50 || priorityPolicy == AccessRestrictionPolicy::FORWARD_AND_DELAY ) {
+        if (networkLoadStatus == NetworkLoadStatus::HIGH_LOAD) {
+            switch(getClassFromPrefix(prefixValue)) {
+                case ContentClass::MULTIMEDIA:
+                    //DISCARD Low PRIORITY
+                    //std::cout << "(SM) <" << myId << "> High Traffic Low Priority Absolute Discard.\n";
+                    delete(wsm);
+                    return;
+                    break;
+
+                case ContentClass::NETWORK:
+                    //RESTRICT Medium PRIORITY (Probability)
+                    if (uniform(0,1) > 0.5) {
+                        //std::cout << "(SM) <" << myId << "> High Traffic Medium Priority Probabilistic Discard.\n";
+                        delete(wsm);
+                        return;
+                    }
+                    break;
+
+                case ContentClass::TRAFFIC:
+                    //KEEP High PRIORITY
+                    break;
+
+                default:
+                    std::cerr << "(SM) Error: High Load Class Error.\n";
+                    break;
+            }
+        } else if (networkLoadStatus == NetworkLoadStatus::MEDIUM_LOAD && getClassFromPrefix(prefixValue) == ContentClass::MULTIMEDIA) {
+            if (uniform(0,1) > 0.5) {
+                //std::cout << "(SM) <" << myId << "> Medium Traffic Low Priority Probabilistic Discard.\n";
+                delete(wsm);
+                return;
+            }
+        }
+    }
 
     //Checking if we already have a downstream connection for this interest
     bool downstreamMessageAlreadyExisted = false;        //If a connection already existed we don't perform some actions like logging statistics
@@ -1467,9 +1541,7 @@ void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection
         connection->connectionStatus = ConnectionStatus::DONE_UNAVAILABLE;
         delete(wsm);
         return;
-
-        std::cout << "(SM) <" << myId << "> Missing Chunks for <" << connection->requestPrefix << "> from <" << connection->peerID << "> time <" << simTime() << ">\n";
-        std::cout.flush();   }
+    }
 
     //Setting Parameters
     wsm->setName(MessageClass::INTEREST.c_str());
@@ -1503,14 +1575,37 @@ void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection
     //Setting Forwarded Message status as "Waiting"
     connection->connectionStatus = ConnectionStatus::WAITING_FOR_NETWORK;
 
-    //Setting Delay prior to network forward request
-    sendWSM(wsm);
+    //If we have a priority/content restriction policy we check if it will be applied to this interest request
+    double forwardDelay = uniform(minimumForwardDelay,maximumForwardDelay);
+    if (priorityPolicy == AccessRestrictionPolicy::ADD_DELAY || priorityPolicy == AccessRestrictionPolicy::FORWARD_AND_DELAY) {
+        if (networkLoadStatus == NetworkLoadStatus::HIGH_LOAD) {
+            if (uniform(0,1) > 0.5) {
+                if (getClassFromPrefix(connection->requestPrefix) == ContentClass::NETWORK) {
+                    forwardDelay = uniform(maximumForwardDelay,maximumForwardDelay*2);
+                    std::cout << "(SM) <" << myId << "> High Traffic Medium Priority 2x Max_Delay\n";
+                } else if (getClassFromPrefix(connection->requestPrefix) == ContentClass::NETWORK) {
+                    forwardDelay = uniform(maximumForwardDelay,maximumForwardDelay*4);
+                    std::cout << "(SM) <" << myId << "> High Traffic Low Priority 4x Max_Delay\n";
+                }
+            }
+        } else if (networkLoadStatus == NetworkLoadStatus::MEDIUM_LOAD && getClassFromPrefix(connection->requestPrefix) == ContentClass::MULTIMEDIA) {
+            if (uniform(0,1) > 0.5) {
+                forwardDelay = uniform(maximumForwardDelay,maximumForwardDelay*2);
+                std::cout << "(SM) <" << myId << "> Medium Traffic Low Priority 2x Max_Delay\n";
+            }
+        }
+    }
+
+    //Forwarding content to network with either a standard delay or policy delay
+    sendWSM(wsm,forwardDelay);
     updateNodeColor();
 
     //std::cout << "(SM) <" << myId << "> forwarding interest with up/down: <" << connection->upstreamHopCount << ";" << connection->downstreamHopCount << "> at <" << simTime() << ">\n";
     //std::cout.flush();
 
     //connection->attempts++;
+
+
     startTimer(connection,interestBroadcastTimeout);
 }
 
@@ -1668,6 +1763,8 @@ void BaconServiceManager::transmitDataChunks(Connection_t* connection, std::vect
     //Calculating number of items to be sent
     int queueSize = ceil(requestSize / (double) dataLengthBits);
 
+    //std::cout << "(SM) Chunks per Message: <" << queueSize << ">\n";
+
     //Null chunk vector implies full transmission
     if (chunkVector == NULL) {
         //std::cout << "(SM) <" << myId << "> is Starting FRESH a Data Transfer for Connection <" << connection->connectionID << "> with upHops <" << connection->upstreamHopCount << "> and downHops <" << connection->downstreamHopCount << ">\n";
@@ -1689,6 +1786,9 @@ void BaconServiceManager::transmitDataChunks(Connection_t* connection, std::vect
     //std::cout << "(SM) <" << myId << "> Providing <" << queueSize << "> Data Packets woth of data.\n";
     //std::cout.flush();
 
+    //Figuring out 1 single time value after which we send all data chunks
+    double transmissionDelay = uniform(minimumForwardDelay,maximumForwardDelay);
+
     //Sending all data chunks to lower layers
     for (int i = 0 ; i < queueSize; i++) {
         std::string contentString = "content_chunk_" + std::to_string((*chunkVector)[i]);
@@ -1699,7 +1799,7 @@ void BaconServiceManager::transmitDataChunks(Connection_t* connection, std::vect
         clientIDParameter->setLongValue((*chunkVector)[i]);
         chunkMessage->addPar(clientIDParameter);
 
-        sendWSM(chunkMessage,minimumForwardDelay);
+        sendWSM(chunkMessage,transmissionDelay + minimumForwardDelay * i);
     }
 
     //Sending final content chunk
@@ -1712,7 +1812,7 @@ void BaconServiceManager::transmitDataChunks(Connection_t* connection, std::vect
     sequenceIDParameter->setLongValue(-1);
     chunkMessage->addPar(sequenceIDParameter);
 
-    sendWSM(chunkMessage,minimumForwardDelay);
+    sendWSM(chunkMessage,transmissionDelay +  + minimumForwardDelay * queueSize);
 
     connection->connectionStatus = ConnectionStatus::TRANSFER_WAITING_ACK;
 
@@ -2497,24 +2597,9 @@ void BaconServiceManager::refreshNeighborhood() {
         }
     }
 
-    //Removing old packets from our count
-    for (auto it = packetList.begin();it != packetList.end();){
-        if ((*it).arrival + windowTimeSlotDuration < simTime()) {
-            //Reducing Load and Removing Old packet from List
-            currentNetworkLoad -= (*it).bitSize;
-            it = packetList.erase(it);
-        } else {
-            //Since network obtained packets are stored from older to newer, we can break
-            break;
-        }
-    }
-
-    //Calculating network load for the current moment
-    instantNetworkLoad = 100 * (currentNetworkLoad/(double)bitrate);
-
     //Popping back of load window, adding new
     if ((int)networkLoadWindow.size() == slidingWindowSize) networkLoadWindow.pop_back();
-    networkLoadWindow.push_front(instantNetworkLoad);
+    networkLoadWindow.push_front(instantBitLoad);
 
     //Calculating New Window in Sliding Window
     //TODO: (REVIEW) Sliding Window
@@ -2522,16 +2607,18 @@ void BaconServiceManager::refreshNeighborhood() {
     for(auto it = networkLoadWindow.begin(); it != networkLoadWindow.end();it++) {
         averageNetworkLoad += (*it);
     }
-    averageNetworkLoad = averageNetworkLoad/(double)networkLoadWindow.size();
+    averageNetworkLoad = averageNetworkLoad/(double)networkLoadWindow.size(); //(Number of slots in window)
 
     //Logging Statistics
     stats->logAverageLoad(myId,averageNetworkLoad);
-    stats->logInstantLoad(myId,instantNetworkLoad);
+    stats->logInstantLoad(myId,instantBitLoad);
 
-    //if (stats->allowedToRun()) {
-    //    std::cout << "\t(SM) <" << myId << ">\tI:<" << to_string(instantNetworkLoad) << "%>\tA:<" << averageNetworkLoad << "%>\t<" << to_string(currentNetworkLoad/(double)(1000000)) << "Mbps>\t <" << packetList.size() << "Msgs>\n";
-    //    std::cout.flush();
-    //}
+    /*/
+    if (stats->allowedToRun() && myId == 12) {
+        std::cout << "\t(SM) <" << myId << ">\t Status:<" << networkLoadStatus << ">  I:<" << to_string(instantBitLoad) << "%>\tA:<" << averageNetworkLoad << "%>\t<" << to_string(currentBitLoad/(double)(1000000)) << "Mbps>\t <" << packetList.size() << "Msgs>\n";
+        std::cout.flush();
+    }
+    //*/
 }
 
 //
@@ -2567,10 +2654,80 @@ void BaconServiceManager::logNetworkmessage(WaveShortMessage *msg) {
     NetworkPacket_t freshPacket;
     freshPacket.arrival = simTime();
     freshPacket.bitSize = msg->getBitLength();
+
+    //Checking if its a beacon
+    if (strcmp(msg->getName(), MessageClass::BEACON.c_str()) == 0) {
+        freshPacket.type = ContentClass::BEACON;
+    } else {
+        string prefixString = static_cast<cMsgPar*>(msg->getParList().get(MessageParameter::PREFIX.c_str()))->str();
+        //If the message is not a beacon we figure out the type to save the message type
+        switch(getClassFromPrefix(prefixString)) {
+            case ContentClass::MULTIMEDIA:
+                multimediaBitLoad += freshPacket.bitSize;
+                break;
+            case ContentClass::NETWORK:
+                networkBitLoad += freshPacket.bitSize;
+                break;
+            case ContentClass::TRAFFIC:
+                transitBitLoad += freshPacket.bitSize;
+                break;
+            default:
+                std::cerr << "(SM) Error: Prefix type does not match any known category!\n";
+                break;
+        }
+    }
+
+    //Updating Loads
+    currentBitLoad += freshPacket.bitSize;
+
+    //Adding packet to list
     packetList.push_back(freshPacket);
 
-    //Updating Load
-    currentNetworkLoad += freshPacket.bitSize;
+    //Removing old packets from our count
+        for (auto it = packetList.begin();it != packetList.end();){
+            if ((*it).arrival + windowTimeSlotDuration < simTime()) {
+                //Reducing Load and Removing Old packet from List
+                currentBitLoad -= (*it).bitSize;
+
+                //Checking which category we should reduce load from (if any)
+                switch((*it).type) {
+                    case ContentClass::TRAFFIC:
+                        transitBitLoad -= (*it).bitSize;
+                        break;
+                    case ContentClass::NETWORK:
+                        networkBitLoad -= (*it).bitSize;
+                        break;
+                    case ContentClass::MULTIMEDIA:
+                        multimediaBitLoad -= (*it).bitSize;
+                        break;
+                    default:
+                        //Nothing is done
+                        break;
+                }
+
+                //Removing from List
+                it = packetList.erase(it);
+            } else {
+                //Since network obtained packets are stored from older to newer, we can break
+                break;
+            }
+        }
+
+        //Calculating network load for the current moment
+        instantBitLoad = 100 * (currentBitLoad/(double)bitrate);
+
+        //Establishing in which network state we are currently
+        if (instantBitLoad < lowMediumBandwidth) {
+            networkLoadStatus = NetworkLoadStatus::LOW_LOAD;
+        } else if (instantBitLoad > mediumHighBandwidth ) {
+            networkLoadStatus = NetworkLoadStatus::HIGH_LOAD;
+        } else {
+            networkLoadStatus = NetworkLoadStatus::MEDIUM_LOAD;
+        }
+        //if (myId == 12 && stats->allowedToRun()) {
+        //    std::cout << "instant Load: " << instantBitLoad << "\n";
+        //}
+
 }
 
 //=============================================================
@@ -2611,7 +2768,7 @@ void BaconServiceManager::sendBeacon() {
 
     //Adding Local Load Perception
     cMsgPar* loadParameter = new cMsgPar(MessageParameter::LOAD.c_str());
-    loadParameter->setLongValue(instantNetworkLoad);
+    loadParameter->setLongValue(instantBitLoad);
     beaconMessage->addPar(loadParameter);
 
     //Adding -1 as a representation of no request ID
@@ -2650,7 +2807,7 @@ void BaconServiceManager::handleLowerMsg(cMessage* msg) {
 
     WaveShortMessage* wsm = convertCMessage(msg);
     cGate* inputGate = wsm->getArrivalGate();
-    int recepient = wsm->getRecipientAddress();
+    //int recepient = wsm->getRecipientAddress();
 
     //Checking Message Input Gate
     //CLIENT LINK
@@ -2662,13 +2819,7 @@ void BaconServiceManager::handleLowerMsg(cMessage* msg) {
     } else if (inputGate->getBaseId() == lowerLayerIn) {
         //This function call, placed right here, logs all messages incoming from the network interface
         logNetworkmessage(wsm);
-
-        if (recepient != myId && recepient != -1) {
-            delete (wsm);
-            return;
-        } else {
-            onNetworkMessage(wsm);
-        }
+        onNetworkMessage(wsm);
     //OTHER PORT
     } else {
         std::cerr << "(SM) Error: Unknown Network Interface <" << inputGate->getBaseId() << ">.\n";
@@ -2725,4 +2876,24 @@ WaveShortMessage* BaconServiceManager::convertCMessage(cMessage* msg) {
     WaveShortMessage* wsm = dynamic_cast<WaveShortMessage*>(msg);
     ASSERT(wsm);
     return wsm;
+}
+
+ContentClass BaconServiceManager::getClassFromPrefix(string prefix) {
+
+    //Getting the message request prefix
+    if (prefix.c_str()[0] == '\"') {
+        prefix = prefix.substr(1, prefix.length() - 2);
+    }
+
+    //Comparing against the multimedia prefix
+    if (library->transitPrefix.compare(prefix) < 0) {
+        return ContentClass::TRAFFIC;
+    } else if (library->networkPrefix.compare(prefix) < 0) {
+        return ContentClass::NETWORK;
+    } else if (library->multimediaPrefix.compare(prefix) < 0) {
+        return ContentClass::MULTIMEDIA;
+    } else {
+        std::cerr << "(SM) Error: Prefix type does not match any known category!\n";
+    }
+    return ContentClass::EMERGENCY_SERVICE;
 }
