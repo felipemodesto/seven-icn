@@ -66,15 +66,13 @@ protected:
     ContentPriority priorityNetwork;            //Priority
     ContentPriority priorityMultimedia;         //Priority
 
-    std::string transitPrefix;
-    std::string networkPrefix;
-    std::string multimediaPrefix;
 
     BaconStatistics* stats;
 
 public:
-
-    int libraryCategoriesSize = 4;         //Category Wise
+    std::string transitPrefix;
+    std::string networkPrefix;
+    std::string multimediaPrefix;
 
     long int getCurrentIndex();                      //For Statistics & Maximum Count Use
     long int getRequestIndex();                      //Returns next index (sequence ID) in global request list numbering scheme (to avoid doubles)

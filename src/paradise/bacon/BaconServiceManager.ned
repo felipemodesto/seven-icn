@@ -40,7 +40,7 @@ simple BaconServiceManager extends BaseWaveApplLayer {
         double bitrate @unit(bps) = default(18 Mbps);		//NOTE: This has to match the value in the MAC1609_4 module or things will break
     	
     	int slidingWindowSize = default (1);				//Sliding Window for Data Rate (seconds)
-    	bool requestPriority  = default(false); 			//Defines whether certain content categories will be prioritized
+    	int priorityPolicy  = default(0); 					//Defines whether certain content categories will be prioritized (POLICY PENDING)
     	
         @signal[parkingStateChanged](type="BaseMobility");
     gates:       

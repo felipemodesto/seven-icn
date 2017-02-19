@@ -59,7 +59,6 @@ class BaconServiceManager : public BaseWaveApplLayer {
         int maxAttempts;
         double minimumForwardDelay;
         double maximumForwardDelay;
-        bool requestPriority;
 
         int slidingWindowSize;
         double interestBroadcastTimeout;                //Time before an interest broadcast is timed out
@@ -67,6 +66,7 @@ class BaconServiceManager : public BaseWaveApplLayer {
         double maxSimultaneousConnections;              //Number of simultaneous connected allowed for a node (-1 == Infinite)
         double cacheCopyProbability;                    //Cache copy probability for probabilistic cache in-network caching policy
         CacheInNetworkCoordPolicy inNetworkCaching;       //Configuration which enables/disables in-network caching
+        AccessRestrictionPolicy priorityPolicy;
 
         //Networking Parameters
         int clientExchangeIn;                           //Input from Service Manager
@@ -76,10 +76,19 @@ class BaconServiceManager : public BaseWaveApplLayer {
         bool sendWhileParking;
         int currentlyActiveConnections;
 
+        //Load Evaluation
+        NetworkLoadStatus networkLoadStatus;
         std::list<double> networkLoadWindow;
-        double currentNetworkLoad;
-        double instantNetworkLoad;
-        double averageNetworkLoad;
+        double currentBitLoad;
+        double instantBitLoad;
+        double averageBitLoad;
+        //Class Based Load statistics
+        double transitBitLoad;
+        double networkBitLoad;
+        double multimediaBitLoad;
+
+        int lowMediumBandwidth = 50;
+        int mediumHighBandwidth = 80;
 
         std::vector<cMessage*> cancelMessageTimerVector;
         std::list<Interest_t*> PIT;
@@ -175,6 +184,7 @@ class BaconServiceManager : public BaseWaveApplLayer {
 
     public:
         static WaveShortMessage* convertCMessage(cMessage* msg);               //Convert cMessage to WaveShortMessage (Cast for now)
+        ContentClass getClassFromPrefix(string prefix);
 
 };
 

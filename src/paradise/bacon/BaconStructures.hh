@@ -38,11 +38,20 @@ enum class ContentPriority      {PRIORITY_EMERGENCY = 0, PRIORITY_HIGH = 1, PRIO
 enum class ContentStatus        {UNSERVED, LOCAL, UNAVAILABLE, AVAILABLE, STALE, PARCIAL, PRIVATE, LIVE_FEED, SERVED};
 
 enum class ContentClass {
+    BEACON = 0,
     MULTIMEDIA = 1,
     TRAFFIC = 2,
     NETWORK = 3,
     EMERGENCY_SERVICE = 4,
     GPS_DATA = 5
+};
+
+enum class AccessRestrictionPolicy {
+    NO_RESTRICTION = 0,
+    FORWARD_50 = 1,
+    ADD_DELAY = 2,
+    FORWARD_AND_DELAY = 3,
+    LIMIT_HOP = 4,
 };
 
 enum CacheInNetworkCoordPolicy {
@@ -109,7 +118,10 @@ enum ConnectionStatus {
 };
 
 enum NetworkLoadStatus {
-    LOW_LOAD, MEDIUM_LOAD, HIGH_LOAD, EMERGENCY_LOAD
+    EMERGENCY_LOAD = -1,
+    LOW_LOAD = 0,
+    MEDIUM_LOAD = 50,
+    HIGH_LOAD = 80
 };
 
 class MessageClass {
@@ -162,6 +174,7 @@ struct Neighbor_t {
 struct NetworkPacket_t {
     simtime_t arrival;
     long bitSize;
+    ContentClass type;
 };
 
 //Information Structure that contains the "description" of a piece of content
