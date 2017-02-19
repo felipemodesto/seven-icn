@@ -157,7 +157,7 @@ void BaconServiceManager::cleanConnections() {
                 //curCon->requestPrefix.clear();
                 it = connectionList.erase(it);
                 cancelTimer(curCon);
-                //delete(curCon);
+                delete(curCon);
             }
 
         } else {
@@ -2010,7 +2010,7 @@ void BaconServiceManager::replyAfterContentInclusion(Connection_t* connection) {
     responseMessage->setKind(connection->connectionStatus);
 
     notifyOfContentAvailability(responseMessage,connection);
-    cleanConnections();
+    //cleanConnections();
 }
 
 //=============================================================

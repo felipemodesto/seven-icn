@@ -623,11 +623,11 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                         stats->addcompleteTransmissionDelay(difDouble);
                         stats->increaseMessagesSent(desiredRequest->contentClass);
                     }
-                    else {
-                        std::cout << "(Cl) Warning: Stale Response with delay: <" << difDouble << ">\n";
-                        std::cout.flush();
+                    //else {
+                    //    std::cout << "(Cl) Warning: Stale Response with delay: <" << difDouble << ">\n";
+                    //    std::cout.flush();
                         //stats->addincompleteTransmissionDelay(difDouble);
-                    }
+                    //}
 
                     //Logging Time it took for communication
                     completedRequests.push_front(desiredRequest);
