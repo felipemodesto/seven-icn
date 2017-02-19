@@ -1582,16 +1582,16 @@ void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection
             if (uniform(0,1) > 0.5) {
                 if (getClassFromPrefix(connection->requestPrefix) == ContentClass::NETWORK) {
                     forwardDelay = uniform(maximumForwardDelay,maximumForwardDelay*2);
-                    std::cout << "(SM) <" << myId << "> High Traffic Medium Priority 2x Max_Delay\n";
+                    //std::cout << "(SM) <" << myId << "> High Traffic Medium Priority 2x Max_Delay\n";
                 } else if (getClassFromPrefix(connection->requestPrefix) == ContentClass::NETWORK) {
                     forwardDelay = uniform(maximumForwardDelay,maximumForwardDelay*4);
-                    std::cout << "(SM) <" << myId << "> High Traffic Low Priority 4x Max_Delay\n";
+                    //std::cout << "(SM) <" << myId << "> High Traffic Low Priority 4x Max_Delay\n";
                 }
             }
         } else if (networkLoadStatus == NetworkLoadStatus::MEDIUM_LOAD && getClassFromPrefix(connection->requestPrefix) == ContentClass::MULTIMEDIA) {
             if (uniform(0,1) > 0.5) {
                 forwardDelay = uniform(maximumForwardDelay,maximumForwardDelay*2);
-                std::cout << "(SM) <" << myId << "> Medium Traffic Low Priority 2x Max_Delay\n";
+                //std::cout << "(SM) <" << myId << "> Medium Traffic Low Priority 2x Max_Delay\n";
             }
         }
     }
