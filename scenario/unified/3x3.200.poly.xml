@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on Mon Feb 13 22:07:52 2017 by SUMO polyconvert Version 0.25.0D
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/polyconvertConfiguration.xsd">
+
+    <input>
+        <net-file value="3x3.200.roads.xml"/>
+        <osm-files value="3x3.200.clean.osm"/>
+        <type-file value="typemap.xml"/>
+    </input>
+
+    <output>
+        <output-file value="3x3.200.poly.xml"/>
+    </output>
+
+    <processing>
+        <ignore-errors value="true"/>
+        <poi-layer-offset value="5"/>
+    </processing>
+
+</configuration>
+-->
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+    <location netOffset="-827823.89,-2477.40" convBoundary="0.00,0.00,600.74,596.68" origBoundary="-0.055235,0.022384,-0.049844,0.027775" projParameter="+proj=utm +zone=30 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"/>
+
+    <poly id="-12" type="unknown" color="51,128,255" fill="1" layer="-1.00" shape="0.00,596.53 300.30,596.60 600.59,596.68 600.67,298.41 600.74,0.15 300.45,0.07 0.15,0.00 0.08,298.26 0.00,596.53"/>
+    <poly id="-142" type="unknown" color="51,128,255" fill="0" layer="-1.00" shape="600.67,298.41 300.37,298.34 0.08,298.26"/>
+    <poly id="-148" type="unknown" color="51,128,255" fill="0" layer="-1.00" shape="300.45,0.07 300.37,298.34 300.30,596.60"/>
+    <poi id="-10" type="unknown" color="51,128,255" layer="4.00" x="0.00" y="596.53"/>
+    <poi id="-11" type="unknown" color="51,128,255" layer="4.00" x="600.59" y="596.68"/>
+    <poi id="-138" type="unknown" color="51,128,255" layer="4.00" x="300.37" y="298.34"/>
+    <poi id="-141" type="unknown" color="51,128,255" layer="4.00" x="0.08" y="298.26"/>
+    <poi id="-144" type="unknown" color="51,128,255" layer="4.00" x="600.67" y="298.41"/>
+    <poi id="-147" type="unknown" color="51,128,255" layer="4.00" x="300.30" y="596.60"/>
+    <poi id="-150" type="unknown" color="51,128,255" layer="4.00" x="300.45" y="0.07"/>
+    <poi id="-16" type="unknown" color="51,128,255" layer="4.00" x="600.74" y="0.15"/>
+    <poi id="-18" type="unknown" color="51,128,255" layer="4.00" x="0.15" y="0.00"/>
+</additional>
