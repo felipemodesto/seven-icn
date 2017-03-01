@@ -157,8 +157,12 @@ else
     exit 1
   else
     PYTHON_PATH="$SUMO_HOME/tools"
-    RANDOM_TRIP_FILE=${PYTHON_PATH}"/trip/randomTrips.py"
-    ROUTE_TRIP_FILE=${PYTHON_PATH}"/trip/route2trips.py"
+    RANDOM_TRIP_FILE=${PYTHON_PATH}"/randomTrips.py"
+    ROUTE_TRIP_FILE=${PYTHON_PATH}"/route2trips.py"
+    SUMO_GUI="sumo-gui"
+    POLYCONVERT="polyconvert"
+    NETCONVERT="netconvert"
+    DUAROUTER="duarouter"
   fi
 fi
 
