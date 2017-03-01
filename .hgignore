@@ -1,0 +1,11 @@
+.csettings
+tmp
+out
+run
+out/gcc-debug
+out/gcc-release
+scenario/grid/results
+scenario/line/results
+scenario/ottawa/results
+scenario/unified/results
+scenario/unified/.tkenvlog
