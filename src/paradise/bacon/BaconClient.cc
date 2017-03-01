@@ -399,10 +399,7 @@ void BaconClient::startContentRequest() {
 
     //Copying data from currentRequest to our PendingRequest (I don't know an easier way to memcopy the object pointed by an iterator, please bear with me on this one
     PendingContent_t* pendingRequest = new PendingContent_t();
-    pendingRequest->contentClass = curRequest->contentClass;
-    pendingRequest->contentStatus = curRequest->contentStatus;
-    pendingRequest->contentPrefix = curRequest->contentPrefix;
-    pendingRequest->contentSize = -1;   //We don't necessarily know what the size of the content item is
+    pendingRequest->referenceObject = curRequest;
     pendingRequest->requestTime = simTime();
     pendingRequest->fullfillTime = SimTime::ZERO;   //We set it to zero so we know this can't have happened
     int messageID = library->getRequestIndex();
@@ -410,7 +407,7 @@ void BaconClient::startContentRequest() {
 
     //If by some weird reason we got a null object then we'll discard and try again later
     if (pendingRequest == NULL) {
-        std::cerr << "(Cl) Error: <" << myId << "> Generated broken Request for Object <" + pendingRequest->contentPrefix + ">";
+        std::cerr << "(Cl) Error: <" << myId << "> Generated broken Request for Object <" + pendingRequest->referenceObject->contentPrefix + ">";
         std::cerr .flush();
         return;
     }
@@ -431,17 +428,17 @@ void BaconClient::startContentRequest() {
 
     //Named Prefix for specific content
     cMsgPar* contentNameParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
-    contentNameParameter->setStringValue(pendingRequest->contentPrefix.c_str());
+    contentNameParameter->setStringValue(pendingRequest->referenceObject->contentPrefix.c_str());
     requestMessage->addPar(contentNameParameter);
 
     //Adding Priority for Content
     cMsgPar* priorityParameter = new cMsgPar(MessageParameter::PRIORITY.c_str());
-    priorityParameter->setLongValue(static_cast<int>(pendingRequest->priority));
+    priorityParameter->setLongValue(static_cast<int>(pendingRequest->referenceObject->priority));
     requestMessage->addPar(priorityParameter);
 
     //Adding Size for Content
     cMsgPar* sizeParameter = new cMsgPar(MessageParameter::SIZE.c_str());
-    sizeParameter->setLongValue(pendingRequest->contentSize);
+    sizeParameter->setLongValue(pendingRequest->referenceObject->contentSize);
     requestMessage->addPar(sizeParameter);
 
     //Adding User ID
@@ -470,7 +467,7 @@ void BaconClient::startContentRequest() {
     requestMessage->setSenderAddress(myId);
 
     //Logging the statistics about the content request about to be made
-    stats->logContentRequest(pendingRequest->contentPrefix);
+    stats->logContentRequest(pendingRequest->referenceObject->contentPrefix);
 
     //Sending request
     sendWSM(requestMessage);
@@ -546,7 +543,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
 
     //Searching for the request in our list of ongoing requests
     for (auto it = ongoingRequests.begin(); it != ongoingRequests.end();) {
-        if ( prefixString.compare((*it)->contentPrefix) == 0 && requestID == (*it)->pendingID ) {
+        if ( prefixString.compare((*it)->referenceObject->contentPrefix) == 0 && requestID == (*it)->pendingID ) {
             foundRequest = true;
             desiredRequest = *it;
 
@@ -561,7 +558,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
     if (!foundRequest) {
         for (auto it = backloggedRequests.begin(); it != backloggedRequests.end();) {
             //std::cerr << "\t<" << it->contentPrefix << ">.\n";
-            if (prefixString.compare((*it)->contentPrefix) == 0 && requestID == (*it)->pendingID) {
+            if (prefixString.compare((*it)->referenceObject->contentPrefix) == 0 && requestID == (*it)->pendingID) {
                 foundRequest = true;
                 desiredRequest = *it;
                 stats->increasedBackloggedResponses();
@@ -582,7 +579,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
     //If we haven't found the request in the backlog, the only locally available option is in the complete list
     if (!foundRequest) {
         for (auto it = completedRequests.begin(); it != completedRequests.end(); it++) {
-            if (prefixString.compare((*it)->contentPrefix) == 0 && requestID == (*it)->pendingID) {
+            if (prefixString.compare((*it)->referenceObject->contentPrefix) == 0 && requestID == (*it)->pendingID) {
                 //We should be fine here, as we have confirmed having received the content we don't care about its future
                 foundRequest = true;
                 desiredRequest = *it;
@@ -621,7 +618,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     double difDouble = difTime.dbl();
                     if (difTime <= requestTimeout) {
                         stats->addcompleteTransmissionDelay(difDouble);
-                        stats->increaseMessagesSent(desiredRequest->contentClass);
+                        stats->increaseMessagesSent(desiredRequest->referenceObject->contentClass);
                     }
                     //else {
                     //    std::cout << "(Cl) Warning: Stale Response with delay: <" << difDouble << ">\n";
@@ -643,7 +640,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     //std::cout << "?";
                     double difDouble = difTime.dbl();
                     stats->addincompleteTransmissionDelay(difDouble);
-                    stats->increaseMessagesUnserved(desiredRequest->contentClass);
+                    stats->increaseMessagesUnserved(desiredRequest->referenceObject->contentClass);
 
                     //Adding an incomplete transfer to our backlogged list for future tests
                     backloggedRequests.push_front(desiredRequest);
@@ -658,7 +655,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     //std::cout << "-";
                     //Adding an incomplete transfer to our backlogged list for future tests
                     backloggedRequests.push_front(desiredRequest);
-                    stats->increaseMessagesLost(desiredRequest->contentClass);
+                    stats->increaseMessagesLost(desiredRequest->referenceObject->contentClass);
 
                     double difDouble = difTime.dbl();
                     stats->addincompleteTransmissionDelay(difDouble);

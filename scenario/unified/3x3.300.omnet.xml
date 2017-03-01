@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<!-- debug config -->
-<launch>
-	<copy file="3x3.300.roads.xml"/>
-	<copy file="3x3.300.routes.xml"/>
-	<copy file="3x3.300.poly.xml"/>
-	<copy file="3x3.300.sumo.cfg" type="config"/>
-</launch>

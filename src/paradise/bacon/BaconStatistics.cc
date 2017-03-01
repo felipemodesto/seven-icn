@@ -29,6 +29,7 @@ void BaconStatistics::initialize(int stage) {
         contentPopularityStatisticsFile = par("contentNameStatisticsFile").stringValue();
         networkInstantLoadStatisticsFile = par("networkInstantLoadStatisticsFile").stringValue();
         networkAverageLoadStatisticsFile = par("networkAverageLoadStatisticsFile").stringValue();
+        generalStatisticsFile = par("generalStatisticsFile").stringValue();
 
         startStatistics();
     }
@@ -234,15 +235,6 @@ void BaconStatistics::startStatistics() {
 void BaconStatistics::stopStatistics() {
     if (hasStopped) return;
 
-    packetsSentHist.recordAs("PacketsSent");
-    packetsUnservedHist.recordAs("PacketsUnserved");
-    packetsLostHist.recordAs("PacketsLost");
-    chunksLostHist.recordAs("ChunksLost");
-    serverBusyHist.recordAs("ServerBusy");
-    contentUnavailableHist.recordAs("ContentUnavailable");
-    hopCountHist.recordAs("HopCount");
-    duplicateRequestHist.recordAs("DuplicateRequests");
-
     //If we're logging vehicle positions, we'll save a log csv file with our position matrix
     if (collectingPositions) {
         FILE * pFile;
@@ -267,24 +259,64 @@ void BaconStatistics::stopStatistics() {
         fclose(pFile);
     }
 
+    //Calculating Average Delays
+    totalTransmissionDelay = totalTransmissionDelay/(double)totalTransmissionCount;
+    completeTransmissionDelay += completeTransmissionDelay/(double)completeTransmissionCount;
+    incompleteTranmissionDelay += incompleteTranmissionDelay/(double)incompleteTransmissionCount;
 
-    //If we're logging vehicle positions, we'll save a log csv file with our position matrix
-    //if (recordingNetworkLoad) {
-        FILE * pFile;
-        pFile = fopen ( networkInstantLoadStatisticsFile, "w");
-        fprintf(pFile, "#time,id,load\n");
-        for(auto iterator = instantLoadList.begin(); iterator != instantLoadList.end(); iterator++) {
-            fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
-        }
-        fclose(pFile);
-        pFile = fopen ( networkAverageLoadStatisticsFile, "w");
-        fprintf(pFile, "#time,id,load\n");
-        for(auto iterator = averageLoadList.begin(); iterator != averageLoadList.end(); iterator++) {
-            fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
-        }
-        fclose(pFile);
-    //}
+    //Saving Network Load Statistics
+    FILE * pFile;
+    pFile = fopen ( networkInstantLoadStatisticsFile, "w");
+    fprintf(pFile, "#time,id,load\n");
+    for(auto iterator = instantLoadList.begin(); iterator != instantLoadList.end(); iterator++) {
+        fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
+    }
+    fclose(pFile);
+    pFile = fopen ( networkAverageLoadStatisticsFile, "w");
+    fprintf(pFile, "#time,id,load\n");
+    for(auto iterator = averageLoadList.begin(); iterator != averageLoadList.end(); iterator++) {
+        fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
+    }
+    fclose(pFile);
 
+    //Saving Communication statistics previously saved as scalar and vector files
+    pFile = fopen ( generalStatisticsFile, "w");
+    fprintf(pFile,"averageLatency,averageCompletedLatency,averageFailedLatency");
+    fprintf(pFile,"packetsSent,packetsForwarded,packetsUnserved,packetsLost,chunksLost,totalVehicles,activeVehicles,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements");
+
+    fprintf(pFile,"%f,%f,%f",totalTransmissionDelay,completeTransmissionDelay,incompleteTranmissionDelay);
+
+    fprintf(pFile,"%ld",packetsSent);
+    fprintf(pFile,"%ld",packetsForwarded);
+    fprintf(pFile,"%ld",packetsUnserved);
+    fprintf(pFile,"%ld",packetsLost);
+    fprintf(pFile,"%ld",chunksLost);
+    fprintf(pFile,"%ld",multimediaSentPackets);
+    fprintf(pFile,"%ld",multimediaUnservedPackets);
+    fprintf(pFile,"%ld",multimediaLostPackets);
+    fprintf(pFile,"%ld",multimediaLostChunks);
+    fprintf(pFile,"%ld",trafficSentPackets);
+    fprintf(pFile,"%ld",trafficUnservedPackets);
+    fprintf(pFile,"%ld",trafficLostPackets);
+    fprintf(pFile,"%ld",trafficLostChunks);
+    fprintf(pFile,"%ld",networkSentPackets);
+    fprintf(pFile,"%ld",networkUnservedPackets);
+    fprintf(pFile,"%ld",networkLostPackets);
+    fprintf(pFile,"%ld",networkLostChunks);
+    fprintf(pFile,"%ld",emergencySentPackets);
+    fprintf(pFile,"%ld",emergencyUnservedPackets);
+    fprintf(pFile,"%ld",emergencyLostPackets);
+    fprintf(pFile,"%ld",emergencyLostChunks);
+    fprintf(pFile,"%ld",localCacheHits);
+    fprintf(pFile,"%ld",remoteCacheHits);
+    fprintf(pFile,"%ld",localCacheMisses);
+    fprintf(pFile,"%ld",remoteCacheMisses);
+    fprintf(pFile,"%ld",cacheReplacements);
+
+    fclose(pFile);
+
+    //I have since decided not to record statistics using the stuff provided by omnet, it takes too much space.
+    /*
     //Recording Scalar Variables
     recordScalar("packetsSent",packetsSent);
     recordScalar("packetsForwarded",packetsForwarded);
@@ -317,7 +349,18 @@ void BaconStatistics::stopStatistics() {
     recordScalar("localCacheMisses",localCacheMisses);
     recordScalar("remoteCacheMisses",remoteCacheMisses);
     recordScalar("cacheReplacements",cacheReplacements);
-
+    //
+    //
+    //Recording Histograms
+    packetsSentHist.recordAs("PacketsSent");
+    packetsUnservedHist.recordAs("PacketsUnserved");
+    packetsLostHist.recordAs("PacketsLost");
+    chunksLostHist.recordAs("ChunksLost");
+    serverBusyHist.recordAs("ServerBusy");
+    contentUnavailableHist.recordAs("ContentUnavailable");
+    hopCountHist.recordAs("HopCount");
+    duplicateRequestHist.recordAs("DuplicateRequests");
+    */
 
     hasStopped = true;
 
@@ -790,8 +833,7 @@ void BaconStatistics::logInstantLoad(int node, double load) {
 void BaconStatistics::logAverageLoad(int node, double load) {
     if (!shouldRecordData()) return;
     LoadAtTime_t newLoad;
-    //if (load < 0) load = 0;
-    //if (load > 1) load = 1;
+
     newLoad.loadValue = load;
     newLoad.vehicleId = node;
     newLoad.simTime = simTime();
@@ -800,12 +842,22 @@ void BaconStatistics::logAverageLoad(int node, double load) {
 
 void BaconStatistics::addcompleteTransmissionDelay(double delay) {
     if (!shouldRecordData()) return;
+
+    totalTransmissionCount++;
+    completeTransmissionCount++;
+    totalTransmissionDelay += delay;
+    completeTransmissionDelay += delay;
     completeTranmissionDelayVect.record(delay);
     overallTranmissionDelayVect.record(delay);
 }
 
 void BaconStatistics::addincompleteTransmissionDelay(double delay) {
     if (!shouldRecordData()) return;
+
+    totalTransmissionCount++;
+    incompleteTransmissionCount++;
+    totalTransmissionDelay += delay;
+    incompleteTranmissionDelay += delay;
     incompleteTranmissionDelayVect.record(delay);
     overallTranmissionDelayVect.record(delay);
 }

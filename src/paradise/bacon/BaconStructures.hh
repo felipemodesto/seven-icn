@@ -179,19 +179,26 @@ struct NetworkPacket_t {
 
 //Information Structure that contains the "description" of a piece of content
 struct Content_t {
+    std::string contentPrefix;              //String name representation of content prefix
     ContentClass contentClass;              //Type of Content
-    ContentStatus contentStatus;            //Status of Content
     ContentPriority priority;               //Content Class Specific Ranking (1 = top rank, highest probability)
     long popularityRanking;                 //Content Popularity
     long contentSize;                       //Content Size in Bytes
-    long useCount;                          //Number of times content was "requested" while in a Library
-    std::string contentPrefix;              //String name representation of content prefix
+    //long useCount;                          //Number of times content was "requested" while in a Library
+    //simtime_t lastAccessTime;               //Time in which object was obtained
+    //ContentStatus contentStatus;            //Status of Content
+};
+
+struct CachedContent_t {
+    Content_t* referenceObject;
     simtime_t lastAccessTime;               //Time in which object was obtained
+    long useCount;                          //Number of times content was "requested" while in a Library
+    ContentStatus contentStatus;            //Status of Content
     //simtime_t expireTime;                 //Time in which object will become Stale
 };
 
 //Variation of a general content object used by Clients to track status of object requests
-struct PendingContent_t : Content_t {
+struct PendingContent_t : CachedContent_t {
     int pendingID;                          //ID for pending request
     simtime_t requestTime;                  //Time in which content was requested
     simtime_t fullfillTime;                 //Time in which content was fulfilled

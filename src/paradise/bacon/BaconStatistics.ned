@@ -35,4 +35,5 @@ simple BaconStatistics {
 		string contentNameStatisticsFile  = default("library.csv");
 		string networkInstantLoadStatisticsFile  = default("instantLoad.csv");
 		string networkAverageLoadStatisticsFile  = default("windowLoad.csv");
+		string generalStatisticsFile = default("generalStatistics.csv");
 }

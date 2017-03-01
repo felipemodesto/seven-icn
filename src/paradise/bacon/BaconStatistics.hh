@@ -37,44 +37,53 @@ protected:
     bool collectingRequestNames;
 
     //Data Packet Related Statistics
-    int packetsSent;
-    int packetsForwarded;
-    int packetsUnserved;
-    int packetsLost;
-    int chunksLost;
-    int totalVehicles;
-    int activeVehicles;
-    int multimediaSentPackets;
-    int multimediaUnservedPackets;
-    int multimediaLostPackets;
-    int multimediaLostChunks;
-    int trafficSentPackets;
-    int trafficUnservedPackets;
-    int trafficLostPackets;
-    int trafficLostChunks;
-    int networkSentPackets;
-    int networkUnservedPackets;
-    int networkLostPackets;
-    int networkLostChunks;
-    int emergencySentPackets;
-    int emergencyUnservedPackets;
-    int emergencyLostPackets;
-    int emergencyLostChunks;
+    long int packetsSent;
+    long int packetsForwarded;
+    long int packetsUnserved;
+    long int packetsLost;
+    long int chunksLost;
+    long int totalVehicles;
+    long int activeVehicles;
+    long int multimediaSentPackets;
+    long int multimediaUnservedPackets;
+    long int multimediaLostPackets;
+    long int multimediaLostChunks;
+    long int trafficSentPackets;
+    long int trafficUnservedPackets;
+    long int trafficLostPackets;
+    long int trafficLostChunks;
+    long int networkSentPackets;
+    long int networkUnservedPackets;
+    long int networkLostPackets;
+    long int networkLostChunks;
+    long int emergencySentPackets;
+    long int emergencyUnservedPackets;
+    long int emergencyLostPackets;
+    long int emergencyLostChunks;
 
     //Caching statistics
-    int localCacheLateHits; //PIT RELATED LOCAL HITS
-    int localCacheHits;
-    int remoteCacheHits;
-    int localCacheMisses;
-    int remoteCacheMisses;
-    int cacheReplacements;
+    long int localCacheLateHits; //PIT RELATED LOCAL HITS
+    long int localCacheHits;
+    long int remoteCacheHits;
+    long int localCacheMisses;
+    long int remoteCacheMisses;
+    long int cacheReplacements;
 
-    int serverCacheHits;
-    int backloggedResponses;
+    long int serverCacheHits;
+    long int backloggedResponses;
 
-    int createdInterests;
-    int registeredInterests;
-    int fulfilledInterests;
+    long int createdInterests;
+    long int registeredInterests;
+    long int fulfilledInterests;
+
+    //Latency related results.
+    //Note: Technically because the values are low, we shouldn't extrapolate the upperbound of the variables but lets keep this in mind
+    long int totalTransmissionCount;
+    long int completeTransmissionCount;
+    long int incompleteTransmissionCount;
+    double totalTransmissionDelay;
+    double completeTransmissionDelay;
+    double incompleteTranmissionDelay;
 
     std::map<std::string,int> locationMap;
     std::map<std::string,int> contentRequestMap;
@@ -90,21 +99,17 @@ protected:
     const char * contentPopularityStatisticsFile;
     const char * networkInstantLoadStatisticsFile;
     const char * networkAverageLoadStatisticsFile;
+    const char * generalStatisticsFile;
 
     omnetpp::cLongHistogram packetsSentHist;
     omnetpp::cLongHistogram packetsForwardedHist;
     omnetpp::cLongHistogram packetsUnservedHist;
     omnetpp::cLongHistogram packetsLostHist;
     omnetpp::cLongHistogram chunksLostHist;
-
     omnetpp::cLongHistogram serverBusyHist;
-
     omnetpp::cLongHistogram contentUnavailableHist;
-
     omnetpp::cLongHistogram hopCountHist;
-
     omnetpp::cLongHistogram duplicateRequestHist;
-
     omnetpp::cLongHistogram requestsPerConnectionHist;
 
     omnetpp::cOutVector serverHitVect;

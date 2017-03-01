@@ -143,10 +143,10 @@ std::vector<double> BaconLibrary::buildCategoryLibrary(int count, int byteSize, 
         newContent.popularityRanking = j+1;         //Used as shorthand to the ranking of the object in its relative popularity queue
         newContent.contentClass = category;
         newContent.contentSize = byteSize;
-        newContent.contentStatus = ContentStatus::AVAILABLE;
+        //newContent.contentStatus = ContentStatus::AVAILABLE;
         newContent.contentPrefix = classPrefix + "/" + std::to_string(j+1);
-        newContent.useCount = 0;
-        newContent.lastAccessTime = 0;
+        //newContent.useCount = 0;
+        //newContent.lastAccessTime = 0;
 
         newLibrary->push_back(newContent);
 

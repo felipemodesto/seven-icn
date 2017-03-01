@@ -51,7 +51,7 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         int contentExchangeIn;          // from Content Manager
         int contentExchangeOut;         // to Content Manager
 
-        std::list<Content_t>* contentLibrary;
+        std::list<CachedContent_t>* contentLibrary;
         int librarySize;
 
         CacheReplacementPolicy cachePolicy;

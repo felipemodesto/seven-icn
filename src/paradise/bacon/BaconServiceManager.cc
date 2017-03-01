@@ -1083,7 +1083,6 @@ void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
         return;
     }
 
-    //TODO: (EVALUATE) This probably causes crashes, right?
     delete(wsm);
 }
 

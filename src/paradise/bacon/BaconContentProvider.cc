@@ -79,7 +79,7 @@ void BaconContentProvider::runCacheReplacement(){
                 int currentIndex = 0;
                 for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
                     if (currentIndex == removableIndex) {
-                        std::string itemName = it->contentPrefix;
+                        std::string itemName = it->referenceObject->contentPrefix;
 
                         //EV << "(CP) Removing Item <" << itemName << "> from Cache.\n";
                         //EV.flush();
@@ -133,7 +133,7 @@ void BaconContentProvider::runCacheReplacement(){
                             if ( (foundRemoval == false) &&
                                  (sameTimeCount == 1 || uniform(0,1) < individualProbability)) {
                                 foundRemoval = true;
-                                std::string itemName = it->contentPrefix;
+                                std::string itemName = it->referenceObject->contentPrefix;
 
                                 //std::cout << "(CP) <" << myId << "> Removing Item <" << it->contentPrefix << "> from Cache with Use Count <" << it->useCount << ">\t last access <" << it->lastAccessTime << ">.\n";
                                 //std::cout.flush();
@@ -211,14 +211,14 @@ void BaconContentProvider::runCacheReplacement(){
                 int largestRanking = 0;
                 //std::list<Content_t>::iterator contentPointer;
                 for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
-                    if (it->popularityRanking >= largestRanking) {
-                        largestRanking = it->popularityRanking;
+                    if (it->referenceObject->popularityRanking >= largestRanking) {
+                        largestRanking = it->referenceObject->popularityRanking;
                     }
                 }
 
                 //TODO: (REVIEW) This is inneficient and I should rewrite for a single-loop
                 for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
-                if (it->popularityRanking == largestRanking) {
+                if (it->referenceObject->popularityRanking == largestRanking) {
                         //std::cout <<  "(CP) Removing item <" << it->contentPrefix << "> with Popularity : <" << to_string(it->popularityRanking) << ">\n";
                         //std::cout.flush();
 
@@ -263,7 +263,7 @@ void BaconContentProvider::addContentToLibrary(Content_t* contentObject) {
     if (simTime() >= stats->getStartTime()) {
         //Looking for item in content library
         for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
-            if (it->contentPrefix.compare(contentObject->contentPrefix) == 0) {
+            if (it->referenceObject->contentPrefix.compare(contentObject->contentPrefix) == 0) {
                 //std::cout << "(CP) <" << myId << "> Already has " << contentObject->contentPrefix << " in local Library.\n";
                 //std::cout.flush();
                 //increaseUseCount(contentObject->contentPrefix);
@@ -285,12 +285,9 @@ void BaconContentProvider::addContentToLibrary(Content_t* contentObject) {
     //newContent.contentPopularity = contentObject->contentPopularity;
     //newContent.contentPriority =  contentObject->contentPriority;
 
-    Content_t newContent;
-    newContent.contentClass = contentObject->contentClass;
-    newContent.contentSize = contentObject->contentSize;
+    CachedContent_t newContent;
+    newContent.referenceObject = contentObject;
     newContent.contentStatus = ContentStatus::AVAILABLE;
-    newContent.popularityRanking = contentObject->popularityRanking;
-    newContent.contentPrefix = contentObject->contentPrefix;
     newContent.lastAccessTime = simTime();
     newContent.useCount = 0;
     //newContent.expireTime = SIMTIME_S;
@@ -322,8 +319,8 @@ void BaconContentProvider::removeContentFromLibrary(Content_t* newContent) {
 
     //Searching for content
     for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
-        if (newContent->contentPrefix.compare(it->contentPrefix) == 0) {
-            std::cout << "(CP) <" << myId << "> Removing Item <" << it->contentPrefix << "> from Cache with Use Count <" << it->useCount << ">.\n";
+        if (newContent->contentPrefix.compare(it->referenceObject->contentPrefix) == 0) {
+            std::cout << "(CP) <" << myId << "> Removing Item <" << it->referenceObject->contentPrefix << "> from Cache with Use Count <" << it->useCount << ">.\n";
             std::cout.flush();
             it = contentLibrary->erase(it);
             librarySize--;
@@ -339,7 +336,7 @@ void BaconContentProvider::removeContentFromLibrary(Content_t* newContent) {
 void BaconContentProvider::buildContentLibrary() {
     //Building Content Database
     if (contentLibrary != NULL) return;
-    contentLibrary = new std::list<Content_t>();
+    contentLibrary = new std::list<CachedContent_t>();
 
     //std::cout << "<" << myId << "> Building Library <" << startingCache << ">.\n";
     //std::cout.flush();
@@ -444,7 +441,7 @@ void BaconContentProvider::increaseUseCount(int addedUses, std::string prefix) {
 
     //Looking for Item
     for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
-        if (prefix.compare(it->contentPrefix) == 0) {
+        if (prefix.compare(it->referenceObject->contentPrefix) == 0) {
             it->useCount += addedUses;
             it->lastAccessTime = simTime();
             return;
@@ -468,7 +465,7 @@ int BaconContentProvider::getUseCount(std::string prefix) {
 
     //Looking for Item
     for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
-        if (prefix.compare(it->contentPrefix) == 0) {
+        if (prefix.compare(it->referenceObject->contentPrefix) == 0) {
             return it->useCount;
         }
     }
@@ -509,10 +506,10 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
 
     //Looking for item in content library
     for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
-        int comparison = it->contentPrefix.compare(lookupValue);
+        int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
 
         if (comparison == 0) {
-             if (it->contentClass == ContentClass::GPS_DATA) {
+             if (it->referenceObject->contentClass == ContentClass::GPS_DATA) {
                  //TODO: (IMPLEMENT) If working with TRAFFIC information, we'll require coordinate values to be part of the name... so deal with this in the future :D
                  /*
                  cMsgPar* requestLocation = static_cast<cMsgPar*>(parArray.get(MessageParameter::COORDINATES.c_str()));
