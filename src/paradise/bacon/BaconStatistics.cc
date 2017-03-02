@@ -22,6 +22,7 @@ void BaconStatistics::initialize(int stage) {
         collectingStatistics = par("collectingStatistics").boolValue();
         collectingRequestNames = par("collectingRequestNames").boolValue();
         collectingPositions = par("collectingPositions").boolValue();
+        collectingLoad = par("collectingLoad").boolValue();
         statisticsStartTime = par("statisticsStartTime").doubleValue();
         statisticsStopTime = par("statisticsStopTime").doubleValue();
 
@@ -235,9 +236,13 @@ void BaconStatistics::startStatistics() {
 void BaconStatistics::stopStatistics() {
     if (hasStopped) return;
 
+    std::cout << "(St) Logging statistics, saving files.\n";
+    std::cout.flush();
+
+    FILE * pFile;
+
     //If we're logging vehicle positions, we'll save a log csv file with our position matrix
     if (collectingPositions) {
-        FILE * pFile;
         pFile = fopen ( locationStatisticsFile, "w");
         fprintf(pFile, "X,Y,Count\n");
         for(auto iterator = locationMap.begin(); iterator != locationMap.end(); iterator++) {
@@ -248,7 +253,6 @@ void BaconStatistics::stopStatistics() {
 
     //If we're logging vehicle positions, we'll save a log csv file with our position matrix
     if (collectingRequestNames) {
-        FILE * pFile;
         pFile = fopen ( contentPopularityStatisticsFile, "w");
         fprintf(pFile, "#name,requests\n");
         for(auto iterator = contentRequestMap.begin(); iterator != contentRequestMap.end(); iterator++) {
@@ -265,53 +269,53 @@ void BaconStatistics::stopStatistics() {
     incompleteTranmissionDelay += incompleteTranmissionDelay/(double)incompleteTransmissionCount;
 
     //Saving Network Load Statistics
-    FILE * pFile;
-    pFile = fopen ( networkInstantLoadStatisticsFile, "w");
-    fprintf(pFile, "#time,id,load\n");
-    for(auto iterator = instantLoadList.begin(); iterator != instantLoadList.end(); iterator++) {
-        fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
+    if (collectingLoad) {
+        pFile = fopen ( networkInstantLoadStatisticsFile, "w");
+        fprintf(pFile, "#time,id,load\n");
+        for(auto iterator = instantLoadList.begin(); iterator != instantLoadList.end(); iterator++) {
+            fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
+        }
+        fclose(pFile);
+        pFile = fopen ( networkAverageLoadStatisticsFile, "w");
+        fprintf(pFile, "#time,id,load\n");
+        for(auto iterator = averageLoadList.begin(); iterator != averageLoadList.end(); iterator++) {
+            fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
+        }
+        fclose(pFile);
     }
-    fclose(pFile);
-    pFile = fopen ( networkAverageLoadStatisticsFile, "w");
-    fprintf(pFile, "#time,id,load\n");
-    for(auto iterator = averageLoadList.begin(); iterator != averageLoadList.end(); iterator++) {
-        fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
-    }
-    fclose(pFile);
 
     //Saving Communication statistics previously saved as scalar and vector files
     pFile = fopen ( generalStatisticsFile, "w");
-    fprintf(pFile,"averageLatency,averageCompletedLatency,averageFailedLatency");
-    fprintf(pFile,"packetsSent,packetsForwarded,packetsUnserved,packetsLost,chunksLost,totalVehicles,activeVehicles,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements");
+    fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency,packetsSent,packetsForwarded,packetsUnserved,packetsLost,chunksLost,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements\n");
 
     fprintf(pFile,"%f,%f,%f",totalTransmissionDelay,completeTransmissionDelay,incompleteTranmissionDelay);
 
-    fprintf(pFile,"%ld",packetsSent);
-    fprintf(pFile,"%ld",packetsForwarded);
-    fprintf(pFile,"%ld",packetsUnserved);
-    fprintf(pFile,"%ld",packetsLost);
-    fprintf(pFile,"%ld",chunksLost);
-    fprintf(pFile,"%ld",multimediaSentPackets);
-    fprintf(pFile,"%ld",multimediaUnservedPackets);
-    fprintf(pFile,"%ld",multimediaLostPackets);
-    fprintf(pFile,"%ld",multimediaLostChunks);
-    fprintf(pFile,"%ld",trafficSentPackets);
-    fprintf(pFile,"%ld",trafficUnservedPackets);
-    fprintf(pFile,"%ld",trafficLostPackets);
-    fprintf(pFile,"%ld",trafficLostChunks);
-    fprintf(pFile,"%ld",networkSentPackets);
-    fprintf(pFile,"%ld",networkUnservedPackets);
-    fprintf(pFile,"%ld",networkLostPackets);
-    fprintf(pFile,"%ld",networkLostChunks);
-    fprintf(pFile,"%ld",emergencySentPackets);
-    fprintf(pFile,"%ld",emergencyUnservedPackets);
-    fprintf(pFile,"%ld",emergencyLostPackets);
-    fprintf(pFile,"%ld",emergencyLostChunks);
-    fprintf(pFile,"%ld",localCacheHits);
-    fprintf(pFile,"%ld",remoteCacheHits);
-    fprintf(pFile,"%ld",localCacheMisses);
-    fprintf(pFile,"%ld",remoteCacheMisses);
-    fprintf(pFile,"%ld",cacheReplacements);
+    fprintf(pFile,",%ld",packetsSent);
+    fprintf(pFile,",%ld",packetsForwarded);
+    fprintf(pFile,",%ld",packetsUnserved);
+    fprintf(pFile,",%ld",packetsLost);
+    fprintf(pFile,",%ld",chunksLost);
+    fprintf(pFile,",%ld",multimediaSentPackets);
+    fprintf(pFile,",%ld",multimediaUnservedPackets);
+    fprintf(pFile,",%ld",multimediaLostPackets);
+    fprintf(pFile,",%ld",multimediaLostChunks);
+    fprintf(pFile,",%ld",trafficSentPackets);
+    fprintf(pFile,",%ld",trafficUnservedPackets);
+    fprintf(pFile,",%ld",trafficLostPackets);
+    fprintf(pFile,",%ld",trafficLostChunks);
+    fprintf(pFile,",%ld",networkSentPackets);
+    fprintf(pFile,",%ld",networkUnservedPackets);
+    fprintf(pFile,",%ld",networkLostPackets);
+    fprintf(pFile,",%ld",networkLostChunks);
+    fprintf(pFile,",%ld",emergencySentPackets);
+    fprintf(pFile,",%ld",emergencyUnservedPackets);
+    fprintf(pFile,",%ld",emergencyLostPackets);
+    fprintf(pFile,",%ld",emergencyLostChunks);
+    fprintf(pFile,",%ld",localCacheHits);
+    fprintf(pFile,",%ld",remoteCacheHits);
+    fprintf(pFile,",%ld",localCacheMisses);
+    fprintf(pFile,",%ld",remoteCacheMisses);
+    fprintf(pFile,",%ld",cacheReplacements);
 
     fclose(pFile);
 
@@ -364,8 +368,8 @@ void BaconStatistics::stopStatistics() {
 
     hasStopped = true;
 
-    //std::cout << "(St) STATISTICS COLLECTION IS DONE!\n";
-    //std::cout.flush();
+    std::cout << "\t\\--> (St) STATISTICS COLLECTION IS DONE!\n";
+    std::cout.flush();
 
 }
 

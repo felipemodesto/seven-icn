@@ -35,6 +35,7 @@ protected:
     bool collectingStatistics;
     bool collectingPositions;
     bool collectingRequestNames;
+    bool collectingLoad;
 
     //Data Packet Related Statistics
     long int packetsSent;

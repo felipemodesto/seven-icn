@@ -73,6 +73,7 @@ else
 fi
 
 # Based on the input map file.
+CLEAN_NAME=$(basename ${OSM_FILE} .osm | tr ' ' _)
 SCENARIO_NAME=$(basename ${OSM_FILE} .osm | tr ' ' _)".${NUMBER_OF_TRIPS}"
 
 
@@ -97,20 +98,19 @@ FRINGE_FACTOR=1      #PROPORTION OF TRIPS THAT START IN AN EDGE/LEAF
 
 #NUMBER_OF_TRIPS=20    	#MAXIMUM NUMBER OF VEHICLES AT THE SAME TIME
 SIMULATION_LENGTH=1600 	#SIMULATION LENGTH
-MIN_TRIP_LENGTH=0     	#MINIMUM STRAIGHT LINE DISTANCE
+MIN_TRIP_LENGTH=500    	#MINIMUM STRAIGHT LINE DISTANCE IN METERS BETWEEN START AND END
 MIN_EDGES=30      		#MINIMUM NUMBER OF EDGES VEHICLE HAS TO TRAVEL
 TIME_STEP=0.1      		#SIMULATION TIMESTEP
 INTER_VEHICLE_SPAWN_PERIOD=0.1
 VEHICLE_SPAWN_START_TIME=0
 
 OSM_CLEAN_FILE=${SCENARIO_NAME}".clean.osm"
-NET_FILE=${SCENARIO_NAME}".roads.xml"
+NET_FILE=${SCENARIO_NAME}".net.xml"
 ROUTE_FILE=${SCENARIO_NAME}".routes.xml"
 OVERLAY_FILE=${SCENARIO_NAME}".poly.xml"
 
 SUMO_CONFIG_FILE=${SCENARIO_NAME}".sumo.cfg"
 OMNET_CONFIG_FILE=${SCENARIO_NAME}".omnet.xml"
-#LAUNCHD_CONFIG_FILE=${SCENARIO_NAME}".launchd.xml"
 
 TRIP_CONFIG_FILE=${SCENARIO_NAME}".randomTrips.xml"
 OUTPUT_TRIP_FILE=${SCENARIO_NAME}".trips.xml"
@@ -208,7 +208,7 @@ echo " \\--> done.\n"
 
 #### Convert OSM to SUMO Map:
 printf "Creating Road Network XML File From OSM...\n"
-${NETCONVERT} --osm-files ${OSM_CLEAN_FILE} --tls.guess-signals --remove-edges.by-vclass ${EXCLUDED_VEHICLE_CLASSES} --geometry.remove --tls.join --remove-edges.isolated --no-turnarounds -o ${NET_FILE}
+${NETCONVERT} -c netconvertConfiguration.xsd --osm-files ${OSM_CLEAN_FILE} --tls.guess-signals --remove-edges.by-vclass ${EXCLUDED_VEHICLE_CLASSES} --geometry.remove true --tls.join true --tls.guess true --remove-edges.isolated true --no-turnarounds true --no-turnarounds.tls true -o ${NET_FILE} --verbose true
 printf " \\--> done.\n"
 
 
@@ -221,7 +221,7 @@ printf " \\--> done.\n"
 #### Running SUMO's python script that generates random trips
 #### (-r ==  Random Trips, -s == Random Seed, -e == EndTime, -l == Weight Edge Probability)
 printf "Generating Random Trips for Road Network XML File...\n"
-python2 ${RANDOM_TRIP_FILE} -n ${NET_FILE}  --r ${ROUTE_FILE} -a ${TRIP_CONFIG_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --period ${INTER_VEHICLE_SPAWN_PERIOD} --min-distance ${MIN_TRIP_LENGTH} --fringe-factor ${FRINGE_FACTOR} --intermediate ${MIN_EDGES} -l --trip-attributes="departSpeed=\"max\"  departPos=\"random\"" -o ${OUTPUT_TRIP_FILE}
+python2 ${RANDOM_TRIP_FILE} -n ${NET_FILE}  --r ${ROUTE_FILE} -a ${TRIP_CONFIG_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --period ${INTER_VEHICLE_SPAWN_PERIOD} --min-distance ${MIN_TRIP_LENGTH} --fringe-factor ${FRINGE_FACTOR} -L --intermediate ${MIN_EDGES} -l --trip-attributes="departSpeed=\"max\"  departPos=\"random\"" -o ${OUTPUT_TRIP_FILE} --weights-prefix ${CLEAN_NAME} # --weights-output-prefix ${SCENARIO_NAME}
 #python2 ${RANDOM_TRIP_FILE} -n ${NET_FILE} -a ${TRIP_CONFIG_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --period ${INTER_VEHICLE_SPAWN_PERIOD} --min-distance ${MIN_TRIP_LENGTH} --fringe-factor ${FRINGE_FACTOR} --intermediate ${MIN_EDGES} -l --trip-attributes="departSpeed=\"max\"  departPos=\"random\"" -o ${OUTPUT_TRIP_FILE}
 printf " \\--> done.\n"
 
@@ -244,8 +244,8 @@ cat > ${SUMO_CONFIG_FILE} << EOF
     <end value="${SIMULATION_LENGTH}"/>
     <step-length value="${TIME_STEP}"/>
   </time>
-  <time-to-teleport value="450"/>
-  <time-to-teleport.highways value="50"/>
+  <time-to-teleport value="50"/>
+  <time-to-teleport.highways value="25"/>
   <gui_only>
     <start value="true"/>
   </gui_only>
@@ -274,10 +274,11 @@ EOF
 
 #### Removing Redundant clean osm file now that we are done
 rm ${OSM_CLEAN_FILE}
+#${PYTHON_PATH}"/showDepartsAndArrivalsPerEdge.py" "${ROUTE_FILE}" --output-file "${SCENARIO_NAME}.results.xml"
 
 #### Run SUMO-GUI
-#printf "Opening Simulation Scenario in SUMO GUI..."
-#${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false -S true &
+printf "Opening Simulation Scenario in SUMO GUI... with ${SCENARIO_NAME}"
+${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false -S true --weight-files "${CLEAN_NAME}.via.xml" --weight-attribute via &
 #printf " \\--> done.\n"
 
 # vim:set ts=2 sw=2 et:
