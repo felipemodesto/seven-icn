@@ -29,6 +29,7 @@ simple BaconStatistics {
         bool collectingStatistics = default(true);
         bool collectingPositions = default(false);
         bool collectingRequestNames = default(false);
+        bool collectingLoad = default(false);
 		double statisticsStartTime  = default(0); 		//First Time Stamp before statistics data is collected
 		double statisticsStopTime  = default(100); 		//Final moment until which statistics are collected
 		string locationStatisticsFile  = default("heatmap.csv");
