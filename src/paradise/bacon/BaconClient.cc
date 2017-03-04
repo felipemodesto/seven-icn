@@ -161,8 +161,8 @@ void BaconClient::finish() {
     }
 
     //Log Good, Bad and Unserved Requests
-    std::cout << "(Cl) Stats for <" << myId << "> (" << GoodReplyRequests << "-" << BadReplyRequests << "-" << NoReplyRequests << ")\n";
-    std::cout.flush();
+    //std::cout << "(Cl) Stats for <" << myId << "> (" << GoodReplyRequests << "-" << BadReplyRequests << "-" << NoReplyRequests << ")\n";
+    //std::cout.flush();
 }
 
 /*/

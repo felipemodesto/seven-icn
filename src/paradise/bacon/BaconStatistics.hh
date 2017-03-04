@@ -198,8 +198,8 @@ public:
 
     void increaseServerCacheHits();
 
-    void increaseActiveVehicles();              //Increase the number of active Vehicles by 1 (new vehicle spawned)
-    void decreaseActiveVehicles();              //Decrease the number of active Vehicles by 1 (vehicle "deleted" / journey complete)
+    void increaseActiveVehicles(int vehicleId); //Increase the number of active Vehicles by 1 (new vehicle spawned)
+    void decreaseActiveVehicles(int vehicleId); //Decrease the number of active Vehicles by 1 (vehicle "deleted" / journey complete)
 
     void increaseMessagesSent(ContentClass cClass);
     void increaseMultimediaMessagesSent();

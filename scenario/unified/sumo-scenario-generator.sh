@@ -53,7 +53,7 @@ ROUTE_TRIP_FILE=$(which route2trips.py)
 if [[ -n "${1}" ]]; then
   OSM_FILE="${1}"
 else
-  OSM_FILE="map.osm"
+  OSM_FILE="ottawa.osm"
 fi
 
 if [[ ! -e "${OSM_FILE}" ]]; then
@@ -104,10 +104,13 @@ TIME_STEP=0.1      		#SIMULATION TIMESTEP
 INTER_VEHICLE_SPAWN_PERIOD=0.1
 VEHICLE_SPAWN_START_TIME=0
 
-OSM_CLEAN_FILE=${SCENARIO_NAME}".clean.osm"
-NET_FILE=${SCENARIO_NAME}".net.xml"
 ROUTE_FILE=${SCENARIO_NAME}".routes.xml"
-OVERLAY_FILE=${SCENARIO_NAME}".poly.xml"
+
+#These files are not really dependent on the scenario configuration and can be shared
+OSM_CLEAN_FILE=${CLEAN_NAME}".clean.osm"
+NET_FILE=${CLEAN_NAME}".net.xml"
+OVERLAY_FILE=${CLEAN_NAME}".poly.xml"
+REROUTE_FILE=${CLEAN_NAME}".reroute.xml"
 
 SUMO_CONFIG_FILE=${SCENARIO_NAME}".sumo.cfg"
 OMNET_CONFIG_FILE=${SCENARIO_NAME}".omnet.xml"
@@ -185,21 +188,20 @@ printf "  \\--> Vehicle Instantiation period is [$VEHICLE_SPAWN_START_TIME ; $VE
 #exit
 
 # Not actually cleaning the document for now, so let's just copy it to the clean file position, keeping the original safe
-cp ${OSM_FILE} ${OSM_CLEAN_FILE}
+#cp ${OSM_FILE} ${OSM_CLEAN_FILE}
 
 #### Cleaning File
 #### REMOVING ALL NAME VARIATIONS! name:xx (NON ASCII MESSED UP TEXT)
-printf "Removing utf8-extension characters from name fields...\n"
-while read -r line; do
-  [[ ! ${line} = *"name:"* ]] && echo "${line}"
-done < ${OSM_FILE} > ${OSM_CLEAN_FILE}
-printf " \\--> done.\n"
+#printf "Removing utf8-extension characters from name fields...\n"
+#while read -r line; do
+#  [[ ! ${line} = *"name:"* ]] && echo "${line}"
+#done < ${OSM_FILE} > ${OSM_CLEAN_FILE}
+#printf " \\--> done.\n"
 
 
 #### Building the restriction document for the random trip python script
 #### (This is not really being used, but in theory is passed as an argument to the RandomTrips script)
-printf "Writing Restriction Class Document...\n"
-#echo "<?xml version=\"1.0\"?>" > $TRIP_CONFIG_FILE
+#printf "Writing Restriction Class Document...\n"
 echo "<additional>" > ${TRIP_CONFIG_FILE}
 echo "  <vType id=\"myType\" maxSpeed=\"27\" vClass=\"passenger\"/>" >> ${TRIP_CONFIG_FILE}
 echo "</additional>" >> ${TRIP_CONFIG_FILE}
@@ -207,22 +209,21 @@ echo " \\--> done.\n"
 
 
 #### Convert OSM to SUMO Map:
-printf "Creating Road Network XML File From OSM...\n"
-${NETCONVERT} -c netconvertConfiguration.xsd --osm-files ${OSM_CLEAN_FILE} --tls.guess-signals --remove-edges.by-vclass ${EXCLUDED_VEHICLE_CLASSES} --geometry.remove true --tls.join true --tls.guess true --remove-edges.isolated true --no-turnarounds true --no-turnarounds.tls true -o ${NET_FILE} --verbose true
-printf " \\--> done.\n"
+#printf "Creating Road Network XML File From OSM...\n"
+#${NETCONVERT} -c netconvertConfiguration.xsd --osm-files ${OSM_CLEAN_FILE} --tls.guess-signals --remove-edges.by-vclass ${EXCLUDED_VEHICLE_CLASSES} --geometry.remove true --tls.join true --tls.guess true --remove-edges.isolated true --no-turnarounds true --no-turnarounds.tls true -o ${NET_FILE} --verbose true
+#printf " \\--> done.\n"
 
 
 #### ADD Polygon Features to Map (copy typemap.xml file from somewhere, possibly Wiki if you don't have one)
-printf "Creating Feature Map XML File From OSM...\n"
-${POLYCONVERT} --net-file ${NET_FILE} --osm-files ${OSM_CLEAN_FILE} --ignore-errors true --type-file typemap.xml -o ${OVERLAY_FILE}
-printf " \\--> done.\n"
+#printf "Creating Feature Map XML File From OSM...\n"
+#${POLYCONVERT} --net-file ${NET_FILE} --osm-files ${OSM_CLEAN_FILE} --ignore-errors true --type-file typemap.xml -o ${OVERLAY_FILE}
+#printf " \\--> done.\n"
 
 
 #### Running SUMO's python script that generates random trips
 #### (-r ==  Random Trips, -s == Random Seed, -e == EndTime, -l == Weight Edge Probability)
 printf "Generating Random Trips for Road Network XML File...\n"
-python2 ${RANDOM_TRIP_FILE} -n ${NET_FILE}  --r ${ROUTE_FILE} -a ${TRIP_CONFIG_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --period ${INTER_VEHICLE_SPAWN_PERIOD} --min-distance ${MIN_TRIP_LENGTH} --fringe-factor ${FRINGE_FACTOR} -L --intermediate ${MIN_EDGES} -l --trip-attributes="departSpeed=\"max\"  departPos=\"random\"" -o ${OUTPUT_TRIP_FILE} --weights-prefix ${CLEAN_NAME} # --weights-output-prefix ${SCENARIO_NAME}
-#python2 ${RANDOM_TRIP_FILE} -n ${NET_FILE} -a ${TRIP_CONFIG_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --period ${INTER_VEHICLE_SPAWN_PERIOD} --min-distance ${MIN_TRIP_LENGTH} --fringe-factor ${FRINGE_FACTOR} --intermediate ${MIN_EDGES} -l --trip-attributes="departSpeed=\"max\"  departPos=\"random\"" -o ${OUTPUT_TRIP_FILE}
+python2 ${RANDOM_TRIP_FILE} -n ${NET_FILE} --r ${ROUTE_FILE} -a ${TRIP_CONFIG_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --period ${INTER_VEHICLE_SPAWN_PERIOD} --min-distance ${MIN_TRIP_LENGTH} --fringe-factor ${FRINGE_FACTOR} -L --intermediate ${MIN_EDGES} -l --trip-attributes="departSpeed=\"max\"  departPos=\"random\"" -o ${OUTPUT_TRIP_FILE} --weights-prefix ${CLEAN_NAME} #--weights-output-prefix ${SCENARIO_NAME}
 printf " \\--> done.\n"
 
 #### Running SUMO's python trip to route script
@@ -235,17 +236,17 @@ cat > ${SUMO_CONFIG_FILE} << EOF
 <?xml version="1.0"?>
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.sf.net/xsd/sumoConfiguration.xsd">
   <input>
-    <net-file value="${NET_FILE}"/>
     <route-files value="${ROUTE_FILE}"/>
-    <additional-files value="${OVERLAY_FILE}"/>
+    <net-file value="${NET_FILE}"/>
+    <additional-files value="${REROUTE_FILE}"/>
   </input>
   <time>
     <begin value="${VEHICLE_SPAWN_START_TIME}"/>
     <end value="${SIMULATION_LENGTH}"/>
     <step-length value="${TIME_STEP}"/>
   </time>
-  <time-to-teleport value="50"/>
-  <time-to-teleport.highways value="25"/>
+  <time-to-teleport value="100"/>
+  <time-to-teleport.highways value="50"/>
   <gui_only>
     <start value="true"/>
   </gui_only>
@@ -260,6 +261,7 @@ cat > ${OMNET_CONFIG_FILE} << EOF
 	<copy file="${NET_FILE}"/>
 	<copy file="${ROUTE_FILE}"/>
 	<copy file="${OVERLAY_FILE}"/>
+  <copy file="${REROUTE_FILE}"/>
 	<copy file="${SUMO_CONFIG_FILE}" type="config"/>
 </launch>
 EOF
@@ -273,12 +275,12 @@ EOF
 #echo " \\--> done.\n"
 
 #### Removing Redundant clean osm file now that we are done
-rm ${OSM_CLEAN_FILE}
+#rm ${OSM_CLEAN_FILE}
 #${PYTHON_PATH}"/showDepartsAndArrivalsPerEdge.py" "${ROUTE_FILE}" --output-file "${SCENARIO_NAME}.results.xml"
 
 #### Run SUMO-GUI
-printf "Opening Simulation Scenario in SUMO GUI... with ${SCENARIO_NAME}"
-${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false -S true --weight-files "${CLEAN_NAME}.via.xml" --weight-attribute via &
+#printf "Opening Simulation Scenario in SUMO GUI... with ${SCENARIO_NAME}"
+#${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false -S true --weight-files "${CLEAN_NAME}.via.xml" --weight-attribute "via" &
 #printf " \\--> done.\n"
 
 # vim:set ts=2 sw=2 et:

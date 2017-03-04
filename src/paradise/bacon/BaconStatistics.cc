@@ -98,6 +98,9 @@ bool BaconStatistics::shouldRecordData() {
 void BaconStatistics::startStatistics() {
     if (hasStarted || hasStopped || !collectingStatistics) return;
 
+    std::cout << "(St) Statistics Collection has started.\n";
+    std::cout.flush();
+
     hasStarted = false;
     hasStopped = false;
 
@@ -236,7 +239,7 @@ void BaconStatistics::startStatistics() {
 void BaconStatistics::stopStatistics() {
     if (hasStopped) return;
 
-    std::cout << "(St) Logging statistics, saving files.\n";
+    std::cout << "(St) Statistics Collection has stopped. Saving Statistics.\n";
     std::cout.flush();
 
     FILE * pFile;
@@ -527,7 +530,7 @@ void BaconStatistics::logDuplicateMessagesForConnection(int duplicates,int conne
 }
 
 //Increase the number of active Vehicles by 1 (new vehicle spawned)
-void BaconStatistics::increaseActiveVehicles() {
+void BaconStatistics::increaseActiveVehicles(int vehicleId) {
     BaconStatistics::activeVehicles++;
     BaconStatistics::totalVehicles++;
 
@@ -537,11 +540,16 @@ void BaconStatistics::increaseActiveVehicles() {
 }
 
 //Decrease the number of active Vehicles by 1 (vehicle "deleted" / journey complete)
-void BaconStatistics::decreaseActiveVehicles() {
+void BaconStatistics::decreaseActiveVehicles(int vehicleId) {
     //Logging previous status so we have the ladder graph
     if (hasStarted && !hasStopped) activeVehiclesVect.record(activeVehicles);
 
     BaconStatistics::activeVehicles--;
+
+    if (simTime() < statisticsStopTime) {
+        std::cout << "\t(St) Warning: Vehicle <" << vehicleId << "> exited simulation prematurely at time <" << simTime() << ">\n";
+        std::cout.flush();
+    }
 
     //if (!hasStarted || hasStopped) return;
     activeVehiclesVect.record(activeVehicles);
