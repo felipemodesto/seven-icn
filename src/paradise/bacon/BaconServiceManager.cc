@@ -101,7 +101,7 @@ void BaconServiceManager::initialize(int stage) {
             cache = check_and_cast<BaconContentProvider *>(getParentModule()->getSubmodule("content"));
 
             //Adding vehicle to statistics
-            stats->increaseActiveVehicles();
+            stats->increaseActiveVehicles(myId);
 
             //Setting Up Beacon Event
             double maxOffset = par("maxOffset").doubleValue();
@@ -125,7 +125,7 @@ void BaconServiceManager::finish() {
     stats->setChunksLost(totalChunksLost);
     stats->setServerBusy(totalServerBusyResponses);
     stats->setContentUnavailable(totalContentUnavailableResponses);
-    stats->decreaseActiveVehicles();
+    stats->decreaseActiveVehicles(myId);
 
     //Cleaning up
     cleanConnections();
