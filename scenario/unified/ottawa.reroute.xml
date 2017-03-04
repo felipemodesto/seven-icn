@@ -1,0 +1,184 @@
+<additionals>
+	<rerouter id="rerouter_A" edges="76419221#2;-76419221#2">
+		<interval end="1600">
+			<destProbReroute id="305807458#2" 	probability="0.0625"	ref="Bp"/>
+			<destProbReroute id="-305807458#2" 	probability="0.0625"	ref="Bn"/>
+			<destProbReroute id="362066956#4" 	probability="0.0625"	ref="Cp"/>
+			<destProbReroute id="-362066956#4" 	probability="0.0625"	ref="Cn"/>
+			<destProbReroute id="258787159#3" 	probability="0.0625"	ref="Dp"/>
+			<destProbReroute id="-258787159#3" 	probability="0.0625"	ref="Dn"/>
+			<destProbReroute id="258787159#6" 	probability="0.0625"	ref="Ep"/>
+			<destProbReroute id="-258787159#6" 	probability="0.0625"	ref="En"/>
+			<destProbReroute id="76441065#2" 	probability="0.0625"	ref="Fp"/>
+			<destProbReroute id="-321748518" 	probability="0.0625"	ref="Fn"/>
+			<destProbReroute id="76441787#6" 	probability="0.0625"	ref="Gp"/>
+			<destProbReroute id="-76441787#6" 	probability="0.0625"	ref="Gn"/>
+			<destProbReroute id="76441065#0" 	probability="0.0625"	ref="Hp"/>
+			<destProbReroute id="-76441065#0" 	probability="0.0625"	ref="Hn"/>
+			<destProbReroute id="76441807#1" 	probability="0.0625"	ref="Ip"/>
+			<destProbReroute id="-76441807#1" 	probability="0.0625"	ref="In"/>
+		</interval>
+	</rerouter>
+	<rerouter id="rerouter_B" edges="305807458#2;-305807458#2">
+		<interval end="1600">
+			<destProbReroute id="76419221#2" 	probability="0.0625"	ref="Ap"/>
+			<destProbReroute id="-76419221#2" 	probability="0.0625"	ref="An"/>
+			<destProbReroute id="362066956#4" 	probability="0.0625"	ref="Cp"/>
+			<destProbReroute id="-362066956#4" 	probability="0.0625"	ref="Cn"/>
+			<destProbReroute id="258787159#3" 	probability="0.0625"	ref="Dp"/>
+			<destProbReroute id="-258787159#3" 	probability="0.0625"	ref="Dn"/>
+			<destProbReroute id="258787159#6" 	probability="0.0625"	ref="Ep"/>
+			<destProbReroute id="-258787159#6" 	probability="0.0625"	ref="En"/>
+			<destProbReroute id="76441065#2" 	probability="0.0625"	ref="Fp"/>
+			<destProbReroute id="-321748518" 	probability="0.0625"	ref="Fn"/>
+			<destProbReroute id="76441787#6" 	probability="0.0625"	ref="Gp"/>
+			<destProbReroute id="-76441787#6" 	probability="0.0625"	ref="Gn"/>
+			<destProbReroute id="76441065#0" 	probability="0.0625"	ref="Hp"/>
+			<destProbReroute id="-76441065#0" 	probability="0.0625"	ref="Hn"/>
+			<destProbReroute id="76441807#1" 	probability="0.0625"	ref="Ip"/>
+			<destProbReroute id="-76441807#1" 	probability="0.0625"	ref="In"/>
+		</interval>
+	</rerouter>
+	<rerouter id="rerouter_C" edges="362066956#4;-362066956#4">
+		<interval end="1600">
+			<destProbReroute id="76419221#2" 	probability="0.0625"	ref="Ap"/>
+			<destProbReroute id="-76419221#2" 	probability="0.0625"	ref="An"/>
+			<destProbReroute id="305807458#2" 	probability="0.0625"	ref="Bp"/>
+			<destProbReroute id="-305807458#2" 	probability="0.0625"	ref="Bn"/>
+			<destProbReroute id="362066956#4" 	probability="0.0625"	ref="Cp"/>
+			<destProbReroute id="-362066956#4" 	probability="0.0625"	ref="Cn"/>
+			<destProbReroute id="258787159#3" 	probability="0.0625"	ref="Dp"/>
+			<destProbReroute id="-258787159#3" 	probability="0.0625"	ref="Dn"/>
+			<destProbReroute id="258787159#6" 	probability="0.0625"	ref="Ep"/>
+			<destProbReroute id="-258787159#6" 	probability="0.0625"	ref="En"/>
+			<destProbReroute id="76441065#2" 	probability="0.0625"	ref="Fp"/>
+			<destProbReroute id="-321748518" 	probability="0.0625"	ref="Fn"/>
+			<destProbReroute id="76441787#6" 	probability="0.0625"	ref="Gp"/>
+			<destProbReroute id="-76441787#6" 	probability="0.0625"	ref="Gn"/>
+			<destProbReroute id="76441065#0" 	probability="0.0625"	ref="Hp"/>
+			<destProbReroute id="-76441065#0" 	probability="0.0625"	ref="Hn"/>
+			<destProbReroute id="76441807#1" 	probability="0.0625"	ref="Ip"/>
+			<destProbReroute id="-76441807#1" 	probability="0.0625"	ref="In"/>
+		</interval>
+	</rerouter>
+	<rerouter id="rerouter_D" edges="258787159#3;-258787159#3">
+		<interval end="1600">
+			<destProbReroute id="76419221#2" 	probability="0.0625"	ref="Ap"/>
+			<destProbReroute id="-76419221#2" 	probability="0.0625"	ref="An"/>
+			<destProbReroute id="305807458#2" 	probability="0.0625"	ref="Bp"/>
+			<destProbReroute id="-305807458#2" 	probability="0.0625"	ref="Bn"/>
+			<destProbReroute id="362066956#4" 	probability="0.0625"	ref="Cp"/>
+			<destProbReroute id="-362066956#4" 	probability="0.0625"	ref="Cn"/>
+			<destProbReroute id="258787159#6" 	probability="0.0625"	ref="Ep"/>
+			<destProbReroute id="-258787159#6" 	probability="0.0625"	ref="En"/>
+			<destProbReroute id="76441065#2" 	probability="0.0625"	ref="Fp"/>
+			<destProbReroute id="-321748518" 	probability="0.0625"	ref="Fn"/>
+			<destProbReroute id="76441787#6" 	probability="0.0625"	ref="Gp"/>
+			<destProbReroute id="-76441787#6" 	probability="0.0625"	ref="Gn"/>
+			<destProbReroute id="76441065#0" 	probability="0.0625"	ref="Hp"/>
+			<destProbReroute id="-76441065#0" 	probability="0.0625"	ref="Hn"/>
+			<destProbReroute id="76441807#1" 	probability="0.0625"	ref="Ip"/>
+			<destProbReroute id="-76441807#1" 	probability="0.0625"	ref="In"/>
+		</interval>
+	</rerouter>
+	<rerouter id="rerouter_E" edges="258787159#6;-258787159#6">
+		<interval end="1600">
+			<destProbReroute id="76419221#2" 	probability="0.0625"	ref="Ap"/>
+			<destProbReroute id="-76419221#2" 	probability="0.0625"	ref="An"/>
+			<destProbReroute id="305807458#2" 	probability="0.0625"	ref="Bp"/>
+			<destProbReroute id="-305807458#2" 	probability="0.0625"	ref="Bn"/>
+			<destProbReroute id="362066956#4" 	probability="0.0625"	ref="Cp"/>
+			<destProbReroute id="-362066956#4" 	probability="0.0625"	ref="Cn"/>
+			<destProbReroute id="258787159#3" 	probability="0.0625"	ref="Dp"/>
+			<destProbReroute id="-258787159#3" 	probability="0.0625"	ref="Dn"/>
+			<destProbReroute id="76441065#2" 	probability="0.0625"	ref="Fp"/>
+			<destProbReroute id="-321748518" 	probability="0.0625"	ref="Fn"/>
+			<destProbReroute id="76441787#6" 	probability="0.0625"	ref="Gp"/>
+			<destProbReroute id="-76441787#6" 	probability="0.0625"	ref="Gn"/>
+			<destProbReroute id="76441065#0" 	probability="0.0625"	ref="Hp"/>
+			<destProbReroute id="-76441065#0" 	probability="0.0625"	ref="Hn"/>
+			<destProbReroute id="76441807#1" 	probability="0.0625"	ref="Ip"/>
+			<destProbReroute id="-76441807#1" 	probability="0.0625"	ref="In"/>
+		</interval>
+	</rerouter>
+	<rerouter id="rerouter_F" edges="76441065#2;-321748518">
+		<interval end="1600">
+			<destProbReroute id="76419221#2" 	probability="0.0625"	ref="Ap"/>
+			<destProbReroute id="-76419221#2" 	probability="0.0625"	ref="An"/>
+			<destProbReroute id="305807458#2" 	probability="0.0625"	ref="Bp"/>
+			<destProbReroute id="-305807458#2" 	probability="0.0625"	ref="Bn"/>
+			<destProbReroute id="362066956#4" 	probability="0.0625"	ref="Cp"/>
+			<destProbReroute id="-362066956#4" 	probability="0.0625"	ref="Cn"/>
+			<destProbReroute id="258787159#3" 	probability="0.0625"	ref="Dp"/>
+			<destProbReroute id="-258787159#3" 	probability="0.0625"	ref="Dn"/>
+			<destProbReroute id="258787159#6" 	probability="0.0625"	ref="Ep"/>
+			<destProbReroute id="-258787159#6" 	probability="0.0625"	ref="En"/>
+			<destProbReroute id="76441787#6" 	probability="0.0625"	ref="Gp"/>
+			<destProbReroute id="-76441787#6" 	probability="0.0625"	ref="Gn"/>
+			<destProbReroute id="76441065#0" 	probability="0.0625"	ref="Hp"/>
+			<destProbReroute id="-76441065#0" 	probability="0.0625"	ref="Hn"/>
+			<destProbReroute id="76441807#1" 	probability="0.0625"	ref="Ip"/>
+			<destProbReroute id="-76441807#1" 	probability="0.0625"	ref="In"/>
+		</interval>
+	</rerouter>
+	<rerouter id="rerouter_G" edges="76441787#6;-76441787#6">
+		<interval end="1600">
+			<destProbReroute id="76419221#2" 	probability="0.0625"	ref="Ap"/>
+			<destProbReroute id="-76419221#2" 	probability="0.0625"	ref="An"/>
+			<destProbReroute id="305807458#2" 	probability="0.0625"	ref="Bp"/>
+			<destProbReroute id="-305807458#2" 	probability="0.0625"	ref="Bn"/>
+			<destProbReroute id="362066956#4" 	probability="0.0625"	ref="Cp"/>
+			<destProbReroute id="-362066956#4" 	probability="0.0625"	ref="Cn"/>
+			<destProbReroute id="258787159#3" 	probability="0.0625"	ref="Dp"/>
+			<destProbReroute id="-258787159#3" 	probability="0.0625"	ref="Dn"/>
+			<destProbReroute id="258787159#6" 	probability="0.0625"	ref="Ep"/>
+			<destProbReroute id="-258787159#6" 	probability="0.0625"	ref="En"/>
+			<destProbReroute id="76441065#2" 	probability="0.0625"	ref="Fp"/>
+			<destProbReroute id="-321748518" 	probability="0.0625"	ref="Fn"/>
+			<destProbReroute id="76441065#0" 	probability="0.0625"	ref="Hp"/>
+			<destProbReroute id="-76441065#0" 	probability="0.0625"	ref="Hn"/>
+			<destProbReroute id="76441807#1" 	probability="0.0625"	ref="Ip"/>
+			<destProbReroute id="-76441807#1" 	probability="0.0625"	ref="In"/>
+		</interval>
+	</rerouter>
+	<rerouter id="rerouter_H" edges="76441065#0;-76441065#0">
+		<interval end="1600">
+			<destProbReroute id="76419221#2" 	probability="0.0625"	ref="Ap"/>
+			<destProbReroute id="-76419221#2" 	probability="0.0625"	ref="An"/>
+			<destProbReroute id="305807458#2" 	probability="0.0625"	ref="Bp"/>
+			<destProbReroute id="-305807458#2" 	probability="0.0625"	ref="Bn"/>
+			<destProbReroute id="362066956#4" 	probability="0.0625"	ref="Cp"/>
+			<destProbReroute id="-362066956#4" 	probability="0.0625"	ref="Cn"/>
+			<destProbReroute id="258787159#3" 	probability="0.0625"	ref="Dp"/>
+			<destProbReroute id="-258787159#3" 	probability="0.0625"	ref="Dn"/>
+			<destProbReroute id="258787159#6" 	probability="0.0625"	ref="Ep"/>
+			<destProbReroute id="-258787159#6" 	probability="0.0625"	ref="En"/>
+			<destProbReroute id="76441065#2" 	probability="0.0625"	ref="Fp"/>
+			<destProbReroute id="-321748518" 	probability="0.0625"	ref="Fn"/>
+			<destProbReroute id="76441787#6" 	probability="0.0625"	ref="Gp"/>
+			<destProbReroute id="-76441787#6" 	probability="0.0625"	ref="Gn"/>
+			<destProbReroute id="76441807#1" 	probability="0.0625"	ref="Ip"/>
+			<destProbReroute id="-76441807#1" 	probability="0.0625"	ref="In"/>
+		</interval>
+	</rerouter>
+	<rerouter id="rerouter_I" edges="76441807#1;-76441807#1">
+		<interval end="1600">
+			<destProbReroute id="76419221#2" 	probability="0.0625"	ref="Ap"/>
+			<destProbReroute id="-76419221#2" 	probability="0.0625"	ref="An"/>
+			<destProbReroute id="305807458#2" 	probability="0.0625"	ref="Bp"/>
+			<destProbReroute id="-305807458#2" 	probability="0.0625"	ref="Bn"/>
+			<destProbReroute id="362066956#4" 	probability="0.0625"	ref="Cp"/>
+			<destProbReroute id="-362066956#4" 	probability="0.0625"	ref="Cn"/>
+			<destProbReroute id="258787159#3" 	probability="0.0625"	ref="Dp"/>
+			<destProbReroute id="-258787159#3" 	probability="0.0625"	ref="Dn"/>
+			<destProbReroute id="258787159#6" 	probability="0.0625"	ref="Ep"/>
+			<destProbReroute id="-258787159#6" 	probability="0.0625"	ref="En"/>
+			<destProbReroute id="76441065#2" 	probability="0.0625"	ref="Fp"/>
+			<destProbReroute id="-321748518" 	probability="0.0625"	ref="Fn"/>
+			<destProbReroute id="76441787#6" 	probability="0.0625"	ref="Gp"/>
+			<destProbReroute id="-76441787#6" 	probability="0.0625"	ref="Gn"/>
+			<destProbReroute id="76441065#0" 	probability="0.0625"	ref="Hp"/>
+			<destProbReroute id="-76441065#0" 	probability="0.0625"	ref="Hn"/>
+		</interval>
+	</rerouter>
+</additionals>
