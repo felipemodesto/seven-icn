@@ -125,7 +125,13 @@ void BaconServiceManager::finish() {
     stats->setChunksLost(totalChunksLost);
     stats->setServerBusy(totalServerBusyResponses);
     stats->setContentUnavailable(totalContentUnavailableResponses);
-    stats->decreaseActiveVehicles(myId);
+    bool error = stats->decreaseActiveVehicles(myId);
+
+    //For log purposes we'll inform our position data if we have vehicle exit issues
+    if (error == false) {
+        std::cout << "(SM) <" << myId << "> Vehicle exit error, Position: <" << traci->getCurrentPosition() << "> road ID: <" << traci->getRoadId() << ">\n";
+        std::cout.flush();
+    }
 
     //Cleaning up
     cleanConnections();

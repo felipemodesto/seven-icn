@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <!-- debug config -->
 <launch>
+  <copy file="ottawa.100.randomTrips.xml"/>
 	<copy file="ottawa.net.xml"/>
 	<copy file="ottawa.100.routes.xml"/>
 	<copy file="ottawa.poly.xml"/>
-  <copy file="ottawa.reroute.xml"/>
+  	<copy file="ottawa.reroute.xml"/>
 	<copy file="ottawa.100.sumo.cfg" type="config"/>
 </launch>

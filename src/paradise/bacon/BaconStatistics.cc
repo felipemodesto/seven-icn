@@ -98,6 +98,14 @@ bool BaconStatistics::shouldRecordData() {
 void BaconStatistics::startStatistics() {
     if (hasStarted || hasStopped || !collectingStatistics) return;
 
+    //Checking if we already have simulation results for this file
+    FILE *  pFile = fopen ( generalStatisticsFile, "r");
+    if (pFile != NULL) {
+        std::cerr << "(St) Error: Simulation file already present in folder. Skipping simulation to accelerate simulation.\n";
+        std::cerr.flush();
+        exit(0);
+    }
+
     std::cout << "(St) Statistics Collection has started.\n";
     std::cout.flush();
 
@@ -238,6 +246,12 @@ void BaconStatistics::startStatistics() {
 //
 void BaconStatistics::stopStatistics() {
     if (hasStopped) return;
+
+    if (simTime() < statisticsStopTime) {
+        std::cerr << "\n(St) Warning: Simulation exited prematurely. Statistics will not be logged.\n";
+        std::cerr.flush();
+        return;
+    }
 
     std::cout << "(St) Statistics Collection has stopped. Saving Statistics.\n";
     std::cout.flush();
@@ -476,83 +490,75 @@ void BaconStatistics::increaseChunksLost() {
 }
 
 void BaconStatistics::setHopsCount(int hops) {
-    //if (!shouldRecordData()) return;
     hopCountHist.collect(hops);
 
 }
 
 void BaconStatistics::setHopsCount(int hops, int count) {
-    //if (!shouldRecordData()) return;
     for (int i = 0; i < count ; i++) {
         hopCountHist.collect(hops);
     }
 }
 
 void BaconStatistics::setPacketsSent(int x) {
-    //if (!shouldRecordData()) return;
     packetsSentHist.collect(x);
 }
 
 void BaconStatistics::setPacketsUnserved(int x) {
-    //if (!shouldRecordData()) return;
     packetsUnservedHist.collect(x);
 }
 
 void BaconStatistics::setPacketsLost(int x) {
-    //if (!shouldRecordData()) return;
     packetsLostHist.collect(x);
 }
 
 void BaconStatistics::setChunksLost(int x) {
-    //if (!shouldRecordData()) return;
     chunksLostHist.collect(x);
 }
 
 void BaconStatistics::setServerBusy(int x) {
-    //if (!shouldRecordData()) return;
     serverBusyHist.collect(x);
 }
 
 void BaconStatistics::setContentUnavailable(int x) {
-   // if (!shouldRecordData()) return;
     contentUnavailableHist.collect(x);
 }
 
 void BaconStatistics::logInterestForConnection(int connectionID) {
-   // if (!shouldRecordData()) return;
     requestsPerConnectionHist.collect(connectionID);
 }
 
 void BaconStatistics::logDuplicateMessagesForConnection(int duplicates,int connection) {
-    //if (!shouldRecordData()) return;
     duplicateRequestHist.collect(duplicates);
     //We're ignoring the connection ID for duplicates, but this has been setup with that in mind. Not adding a to-do as it's not something i'm thinking of doing soon.
 }
 
 //Increase the number of active Vehicles by 1 (new vehicle spawned)
-void BaconStatistics::increaseActiveVehicles(int vehicleId) {
+bool BaconStatistics::increaseActiveVehicles(int vehicleId) {
     BaconStatistics::activeVehicles++;
     BaconStatistics::totalVehicles++;
 
     //NOTE: This does not care about general statistics collection
-    //if (!hasStarted || hasStopped) return;
     activeVehiclesVect.record(activeVehicles);
+
+    return true;
 }
 
 //Decrease the number of active Vehicles by 1 (vehicle "deleted" / journey complete)
-void BaconStatistics::decreaseActiveVehicles(int vehicleId) {
+bool BaconStatistics::decreaseActiveVehicles(int vehicleId) {
     //Logging previous status so we have the ladder graph
     if (hasStarted && !hasStopped) activeVehiclesVect.record(activeVehicles);
 
     BaconStatistics::activeVehicles--;
 
-    if (simTime() < statisticsStopTime) {
-        std::cout << "\t(St) Warning: Vehicle <" << vehicleId << "> exited simulation prematurely at time <" << simTime() << ">\n";
-        std::cout.flush();
-    }
-
-    //if (!hasStarted || hasStopped) return;
     activeVehiclesVect.record(activeVehicles);
+
+    if (simTime() < statisticsStopTime) {
+        std::cout << "(St) Warning: Vehicle <" << vehicleId << "> exited simulation prematurely at time <" << simTime() << ">\n";
+        std::cout.flush();
+        return false;
+    }
+    return true;
 }
 
 void BaconStatistics::increaseServerCacheHits() {
@@ -834,8 +840,6 @@ void BaconStatistics::increaseFulfilledInterests() {
 void BaconStatistics::logInstantLoad(int node, double load) {
     if (!shouldRecordData()) return;
     LoadAtTime_t newLoad;
-    //if (load < 0) load = 0;
-    //if (load > 1) load = 1;
     newLoad.loadValue = load;
     newLoad.vehicleId = node;
     newLoad.simTime = simTime();
