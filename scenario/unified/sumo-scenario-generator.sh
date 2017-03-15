@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #set -x << for debuging.
 
 ####################################################
@@ -87,20 +87,11 @@ SCENARIO_NAME=$(basename ${OSM_FILE} .osm | tr ' ' _)".${NUMBER_OF_TRIPS}"
 
 
 
-#CUBE SIMULATION CENARIO
-#declare -i NUMBER_OF_TRIPS
-#declare -i SIMULATION_LENGTH
-#declare -i VEHICLE_SPAWN_START_TIME
-#declare -i VEHICLE_SPAWN_END_TIME
-
-
-FRINGE_FACTOR=1      #PROPORTION OF TRIPS THAT START IN AN EDGE/LEAF
-
-#NUMBER_OF_TRIPS=20    	#MAXIMUM NUMBER OF VEHICLES AT THE SAME TIME
-SIMULATION_LENGTH=1600 	#SIMULATION LENGTH
-MIN_TRIP_LENGTH=500    	#MINIMUM STRAIGHT LINE DISTANCE IN METERS BETWEEN START AND END
-MIN_EDGES=30      		#MINIMUM NUMBER OF EDGES VEHICLE HAS TO TRAVEL
-TIME_STEP=0.1      		#SIMULATION TIMESTEP
+FRINGE_FACTOR=1         #PROPORTION OF TRIPS THAT START IN AN EDGE/LEAF
+SIMULATION_LENGTH=5000 	#SIMULATION LENGTH
+MIN_TRIP_LENGTH=0  	    #MINIMUM STRAIGHT LINE DISTANCE IN METERS BETWEEN START AND END
+MIN_EDGES=1      		    #MINIMUM NUMBER OF EDGES VEHICLE HAS TO TRAVEL
+TIME_STEP=0.1           #SIMULATION TIMESTEP
 INTER_VEHICLE_SPAWN_PERIOD=0.1
 VEHICLE_SPAWN_START_TIME=0
 
@@ -108,9 +99,10 @@ ROUTE_FILE=${SCENARIO_NAME}".routes.xml"
 
 #These files are not really dependent on the scenario configuration and can be shared
 OSM_CLEAN_FILE=${CLEAN_NAME}".clean.osm"
-NET_FILE=${CLEAN_NAME}".net.xml"
 OVERLAY_FILE=${CLEAN_NAME}".poly.xml"
 REROUTE_FILE=${CLEAN_NAME}".reroute.xml"
+
+NET_FILE=${CLEAN_NAME}".net.xml"
 
 SUMO_CONFIG_FILE=${SCENARIO_NAME}".sumo.cfg"
 OMNET_CONFIG_FILE=${SCENARIO_NAME}".omnet.xml"
@@ -185,6 +177,11 @@ done
 printf "  \\--> Inter-Vehicle Spawn Time is set to: $INTER_VEHICLE_SPAWN_PERIOD\n"
 printf "  \\--> Vehicle Instantiation period is [$VEHICLE_SPAWN_START_TIME ; $VEHICLE_SPAWN_END_TIME]\n"
 
+
+#Removing previous simulation-related stuff
+printf "Removing old files"
+rm "${SCENARIO_NAME}.*"
+
 #exit
 
 # Not actually cleaning the document for now, so let's just copy it to the clean file position, keeping the original safe
@@ -203,15 +200,15 @@ printf "  \\--> Vehicle Instantiation period is [$VEHICLE_SPAWN_START_TIME ; $VE
 #### (This is not really being used, but in theory is passed as an argument to the RandomTrips script)
 #printf "Writing Restriction Class Document...\n"
 echo "<additional>" > ${TRIP_CONFIG_FILE}
-echo "  <vType id=\"myType\" maxSpeed=\"27\" vClass=\"passenger\"/>" >> ${TRIP_CONFIG_FILE}
+echo "	<vType id=\"fastCar\" accel=\"0.8\" decel=\"4.5\" sigma=\"0.5\" maxSpeed=\"33\" vClass=\"passenger\" probability=\"0.5\" speedFactor=\"1\" speedDev=\"0.3\"/>" >> ${TRIP_CONFIG_FILE}
+echo "	<vType id=\"slowCar\" accel=\"0.8\" decel=\"4.5\" sigma=\"0.5\" maxSpeed=\"22\" vClass=\"truck\" probability=\"0.5\" speedFactor=\"1\" speedDev=\"0.3\"/>" >> ${TRIP_CONFIG_FILE}
 echo "</additional>" >> ${TRIP_CONFIG_FILE}
 echo " \\--> done.\n"
 
-
 #### Convert OSM to SUMO Map:
-#printf "Creating Road Network XML File From OSM...\n"
-#${NETCONVERT} -c netconvertConfiguration.xsd --osm-files ${OSM_CLEAN_FILE} --tls.guess-signals --remove-edges.by-vclass ${EXCLUDED_VEHICLE_CLASSES} --geometry.remove true --tls.join true --tls.guess true --remove-edges.isolated true --no-turnarounds true --no-turnarounds.tls true -o ${NET_FILE} --verbose true
-#printf " \\--> done.\n"
+printf "Creating Road Network XML File From OSM...\n"
+${NETCONVERT} -c netconvertConfiguration.xsd --osm-files ${OSM_FILE} --tls.guess-signals true --remove-edges.by-vclass ${EXCLUDED_VEHICLE_CLASSES} --geometry.remove true -o ${NET_FILE} --verbose true --tls.join true --tls.guess false --remove-edges.isolated true --no-turnarounds true --no-turnarounds.tls true 
+printf " \\--> done.\n"
 
 
 #### ADD Polygon Features to Map (copy typemap.xml file from somewhere, possibly Wiki if you don't have one)
@@ -223,22 +220,26 @@ echo " \\--> done.\n"
 #### Running SUMO's python script that generates random trips
 #### (-r ==  Random Trips, -s == Random Seed, -e == EndTime, -l == Weight Edge Probability)
 printf "Generating Random Trips for Road Network XML File...\n"
-python2 ${RANDOM_TRIP_FILE} -n ${NET_FILE} --r ${ROUTE_FILE} -a ${TRIP_CONFIG_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --period ${INTER_VEHICLE_SPAWN_PERIOD} --min-distance ${MIN_TRIP_LENGTH} --fringe-factor ${FRINGE_FACTOR} -L --intermediate ${MIN_EDGES} -l --trip-attributes="departSpeed=\"max\"  departPos=\"random\"" -o ${OUTPUT_TRIP_FILE} --weights-prefix ${CLEAN_NAME} #--weights-output-prefix ${SCENARIO_NAME}
+python2 ${RANDOM_TRIP_FILE} -n ${NET_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --period ${INTER_VEHICLE_SPAWN_PERIOD} --min-distance ${MIN_TRIP_LENGTH} --fringe-factor ${FRINGE_FACTOR} --intermediate ${MIN_EDGES} --trip-attributes="departSpeed=\"max\"  departPos=\"random\"  type=\"fastCar\"" -a ${TRIP_CONFIG_FILE} -o ${OUTPUT_TRIP_FILE}  --weights-prefix ${CLEAN_NAME}
 printf " \\--> done.\n"
 
+
 #### Running SUMO's python trip to route script
-#printf "Generating Route System for Road Network XML File...\n"
-##{$DUAROUTER} -n {NET_FILE} -t ${OUTPUT_TRIP_FILE} -o ${ROUTE_FILE} --skip-new-routes true
-#printf " \\--> done.\n"
+printf "Generating Vehicle Routes based on Random Trips File...\n"
+${DUAROUTER} -v -l "duarouter.log"  -d "${TRIP_CONFIG_FILE}" --keep-all-routes true --skip-new-routes true --repair true --repair.from true --repair.to true -n ${NET_FILE} -t ${OUTPUT_TRIP_FILE} -o ${ROUTE_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --weight-attribute "traveltime" --weight-files "${CLEAN_NAME}.weight.xml"
+printf " \\--> done.\n"
+
 
 #### Generating config file.
 cat > ${SUMO_CONFIG_FILE} << EOF
 <?xml version="1.0"?>
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.sf.net/xsd/sumoConfiguration.xsd">
   <input>
+    <additional-files value="${REROUTE_FILE}"/>
     <route-files value="${ROUTE_FILE}"/>
     <net-file value="${NET_FILE}"/>
-    <additional-files value="${REROUTE_FILE}"/>
+    <weight-files value="${CLEAN_NAME}.weight.xml"/>
+    <weight-attribute value="traveltime"/>
   </input>
   <time>
     <begin value="${VEHICLE_SPAWN_START_TIME}"/>
@@ -253,34 +254,41 @@ cat > ${SUMO_CONFIG_FILE} << EOF
 </configuration>
 EOF
 
+
 #### Generating omnet config file.
 cat > ${OMNET_CONFIG_FILE} << EOF
 <?xml version="1.0"?>
 <!-- debug config -->
 <launch>
+  <copy file="${TRIP_CONFIG_FILE}"/>
 	<copy file="${NET_FILE}"/>
 	<copy file="${ROUTE_FILE}"/>
 	<copy file="${OVERLAY_FILE}"/>
-  <copy file="${REROUTE_FILE}"/>
+  	<copy file="${REROUTE_FILE}"/>
 	<copy file="${SUMO_CONFIG_FILE}" type="config"/>
 </launch>
 EOF
 
+
 #### Generating alternative name for launchd file.
 #cp ${OMNET_CONFIG_FILE} ${LAUNCHD_CONFIG_FILE}
+
 
 #### Displaying Trips in Route FIle
 #printf "Printing Routes to Trips..."
 #python2 ${ROUTE_TRIP_FILE} ${ROUTE_FILE}
 #echo " \\--> done.\n"
 
+
 #### Removing Redundant clean osm file now that we are done
 #rm ${OSM_CLEAN_FILE}
 #${PYTHON_PATH}"/showDepartsAndArrivalsPerEdge.py" "${ROUTE_FILE}" --output-file "${SCENARIO_NAME}.results.xml"
 
+
 #### Run SUMO-GUI
-#printf "Opening Simulation Scenario in SUMO GUI... with ${SCENARIO_NAME}"
-#${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false -S true --weight-files "${CLEAN_NAME}.via.xml" --weight-attribute "via" &
+printf "Opening Simulation Scenario in SUMO GUI... with ${SCENARIO_NAME}"
+${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false --verbose true -S true &
 #printf " \\--> done.\n"
+
 
 # vim:set ts=2 sw=2 et:
