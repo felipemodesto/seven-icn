@@ -89,8 +89,8 @@ SCENARIO_NAME=$(basename ${OSM_FILE} .osm | tr ' ' _)".${NUMBER_OF_TRIPS}"
 
 FRINGE_FACTOR=1         #PROPORTION OF TRIPS THAT START IN AN EDGE/LEAF
 SIMULATION_LENGTH=5000 	#SIMULATION LENGTH
-MIN_TRIP_LENGTH=0  	    #MINIMUM STRAIGHT LINE DISTANCE IN METERS BETWEEN START AND END
-MIN_EDGES=1      		    #MINIMUM NUMBER OF EDGES VEHICLE HAS TO TRAVEL
+MIN_TRIP_LENGTH=100	    #MINIMUM STRAIGHT LINE DISTANCE IN METERS BETWEEN START AND END
+MIN_EDGES=35      	    #MINIMUM NUMBER OF EDGES VEHICLE HAS TO TRAVEL
 TIME_STEP=0.1           #SIMULATION TIMESTEP
 INTER_VEHICLE_SPAWN_PERIOD=0.1
 VEHICLE_SPAWN_START_TIME=0
@@ -103,6 +103,7 @@ OVERLAY_FILE=${CLEAN_NAME}".poly.xml"
 REROUTE_FILE=${CLEAN_NAME}".reroute.xml"
 
 NET_FILE=${CLEAN_NAME}".net.xml"
+WEIGHT_FILE=${CLEAN_NAME}".weight.xml"
 
 SUMO_CONFIG_FILE=${SCENARIO_NAME}".sumo.cfg"
 OMNET_CONFIG_FILE=${SCENARIO_NAME}".omnet.xml"
@@ -226,7 +227,7 @@ printf " \\--> done.\n"
 
 #### Running SUMO's python trip to route script
 printf "Generating Vehicle Routes based on Random Trips File...\n"
-${DUAROUTER} -v -l "duarouter.log"  -d "${TRIP_CONFIG_FILE}" --keep-all-routes true --skip-new-routes true --repair true --repair.from true --repair.to true -n ${NET_FILE} -t ${OUTPUT_TRIP_FILE} -o ${ROUTE_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --weight-attribute "traveltime" --weight-files "${CLEAN_NAME}.weight.xml"
+${DUAROUTER} -v -l "duarouter.log"  -d "${TRIP_CONFIG_FILE}" --keep-all-routes true --skip-new-routes true --repair true --repair.from true --repair.to true -n ${NET_FILE} -t ${OUTPUT_TRIP_FILE} -o ${ROUTE_FILE} --begin ${VEHICLE_SPAWN_START_TIME} --end ${VEHICLE_SPAWN_END_TIME} --weight-attribute "traveltime" --weight-files ${WEIGHT_FILE}
 printf " \\--> done.\n"
 
 
@@ -238,7 +239,7 @@ cat > ${SUMO_CONFIG_FILE} << EOF
     <additional-files value="${REROUTE_FILE}"/>
     <route-files value="${ROUTE_FILE}"/>
     <net-file value="${NET_FILE}"/>
-    <weight-files value="${CLEAN_NAME}.weight.xml"/>
+    <weight-files value="${WEIGHT_FILE}"/>
     <weight-attribute value="traveltime"/>
   </input>
   <time>
@@ -265,6 +266,8 @@ cat > ${OMNET_CONFIG_FILE} << EOF
 	<copy file="${ROUTE_FILE}"/>
 	<copy file="${OVERLAY_FILE}"/>
   	<copy file="${REROUTE_FILE}"/>
+  	<copy file="${REROUTE_FILE}"/>
+	<copy file="${WEIGHT_FILE}"/>
 	<copy file="${SUMO_CONFIG_FILE}" type="config"/>
 </launch>
 EOF
@@ -286,8 +289,8 @@ EOF
 
 
 #### Run SUMO-GUI
-printf "Opening Simulation Scenario in SUMO GUI... with ${SCENARIO_NAME}"
-${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false --verbose true -S true &
+#printf "Opening Simulation Scenario in SUMO GUI... with ${SCENARIO_NAME}"
+#${SUMO_GUI} -c ${SUMO_CONFIG_FILE} -Q false --verbose true -S true &
 #printf " \\--> done.\n"
 
 
