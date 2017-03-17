@@ -6,5 +6,7 @@
 	<copy file="ottawa.600.routes.xml"/>
 	<copy file="ottawa.poly.xml"/>
   	<copy file="ottawa.reroute.xml"/>
+  	<copy file="ottawa.reroute.xml"/>
+	<copy file="ottawa.weight.xml"/>
 	<copy file="ottawa.600.sumo.cfg" type="config"/>
 </launch>
