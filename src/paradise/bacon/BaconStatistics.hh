@@ -22,6 +22,7 @@ class BaconStatistics : public omnetpp::cSimpleModule {
 protected:
 
     BaconStatistics* stats;
+    BaconLibrary* library;
 
     //Data Collection Configuration Setup
     clock_t begin = clock();

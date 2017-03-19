@@ -36,4 +36,5 @@ simple BaconLibrary {
 		int priorityTransit = default(1);				//Priority of Items in Transit Object Library
 		int priorityNetwork = default(2);				//Priority of Items in Network Related Library
 		int priorityMultimedia = default(3);			//Priority of Items in Multimedia Library
+		int maxVehicleServers = default(0);				//Maximum number of concurrent vehicle servers in network
 }

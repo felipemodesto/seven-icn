@@ -116,6 +116,8 @@ class BaconClient : public BaseWaveApplLayer {
         double lastX;
         double lastY;
 
+        bool isServer = false;
+
         //PendingContent_t* pendingRequest;//Current Pending Request
         std::list<PendingContent_t*> ongoingRequests;       //List of ongoing Requests
         std::list<PendingContent_t*> backloggedRequests;    //List of content to which a negative reply was given, hopefully so that we can track late responses somehow

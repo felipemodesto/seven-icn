@@ -37,12 +37,20 @@ void BaconContentProvider::initialize(int stage) {
         cSimulation *sim = getSimulation();
         stats = check_and_cast<BaconStatistics*>(sim->getModuleByPath("BaconScenario.statistics"));
         library = check_and_cast<BaconLibrary*>(sim->getModuleByPath("BaconScenario.library"));
+
+        isServer = library->requestServerStatus(myId);
+        if (isServer) {
+            startingCache = -1;
+            maxCachedContents = -1;
+        }
+
         buildContentLibrary();
     }
 }
 
 //Finalization Function (not a destructor!)
 void BaconContentProvider::finish() {
+    if (isServer) library->releaseServerStatus(myId);
 }
 
 //=============================================================
@@ -351,8 +359,8 @@ void BaconContentProvider::buildContentLibrary() {
 
     if (startingCache == -1) {
         //Adding Items from other categories
-        std::cout << "(CP) <" << myId << "> is a Content Server.\n";
-        std::cout.flush();
+        //std::cout << "(CP) Server <" << myId << "> Standing By.\n";
+        //std::cout.flush();
 
         std::list<Content_t>* multimediaLibrary = library->getMultimediaContentList();
         std::list<Content_t>* networkLibrary = library->getNetworkContentList();
@@ -376,8 +384,8 @@ void BaconContentProvider::buildContentLibrary() {
         librarySize = multimediaLibrary->size() + networkLibrary->size() + trafficLibrary->size();
 
     } else if (startingCache > 0) {
-        std::cout << "(CP) <" << myId << "> has pre-cached content. Selecting randomly.\n";
-        std::cerr << "(CP) Error: This method was de-implemented due to ontent fragmentation.\n";
+        //std::cout << "(CP) Assistant <" << myId << "> Standing By.\n";
+        //std::cout.flush();
 
         /*
         //Marking all items as unavailable in order to include exactly the desired number of items (plus the other category items)
@@ -413,6 +421,9 @@ void BaconContentProvider::buildContentLibrary() {
         }
         delete[] inclusionList;
         */
+    } else {
+        //std::cout << "(SM) Vehicle <" << myId << "> Standing By.\n";
+        //std::cout.flush();
     }
 
     //std::cout << "(CP) <" << myId << "> Library is setup.\n";
@@ -553,13 +564,9 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
 }
 
 //Getter to classify node as either server or client (servers don't have cache limitation applied during computation)
-bool BaconContentProvider::isServer() {
+bool BaconContentProvider::getIsServer() {
     //TODO: (REVIEW) Make this more malleable depending on content class (?)
-    //Having all items implies being a server, which we use to log server based statistics
-    if (startingCache == -1) {
-        return true;
-    }
-    return false;
+    return isServer;
 }
 
 //Getter for the currently used Cache Policy
