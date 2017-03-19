@@ -53,6 +53,9 @@ protected:
     std::vector<double> buildCategoryLibrary(int count, int byteSize, ContentPriority priority, ContentClass category, std::string classPrefix);
     void buildContentList();
 
+    int maxVehicleServers = 0;
+    int allocatedVehicleServers = 0;
+
     double zipfCaracterization = 0;
     int sizeMultimedia = 1024;          //Packet size
     int sizeNetwork = 1024;             //Packet size
@@ -66,6 +69,7 @@ protected:
     ContentPriority priorityNetwork;            //Priority
     ContentPriority priorityMultimedia;         //Priority
 
+    std::list<int> serverVehicles;
 
     BaconStatistics* stats;
 
@@ -73,6 +77,11 @@ public:
     std::string transitPrefix;
     std::string networkPrefix;
     std::string multimediaPrefix;
+
+    bool requestServerStatus(int vehicleID);
+    void releaseServerStatus(int vehicleID);
+    int getActiveServers();
+    int getMaximumServers();
 
     long int getCurrentIndex();                      //For Statistics & Maximum Count Use
     long int getRequestIndex();                      //Returns next index (sequence ID) in global request list numbering scheme (to avoid doubles)

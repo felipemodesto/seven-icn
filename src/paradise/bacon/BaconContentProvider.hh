@@ -51,6 +51,8 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         int contentExchangeIn;          // from Content Manager
         int contentExchangeOut;         // to Content Manager
 
+        bool isServer = false;
+
         std::list<CachedContent_t>* contentLibrary;
         int librarySize;
 
@@ -86,7 +88,7 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         bool handleLookup(std::string prefix);                  //Deal with Content Lookup Requests
         void removeContentFromLibrary(Content_t* newContent);   //Remove item from cache
         void addContentToLibrary(Content_t* newContent);        //Add content to Cache
-        bool isServer();                                        //Check if we're a SERVER (Have everything)
+        bool getIsServer();                                        //Check if we're a SERVER (Have everything)
 };
 
 

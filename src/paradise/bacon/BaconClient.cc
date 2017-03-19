@@ -123,6 +123,12 @@ void BaconClient::initialize(int stage) {
             cModule *modlib = sim->getModuleByPath("BaconScenario.library");
             library = check_and_cast<BaconLibrary *>(modlib);
 
+            isServer = library->requestServerStatus(myId);
+            if (isServer) {
+                minimumRequestDelay = -1;
+                maximumRequestDelay = -1;
+            }
+
             //pendingRequest = NULL;
             contentTimerMessage = NULL;
 
@@ -141,6 +147,7 @@ void BaconClient::initialize(int stage) {
                 runtimeTimer = new cMessage("runtimeTimer");
                 resetLocationTimer();
             }
+
             break;
         }
         default:

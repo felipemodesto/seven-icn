@@ -112,6 +112,10 @@ void BaconServiceManager::initialize(int stage) {
             offSet = offSet + floor(offSet/0.050)*0.050;
             individualOffset = dblrand() * maxOffset;
             scheduleAt(simTime() + offSet, sendBeaconEvt);
+
+
+            //std::cout << "(SM) Starting Vehicle <" << myId << "> Time <" << simTime() << ">\n";
+            //std::cout.flush();
         }
     }
 }
@@ -129,9 +133,13 @@ void BaconServiceManager::finish() {
 
     //For log purposes we'll inform our position data if we have vehicle exit issues
     if (error == false) {
-        std::cout << "(SM) <" << myId << "> Vehicle exit error, Position: <" << traci->getCurrentPosition() << "> road ID: <" << traci->getRoadId() << ">\n";
-        std::cout.flush();
+        //std::cout << "(SM) <" << myId << "> Premature Exit, At: <" << traci->getCurrentPosition() << "> road ID: <" << traci->getRoadId() << ">, Time <" << simTime() << ">\n";
+        //std::cout.flush();
     }
+
+
+    //std::cout << "\t(SM) Killing Vehicle <" << myId << ">  Time <" << simTime() << "> at <" << traci->getRoadId() << ">\n";
+    //std::cout.flush();
 
     //Cleaning up
     cleanConnections();
@@ -1230,7 +1238,7 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
                 stats->increaseLocalCacheHits();
             } else {
                 //Having all items implies being a server, which we use to log server based statistics
-                if (cache->isServer()) {
+                if (cache->getIsServer()) {
                     stats->increaseServerCacheHits();
                 } else {
                     stats->increaseRemoteCacheHits();

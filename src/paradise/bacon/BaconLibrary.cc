@@ -27,6 +27,8 @@ void BaconLibrary::initialize(int stage) {
         priorityNetwork = static_cast<ContentPriority>(par("priorityNetwork").longValue());
         priorityMultimedia = static_cast<ContentPriority>(par("priorityMultimedia").longValue());
 
+        maxVehicleServers = par("maxVehicleServers").longValue();
+
         multimediaLibrary = NULL;
         networkLibrary = NULL;
         trafficLibrary = NULL;
@@ -63,6 +65,52 @@ void BaconLibrary::finish() {
     multimediaLibrary->clear();
     networkLibrary->clear();
     trafficLibrary->clear();
+}
+
+//
+bool BaconLibrary::requestServerStatus(int vehicleID){
+    if (!serverVehicles.empty()) {
+        for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
+            if ((*it) == vehicleID) return true;
+        }
+    }
+
+    if (allocatedVehicleServers < maxVehicleServers) {
+        allocatedVehicleServers++;
+        serverVehicles.push_front(vehicleID);
+
+        std::cout << "\t(Lib) Add to <" << allocatedVehicleServers << "> by <" << vehicleID << "> \n";
+        std::cout.flush();
+        return true;
+    }
+    return false;
+}
+
+
+//
+void BaconLibrary::releaseServerStatus(int vehicleID){
+
+    for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
+        if ((*it) == vehicleID) {
+            allocatedVehicleServers--;
+            std::cout << "\t(Lib) Sub to <" << allocatedVehicleServers << "> by <" << vehicleID << "> \n";
+            std::cout.flush();
+
+            serverVehicles.erase(it);
+            return;
+        }
+    }
+
+    std::cerr << "(Lib) Warning: Vehicle <" << vehicleID << "> is NOT a server but thinks it is.\n";
+    std::cerr.flush();
+}
+
+int BaconLibrary::getActiveServers() {
+    return allocatedVehicleServers;
+}
+
+int BaconLibrary::getMaximumServers() {
+    return maxVehicleServers;
 }
 
 //

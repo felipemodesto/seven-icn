@@ -98,6 +98,11 @@ bool BaconStatistics::shouldRecordData() {
 void BaconStatistics::startStatistics() {
     if (hasStarted || hasStopped || !collectingStatistics) return;
 
+    //Getting a reference to the content Library
+    cSimulation *sim = getSimulation();
+    cModule *modlib = sim->getModuleByPath("BaconScenario.library");
+    library = check_and_cast<BaconLibrary *>(modlib);
+
     //Checking if we already have simulation results for this file
     FILE *  pFile = fopen ( generalStatisticsFile, "r");
     if (pFile != NULL) {
@@ -541,6 +546,9 @@ bool BaconStatistics::increaseActiveVehicles(int vehicleId) {
     //NOTE: This does not care about general statistics collection
     activeVehiclesVect.record(activeVehicles);
 
+    //std::cout << "(St) Add <" << vehicleId << "> Total <" << activeVehicles << "> Servers <" << library->getActiveServers() << "/" << library->getMaximumServers() << "> Time <" << simTime() << ">\n";
+    //std::cout.flush();
+
     return true;
 }
 
@@ -553,9 +561,12 @@ bool BaconStatistics::decreaseActiveVehicles(int vehicleId) {
 
     activeVehiclesVect.record(activeVehicles);
 
+    //std::cout << "(St) Rem <" << vehicleId << "> Total <" << activeVehicles << "> Servers <" << library->getActiveServers() << "/" << library->getMaximumServers() << "> Time <" << simTime() << ">\n";
+    //std::cout.flush();
+
     if (simTime() < statisticsStopTime) {
-        std::cout << "(St) Warning: Vehicle <" << vehicleId << "> exited simulation prematurely at time <" << simTime() << ">\n";
-        std::cout.flush();
+        //std::cout << "(St) Warning: Vehicle <" << vehicleId << "> exited simulation prematurely at time <" << simTime() << ">\n";
+        //std::cout.flush();
         return false;
     }
     return true;
