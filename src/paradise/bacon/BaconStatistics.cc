@@ -155,6 +155,10 @@ void BaconStatistics::startStatistics() {
     registeredInterests = 0;
     fulfilledInterests = 0;
 
+    totalTransmissionDelay = 0;
+    completeTransmissionDelay = 0;
+    incompleteTranmissionDelay = 0;
+
     packetsSentHist.setName("PacketsSent");
     packetsForwardedHist.setName("PacketsForwarded");
     packetsUnservedHist.setName("PacketsUnserved");
@@ -287,8 +291,8 @@ void BaconStatistics::stopStatistics() {
 
     //Calculating Average Delays
     totalTransmissionDelay = totalTransmissionDelay/(double)totalTransmissionCount;
-    completeTransmissionDelay += completeTransmissionDelay/(double)completeTransmissionCount;
-    incompleteTranmissionDelay += incompleteTranmissionDelay/(double)incompleteTransmissionCount;
+    completeTransmissionDelay = completeTransmissionDelay/(double)completeTransmissionCount;
+    incompleteTranmissionDelay = incompleteTranmissionDelay/(double)incompleteTransmissionCount;
 
     //Saving Network Load Statistics
     if (collectingLoad) {
@@ -310,7 +314,9 @@ void BaconStatistics::stopStatistics() {
     pFile = fopen ( generalStatisticsFile, "w");
     fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency,packetsSent,packetsForwarded,packetsUnserved,packetsLost,chunksLost,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements\n");
 
-    fprintf(pFile,"%f,%f,%f",totalTransmissionDelay,completeTransmissionDelay,incompleteTranmissionDelay);
+    fprintf(pFile,",%F",totalTransmissionDelay);
+    fprintf(pFile,",%F",completeTransmissionDelay);
+    fprintf(pFile,",%F",incompleteTranmissionDelay);
 
     fprintf(pFile,",%ld",packetsSent);
     fprintf(pFile,",%ld",packetsForwarded);
@@ -874,8 +880,8 @@ void BaconStatistics::addcompleteTransmissionDelay(double delay) {
     completeTransmissionCount++;
     totalTransmissionDelay += delay;
     completeTransmissionDelay += delay;
-    completeTranmissionDelayVect.record(delay);
     overallTranmissionDelayVect.record(delay);
+    completeTranmissionDelayVect.record(delay);
 }
 
 void BaconStatistics::addincompleteTransmissionDelay(double delay) {
@@ -885,8 +891,8 @@ void BaconStatistics::addincompleteTransmissionDelay(double delay) {
     incompleteTransmissionCount++;
     totalTransmissionDelay += delay;
     incompleteTranmissionDelay += delay;
-    incompleteTranmissionDelayVect.record(delay);
     overallTranmissionDelayVect.record(delay);
+    incompleteTranmissionDelayVect.record(delay);
 }
 
 void BaconStatistics::increaseHopCountResult(int hopCount) {
