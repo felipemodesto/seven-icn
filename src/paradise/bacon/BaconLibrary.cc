@@ -49,13 +49,13 @@ void BaconLibrary::initialize(int stage) {
 
         //Adding all items from all libraries
         for (auto it = multimediaLibrary->begin(); it != multimediaLibrary->end(); it++) {
-            stats->logContentRequest(it->contentPrefix);
+            stats->logContentRequest(it->contentPrefix, false);
         }
         for (auto it = networkLibrary->begin(); it != networkLibrary->end(); it++) {
-            stats->logContentRequest(it->contentPrefix);
+            stats->logContentRequest(it->contentPrefix, false);
         }
         for (auto it = trafficLibrary->begin(); it != trafficLibrary->end(); it++) {
-            stats->logContentRequest(it->contentPrefix);
+            stats->logContentRequest(it->contentPrefix, false);
         }
     }
 }
@@ -79,7 +79,7 @@ bool BaconLibrary::requestServerStatus(int vehicleID){
         allocatedVehicleServers++;
         serverVehicles.push_front(vehicleID);
 
-        std::cout << "\t(Lib) Add to <" << allocatedVehicleServers << "> by <" << vehicleID << "> \n";
+        std::cout << "\t(Lib) Add to <" << allocatedVehicleServers << "> servers by vehicle <" << vehicleID << "> \n";
         std::cout.flush();
         return true;
     }
@@ -93,7 +93,7 @@ void BaconLibrary::releaseServerStatus(int vehicleID){
     for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
         if ((*it) == vehicleID) {
             allocatedVehicleServers--;
-            std::cout << "\t(Lib) Sub to <" << allocatedVehicleServers << "> by <" << vehicleID << "> \n";
+            std::cout << "\t(Lib) Sub to <" << allocatedVehicleServers << "> servers by vehicle <" << vehicleID << "> \n";
             std::cout.flush();
 
             serverVehicles.erase(it);
