@@ -33,12 +33,28 @@ void BaconStatistics::initialize(int stage) {
         generalStatisticsFile = par("generalStatisticsFile").stringValue();
 
         startStatistics();
+
+        clockTimerMessage = new cMessage("clockTimerMessage");
+        scheduleAt(simTime() + 1, clockTimerMessage);
+    }
+}
+
+void BaconStatistics::handleMessage(cMessage *msg) {
+    if ( msg == clockTimerMessage ) {
+        if (clockTimerMessage == NULL) return;
+        scheduleAt(simTime() + 1, clockTimerMessage);
+        keepTime();
     }
 }
 
 //Finalization Function (not a destructor!)
 void BaconStatistics::finish() {
     stopStatistics();
+
+    if (clockTimerMessage != NULL) {
+        cancelAndDelete(clockTimerMessage);
+        clockTimerMessage = NULL;
+    }
 }
 
 //
@@ -86,7 +102,7 @@ void BaconStatistics::keepTime() {
 
 //
 bool BaconStatistics::shouldRecordData() {
-    keepTime();
+    //keepTime();
 
     if (!allowedToRun()) return false;
     if (!collectingStatistics and !collectingPositions) return false;
@@ -117,6 +133,7 @@ void BaconStatistics::startStatistics() {
     hasStarted = false;
     hasStopped = false;
 
+    requestsStarted = 0;
     packetsSent = 0;
     packetsForwarded = 0;
     packetsUnserved = 0;
@@ -167,6 +184,7 @@ void BaconStatistics::startStatistics() {
     serverBusyHist.setName("ServerBusy");
     contentUnavailableHist.setName("ContentUnavailable");
 
+    requestsStartedVect.setName("RequestsStarted");
     packetsSentVect.setName("SentPackets");
     packetsForwardedVect.setName("ForwardedPackets");
     packetsUnservedVect.setName("UnservedPackets");
@@ -213,6 +231,7 @@ void BaconStatistics::startStatistics() {
 
     statisticsTimekeepingVect.setName("CompletionPercentage");
 
+    requestsStartedVect.record(0);
     packetsSentVect.record(0);
     packetsUnservedVect.record(0);
     packetsLostVect.record(0);
@@ -416,7 +435,12 @@ void BaconStatistics::logPosition(double x, double y) {
 }
 
 //
-void BaconStatistics::logContentRequest(std::string contentName) {
+void BaconStatistics::logContentRequest(std::string contentName, bool shouldLogContent) {
+    if (shouldLogContent) {
+        requestsStarted++;
+        requestsStartedVect.record(requestsStarted);
+    }
+
     if (!collectingRequestNames) return;
 
     //Trying to insert new content request tuple

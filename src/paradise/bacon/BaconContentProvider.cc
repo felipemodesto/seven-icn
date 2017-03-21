@@ -268,7 +268,8 @@ void BaconContentProvider::addContentToLibrary(Content_t* contentObject) {
 
     //Prior to Simulation Start during Warmup, we're just building our libraries so we ignore "searches"
     //Note: Please keep this in mind when cold starting simulations
-    if (simTime() >= stats->getStartTime()) {
+    //if (simTime() >= stats->getStartTime()) {
+    if (!isServer) {
         //Looking for item in content library
         for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
             if (it->referenceObject->contentPrefix.compare(contentObject->contentPrefix) == 0) {

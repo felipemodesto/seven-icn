@@ -133,10 +133,14 @@ void BaconClient::initialize(int stage) {
             contentTimerMessage = NULL;
 
             //Won't start timer for server nodes or if we're one of those nodes that doesn't make its own requests (MULE)
-            if (minimumRequestDelay != -1 && maximumRequestDelay != -1) {
+            if (minimumRequestDelay != -1 || maximumRequestDelay != -1) {
                 //Starting First Request for after warmup time
-                simtime_t firstTimerTime = uniform(minimumRequestDelay,maximumRequestDelay);
-                startNewMessageTimer(firstTimerTime + stats->getStartTime() - minimumRequestDelay);
+                if (simTime() < stats->getStartTime()) {
+                    simtime_t firstTimerTime = uniform(minimumRequestDelay,maximumRequestDelay);
+                    startNewMessageTimer(firstTimerTime + stats->getStartTime() - minimumRequestDelay - simTime());
+                } else {
+                    startNewMessageTimer();
+                }
             } else {
                 //We're a server. Should we do something?
             }
@@ -243,38 +247,25 @@ void BaconClient::notifyLocation() {
 
 //
 void BaconClient::startNewMessageTimer() {
+    requestTimer = uniform(minimumRequestDelay,maximumRequestDelay);
     startNewMessageTimer(requestTimer);
-    stats->keepTime();
 }
 
 //
 void BaconClient::startNewMessageTimer(simtime_t timerTime) {
-    requestTimer = uniform(minimumRequestDelay,maximumRequestDelay);
-
-    //Old method used to check if we had an ongoing request to stop us from having multiple
-    //For now we will ALWAYS start a new request timer
-    //if (pendingRequest != NULL) {
-    //    if ( pendingRequest->contentStatus == ContentStatus::SERVED ) {
-    //        std::cout << "(SM) This should have been Cleared. o.õ\n";
-    //        std::cout.flush();
-    //        completedRequests.push_front(pendingRequest);
-    //        //delete(pendingRequest);
-    //        pendingRequest = NULL;
-    //    }
-    //    //else {
-    //    //    EV << "Request has not been fulfilled and will be kept in queue.\n";
-    //    //    EV.flush();
-    //    //}
-    //}
-
     if (contentTimerMessage == NULL) {
         contentTimerMessage = new cMessage("contentTimerMessage");
     } else {
         cancelEvent(contentTimerMessage);
     }
 
+    simtime_t requestTime = simTime() + timerTime;
+    if (requestTime <= simTime()) requestTime = simTime() + uniform(minimumRequestDelay,maximumRequestDelay);
+
+    //std::cout << "\t (Cl) <" << myId << "> starting a new Message Timer for <" << requestTime << "> at time <" << simTime() << ">\n";
+
     //Scheduling the self-timer for the service request message
-    scheduleAt(simTime() + timerTime, contentTimerMessage);
+    scheduleAt(requestTime, contentTimerMessage);
 }
 
 //=============================================================
@@ -322,6 +313,9 @@ void BaconClient::cleanRequestList() {
 
 //
 void BaconClient::startContentRequest() {
+
+    //std::cout << "\t(Cl) <" << myId << "> is attempting a new request at <" << simTime() << ">\n";
+
     //Checking if we're in a ready communication state
     if (!stats->allowedToRun()) {
         return;
@@ -337,7 +331,8 @@ void BaconClient::startContentRequest() {
 
     //TODO: (DECIDE) Decide if we should limit concurrent requests at the client level
     if ((int)ongoingRequests.size() >= (int)maxOpenRequests) {
-        startNewMessageTimer();
+        //std::cout << "\t\t(Cl) <" << myId << "> MAXED OUT\n";
+        //std::cout.flush();
         return;
     }
 
@@ -419,7 +414,7 @@ void BaconClient::startContentRequest() {
         return;
     }
 
-    //std::cout << "(Cl) <" << myId << "> NR for <" << pendingRequest->contentPrefix << "> of class <" << static_cast<int>(pendingRequest->contentClass) << "> Time<" << simTime() << ">\n";
+    //std::cout << "\t(Cl) <" << myId << "> NR for <" << pendingRequest->referenceObject->contentPrefix << "> of class <" << static_cast<int>(pendingRequest->referenceObject->contentClass) << "> Time<" << simTime() << ">\n";
     //std::cout.flush();
 
     //std::cout << "(Cl) <" << contentRequestInterstType << ">\t->\t<" << pendingRequest->contentPrefix << ">\n";
@@ -474,7 +469,7 @@ void BaconClient::startContentRequest() {
     requestMessage->setSenderAddress(myId);
 
     //Logging the statistics about the content request about to be made
-    stats->logContentRequest(pendingRequest->referenceObject->contentPrefix);
+    stats->logContentRequest(pendingRequest->referenceObject->contentPrefix, true);
 
     //Sending request
     sendWSM(requestMessage);
@@ -483,11 +478,11 @@ void BaconClient::startContentRequest() {
 //
 void BaconClient::handleMessage(cMessage *msg) {
     if ( msg == contentTimerMessage ) {
-        //Starting a new request
-        startContentRequest();
-
         //Creating timer for next request
         startNewMessageTimer();
+
+        //Starting a new request
+        startContentRequest();
     } else if (msg == runtimeTimer) {
         notifyLocation();
     } else {
@@ -554,6 +549,9 @@ void BaconClient::onData(WaveShortMessage* wsm) {
             foundRequest = true;
             desiredRequest = *it;
 
+            //std::cout << "\t(Cl) //--> <" << myId << "> Got response for ongoing request for <" << desiredRequest->referenceObject->contentPrefix << ">.\n";
+            //std::cout.flush();
+
             it = ongoingRequests.erase(it);
             break;
         } else {
@@ -574,6 +572,9 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     std::cerr << "(Cl) Error: Found Request for <" << prefixString << "> on backlog list.\n";
                     std::cerr.flush();
                 }
+
+                //std::cout << "\t(Cl) //--> <" << myId << "> Got response for a backlogged request for <" << desiredRequest->referenceObject->contentPrefix << ">.\n";
+                //std::cout.flush();
 
                 it = backloggedRequests.erase(it);
                 break;
@@ -633,6 +634,9 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                         //stats->addincompleteTransmissionDelay(difDouble);
                     //}
 
+                    //std::cout << "(Cl) <" << myId << "> Good Request for <" << desiredRequest->referenceObject->contentPrefix << ">.\n";
+                    //std::cout.flush();
+
                     //Logging Time it took for communication
                     completedRequests.push_front(desiredRequest);
                 }
@@ -649,6 +653,9 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     stats->addincompleteTransmissionDelay(difDouble);
                     stats->increaseMessagesUnserved(desiredRequest->referenceObject->contentClass);
 
+                    //std::cout << "(Cl) <" << myId << "> Unserved Request for <" << desiredRequest->referenceObject->contentPrefix << ">.\n";
+                    //std::cout.flush();
+
                     //Adding an incomplete transfer to our backlogged list for future tests
                     backloggedRequests.push_front(desiredRequest);
                 }
@@ -663,6 +670,9 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     //Adding an incomplete transfer to our backlogged list for future tests
                     backloggedRequests.push_front(desiredRequest);
                     stats->increaseMessagesLost(desiredRequest->referenceObject->contentClass);
+
+                    //std::cout << "(Cl) <" << myId << "> Partial Request for <" << desiredRequest->referenceObject->contentPrefix << ">.\n";
+                    //std::cout.flush();
 
                     double difDouble = difTime.dbl();
                     stats->addincompleteTransmissionDelay(difDouble);

@@ -74,9 +74,9 @@ protected:
     BaconStatistics* stats;
 
 public:
-    std::string transitPrefix;
-    std::string networkPrefix;
-    std::string multimediaPrefix;
+    std::string transitPrefix = "t";
+    std::string networkPrefix = "n";
+    std::string multimediaPrefix = "m";
 
     bool requestServerStatus(int vehicleID);
     void releaseServerStatus(int vehicleID);

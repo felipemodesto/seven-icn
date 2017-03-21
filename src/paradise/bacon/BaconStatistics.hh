@@ -23,6 +23,7 @@ protected:
 
     BaconStatistics* stats;
     BaconLibrary* library;
+    cMessage *clockTimerMessage;      //Self message sent in timer
 
     //Data Collection Configuration Setup
     clock_t begin = clock();
@@ -78,6 +79,8 @@ protected:
     long int registeredInterests;
     long int fulfilledInterests;
 
+    long int requestsStarted;
+
     //Latency related results.
     //Note: Technically because the values are low, we shouldn't extrapolate the upperbound of the variables but lets keep this in mind
     long int totalTransmissionCount;
@@ -116,6 +119,7 @@ protected:
 
     omnetpp::cOutVector serverHitVect;
 
+    omnetpp::cOutVector requestsStartedVect;
     omnetpp::cOutVector packetsSentVect;
     omnetpp::cOutVector packetsForwardedVect;
     omnetpp::cOutVector packetsUnservedVect;
@@ -158,6 +162,9 @@ protected:
     omnetpp::cOutVector registeredInterestVect;
     omnetpp::cOutVector fulfilledInterestVect;
 
+protected:
+    void handleMessage(cMessage *msg);
+
 public:
     virtual void initialize(int stage);
     virtual void finish();
@@ -183,8 +190,8 @@ public:
     void logInstantLoad(int node, double load);
     void logAverageLoad(int node, double load);
 
-    void logPosition(double x, double y);               //Vehicles record their position every second of simulation
-    void logContentRequest(std::string contentName);    //Recording the name of each item requested
+    void logPosition(double x, double y);                                   //Vehicles record their position every second of simulation
+    void logContentRequest(std::string contentName, bool shouldCount);    //Recording the name of each item requested
 
     void increasePacketsSent();                 //Increase number of Packets Sent by 1
     void increasePacketsSent(int x);            //Increase number of Packets Sent by X
