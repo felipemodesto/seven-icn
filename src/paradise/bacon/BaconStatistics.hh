@@ -38,6 +38,7 @@ protected:
     bool collectingPositions;
     bool collectingRequestNames;
     bool collectingLoad;
+    bool collectingNeighborhood;
 
     //Data Packet Related Statistics
     long int packetsSent;
@@ -81,6 +82,9 @@ protected:
 
     long int requestsStarted;
 
+    double lastContactTime;
+    double lastParticipationlength;
+
     //Latency related results.
     //Note: Technically because the values are low, we shouldn't extrapolate the upperbound of the variables but lets keep this in mind
     long int totalTransmissionCount;
@@ -92,6 +96,8 @@ protected:
 
     std::map<std::string,int> locationMap;
     std::map<std::string,int> contentRequestMap;
+    std::map<double,int> contactDurationMap;
+    std::map<double,int> participationLengthMap;
 
     std::map<int,int> hopDistanceCountMap;
     //std::map<int,omnetpp::cOutVector> hopDistanceVectorMap;
@@ -101,6 +107,8 @@ protected:
     std::list<LoadAtTime_t> averageLoadList;
 
     const char * locationStatisticsFile;
+    const char * participationLengthStatsFile;
+    const char * neighborhoodStatisticsFile;
     const char * contentPopularityStatisticsFile;
     const char * networkInstantLoadStatisticsFile;
     const char * networkAverageLoadStatisticsFile;
@@ -117,8 +125,9 @@ protected:
     omnetpp::cLongHistogram duplicateRequestHist;
     omnetpp::cLongHistogram requestsPerConnectionHist;
 
+    omnetpp::cOutVector participationLengthVect;
+    omnetpp::cOutVector neighborCountVect;
     omnetpp::cOutVector serverHitVect;
-
     omnetpp::cOutVector requestsStartedVect;
     omnetpp::cOutVector packetsSentVect;
     omnetpp::cOutVector packetsForwardedVect;
@@ -193,6 +202,9 @@ public:
     void logPosition(double x, double y);                                   //Vehicles record their position every second of simulation
     void logContentRequest(std::string contentName, bool shouldCount);    //Recording the name of each item requested
 
+    void logParticipationDuration(double participationLength);
+    void logContactDuration(double contactDuration);
+
     void increasePacketsSent();                 //Increase number of Packets Sent by 1
     void increasePacketsSent(int x);            //Increase number of Packets Sent by X
     void increasePacketsForwarded();            //Increase number of Packets Forwarded by 1
@@ -220,7 +232,6 @@ public:
     void increaseTrafficMessagesLost();
     void increaseNetworkMessagesLost();
     void increaseEmergencyMessagesLost();
-
 
     void increaseMessagesUnserved(ContentClass cClass);
     void increaseTrafficMessagesUnserved();
@@ -264,6 +275,7 @@ public:
 
     void setHopsCount(int hops);            //Set the number of messages with a given hop count
     void setHopsCount(int hops, int count); //Set the number of messages with a given hop count
+
 };
 
 #endif /* BACONSTATISTICS_H */

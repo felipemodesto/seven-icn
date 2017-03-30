@@ -30,6 +30,7 @@ simple BaconStatistics {
         bool collectingPositions = default(false);
         bool collectingRequestNames = default(false);
         bool collectingLoad = default(false);
+        bool collectingNeighborhood = default(false);
 		double statisticsStartTime  = default(0); 		//First Time Stamp before statistics data is collected
 		double statisticsStopTime  = default(100); 		//Final moment until which statistics are collected
 		string locationStatisticsFile  = default("heatmap.csv");
@@ -37,4 +38,6 @@ simple BaconStatistics {
 		string networkInstantLoadStatisticsFile  = default("instantLoad.csv");
 		string networkAverageLoadStatisticsFile  = default("windowLoad.csv");
 		string generalStatisticsFile = default("generalStatistics.csv");
+		string neighborhoodStatisticsFile = default("neighborhood.csv");
+		string participationLengthStatsFile = default("participationLength.csv");
 }
