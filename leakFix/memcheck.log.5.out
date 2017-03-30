@@ -1,0 +1,810 @@
+==7487== Memcheck, a memory error detector
+==7487== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==7487== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==7487== Command: /home/felipe/Simulation/omnetpp-5.0/bin/opp_run -r 10 -u Cmdenv -c Line_Edge -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false baconnet.ini
+==7487== Parent PID: 7486
+==7487== 
+==7487== Invalid read of size 8
+==7487==    at 0x25C3F010: BaconServiceManager::handleInterestReplyMessage(WaveShortMessage*) (BaconServiceManager.cc:995)
+==7487==    by 0x25C3DA51: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:681)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487==    by 0x513ADBA: omnetpp::envir::setupUserInterface(int, char**) (startup.cc:235)
+==7487==    by 0x513BDAF: evMain (evmain.cc:40)
+==7487==  Address 0x26675388 is 56 bytes inside a block of size 88 free'd
+==7487==    at 0x4C2F24B: operator delete(void*) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C450B2: BaconServiceManager::deleteInterest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (BaconServiceManager.cc:2429)
+==7487==    by 0x25C44D7D: BaconServiceManager::removeFromInterest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int) (BaconServiceManager.cc:2406)
+==7487==    by 0x25C3EEFA: BaconServiceManager::handleInterestReplyMessage(WaveShortMessage*) (BaconServiceManager.cc:974)
+==7487==    by 0x25C3DA51: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:681)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==  Block was alloc'd at
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C4462C: BaconServiceManager::createInterest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int) (BaconServiceManager.cc:2344)
+==7487==    by 0x25C3F876: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1160)
+==7487==    by 0x25C3D9FC: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:679)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487== 
+==7487== 
+==7487== HEAP SUMMARY:
+==7487==     in use at exit: 33,717,910 bytes in 312,543 blocks
+==7487==   total heap usage: 1,733,499,177 allocs, 1,733,186,634 frees, 130,779,409,158 bytes allocated
+==7487== 
+==7487== 4 bytes in 1 blocks are possibly lost in loss record 3 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x513F2DF: __gnu_cxx::new_allocator<int>::allocate(unsigned long, void const*) (new_allocator.h:104)
+==7487==    by 0x513F14F: std::allocator_traits<std::allocator<int> >::allocate(std::allocator<int>&, unsigned long) (alloc_traits.h:491)
+==7487==    by 0x513EF37: std::_Vector_base<int, std::allocator<int> >::_M_allocate(unsigned long) (stl_vector.h:170)
+==7487==    by 0x515B497: void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) (vector.tcc:412)
+==7487==    by 0x5159820: std::vector<int, std::allocator<int> >::push_back(int const&) (stl_vector.h:923)
+==7487==    by 0x25C446E1: BaconServiceManager::createInterest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int) (BaconServiceManager.cc:2349)
+==7487==    by 0x25C3F876: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1160)
+==7487==    by 0x25C3D9FC: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:679)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487== 
+==7487== 8 bytes in 1 blocks are possibly lost in loss record 16 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x513F2DF: __gnu_cxx::new_allocator<int>::allocate(unsigned long, void const*) (new_allocator.h:104)
+==7487==    by 0x513F14F: std::allocator_traits<std::allocator<int> >::allocate(std::allocator<int>&, unsigned long) (alloc_traits.h:491)
+==7487==    by 0x513EF37: std::_Vector_base<int, std::allocator<int> >::_M_allocate(unsigned long) (stl_vector.h:170)
+==7487==    by 0x515B497: void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) (vector.tcc:412)
+==7487==    by 0x5159820: std::vector<int, std::allocator<int> >::push_back(int const&) (stl_vector.h:923)
+==7487==    by 0x25C449FA: BaconServiceManager::addToInterest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int) (BaconServiceManager.cc:2382)
+==7487==    by 0x25C3F9BF: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1183)
+==7487==    by 0x25C3D9FC: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:679)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487== 
+==7487== 16 bytes in 1 blocks are possibly lost in loss record 107 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006522: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF90: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEA30B: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4177: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487==    by 0xFFF00009E: ???
+==7487== 
+==7487== 16 bytes in 1 blocks are possibly lost in loss record 108 of 416
+==7487==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x4C2FDEF: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF8487D7: g_realloc (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006406: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF90: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEA30B: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4177: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487== 
+==7487== 16 bytes in 1 blocks are possibly lost in loss record 109 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006522: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF90: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEA371: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4177: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487==    by 0xFFF00009E: ???
+==7487== 
+==7487== 16 bytes in 1 blocks are possibly lost in loss record 110 of 416
+==7487==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x4C2FDEF: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF8487D7: g_realloc (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006406: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF90: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEA371: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4177: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487== 
+==7487== 16 bytes in 1 blocks are possibly lost in loss record 111 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006522: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF90: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFF3B04: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4181: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487==    by 0xFFF00009E: ???
+==7487== 
+==7487== 16 bytes in 1 blocks are possibly lost in loss record 112 of 416
+==7487==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x4C2FDEF: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF8487D7: g_realloc (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006406: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF90: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFF3B04: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4181: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487== 
+==7487== 16 bytes in 1 blocks are possibly lost in loss record 113 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006522: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF90: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEEC1B: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4186: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487==    by 0xFFF00009E: ???
+==7487== 
+==7487== 16 bytes in 1 blocks are possibly lost in loss record 114 of 416
+==7487==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x4C2FDEF: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF8487D7: g_realloc (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006406: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF90: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEEC1B: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4186: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487== 
+==7487== 24 bytes in 1 blocks are possibly lost in loss record 134 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C2C3AF: BaconLibrary::buildContentList() (BaconLibrary.cc:47)
+==7487==    by 0x25C2C23A: BaconLibrary::initialize(int) (BaconLibrary.cc:20)
+==7487==    by 0x60CF2D3: omnetpp::cModule::initializeModules(int) (cmodule.cc:1374)
+==7487==    by 0x60CF337: omnetpp::cModule::initializeModules(int) (cmodule.cc:1387)
+==7487==    by 0x60CEEF3: omnetpp::cModule::callInitialize() (cmodule.cc:1318)
+==7487==    by 0x6100EC8: omnetpp::cSimulation::callInitialize() (csimulation.cc:445)
+==7487==    by 0x5143612: omnetpp::envir::EnvirBase::startRun() (envirbase.cc:613)
+==7487==    by 0x4E45551: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:266)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487==    by 0x513ADBA: omnetpp::envir::setupUserInterface(int, char**) (startup.cc:235)
+==7487== 
+==7487== 24 bytes in 1 blocks are possibly lost in loss record 135 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C3E56A: BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage*) (BaconServiceManager.cc:829)
+==7487==    by 0x25C3DAA6: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:683)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487==    by 0x513ADBA: omnetpp::envir::setupUserInterface(int, char**) (startup.cc:235)
+==7487== 
+==7487== 88 bytes in 1 blocks are possibly lost in loss record 267 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C4462C: BaconServiceManager::createInterest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int) (BaconServiceManager.cc:2344)
+==7487==    by 0x25C3F876: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1160)
+==7487==    by 0x25C3D9FC: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:679)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487== 
+==7487== 96 bytes in 1 blocks are possibly lost in loss record 318 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10005A59: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x10005B43: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE40AA: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487==    by 0xFFF00009E: ???
+==7487==    by 0xFFF0000A1: ???
+==7487== 
+==7487== 96 bytes in 1 blocks are possibly lost in loss record 319 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10005A59: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x10005B43: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF82: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEA30B: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4177: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487== 
+==7487== 96 bytes in 1 blocks are possibly lost in loss record 320 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10005A59: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x10005B43: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF82: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEA371: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4177: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487== 
+==7487== 96 bytes in 1 blocks are possibly lost in loss record 321 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10005A59: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x10005B43: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF82: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFF3B04: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4181: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487== 
+==7487== 96 bytes in 1 blocks are possibly lost in loss record 322 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10005A59: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x10005B43: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AF82: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEEC1B: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4186: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487== 
+==7487== 96 bytes in 4 blocks are possibly lost in loss record 323 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C3E56A: BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage*) (BaconServiceManager.cc:829)
+==7487==    by 0x25C3DB50: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:687)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487==    by 0x513ADBA: omnetpp::envir::setupUserInterface(int, char**) (startup.cc:235)
+==7487== 
+==7487== 108 bytes in 3 blocks are possibly lost in loss record 327 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x513F2DF: __gnu_cxx::new_allocator<int>::allocate(unsigned long, void const*) (new_allocator.h:104)
+==7487==    by 0x513F14F: std::allocator_traits<std::allocator<int> >::allocate(std::allocator<int>&, unsigned long) (alloc_traits.h:491)
+==7487==    by 0x513EF37: std::_Vector_base<int, std::allocator<int> >::_M_allocate(unsigned long) (stl_vector.h:170)
+==7487==    by 0x515E7B6: std::_Vector_base<int, std::allocator<int> >::_M_create_storage(unsigned long) (stl_vector.h:185)
+==7487==    by 0x515C0C2: std::_Vector_base<int, std::allocator<int> >::_Vector_base(unsigned long, std::allocator<int> const&) (stl_vector.h:136)
+==7487==    by 0x25C46ABD: std::vector<int, std::allocator<int> >::vector(unsigned long, std::allocator<int> const&) (stl_vector.h:278)
+==7487==    by 0x25C3E57F: BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage*) (BaconServiceManager.cc:829)
+==7487==    by 0x25C3DAA6: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:683)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487== 
+==7487== 128 bytes in 8 blocks are possibly lost in loss record 329 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x513F2DF: __gnu_cxx::new_allocator<int>::allocate(unsigned long, void const*) (new_allocator.h:104)
+==7487==    by 0x513F14F: std::allocator_traits<std::allocator<int> >::allocate(std::allocator<int>&, unsigned long) (alloc_traits.h:491)
+==7487==    by 0x513EF37: std::_Vector_base<int, std::allocator<int> >::_M_allocate(unsigned long) (stl_vector.h:170)
+==7487==    by 0x515E7B6: std::_Vector_base<int, std::allocator<int> >::_M_create_storage(unsigned long) (stl_vector.h:185)
+==7487==    by 0x515C0C2: std::_Vector_base<int, std::allocator<int> >::_Vector_base(unsigned long, std::allocator<int> const&) (stl_vector.h:136)
+==7487==    by 0x25C46ABD: std::vector<int, std::allocator<int> >::vector(unsigned long, std::allocator<int> const&) (stl_vector.h:278)
+==7487==    by 0x25C3E57F: BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage*) (BaconServiceManager.cc:829)
+==7487==    by 0x25C3DB50: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:687)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487== 
+==7487== 132 bytes in 1 blocks are possibly lost in loss record 331 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006DFF: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AFE0: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEA30B: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4177: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487==    by 0xFFF00009E: ???
+==7487== 
+==7487== 132 bytes in 1 blocks are possibly lost in loss record 332 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006DFF: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AFE0: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEA371: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4177: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487==    by 0xFFF00009E: ???
+==7487== 
+==7487== 148 bytes in 1 blocks are possibly lost in loss record 334 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006BD6: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AFE0: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFF3B04: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4181: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487==    by 0xFFF00009E: ???
+==7487== 
+==7487== 148 bytes in 1 blocks are possibly lost in loss record 335 of 416
+==7487==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF848770: g_malloc0 (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x10006BD6: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000AFE0: g_type_register_fundamental (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFEEC1B: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE4186: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487==    by 0xFFF00009E: ???
+==7487== 
+==7487== 176 bytes in 2 blocks are definitely lost in loss record 340 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C3559C: BaconStatistics::increaseHopCountResult(int) (BaconStatistics.cc:673)
+==7487==    by 0x25C3B487: BaconServiceManager::cleanConnections() (BaconServiceManager.cc:125)
+==7487==    by 0x25C43085: BaconServiceManager::replyAfterContentInclusion(Connection_t*) (BaconServiceManager.cc:1969)
+==7487==    by 0x25C429E3: BaconServiceManager::fulfillPendingInterest(Connection_t*) (BaconServiceManager.cc:1874)
+==7487==    by 0x25C4282E: BaconServiceManager::completeRemoteDataTransfer(Connection_t*) (BaconServiceManager.cc:1800)
+==7487==    by 0x25C3D03A: BaconServiceManager::handleSelfTimer(WaveShortMessage*) (BaconServiceManager.cc:528)
+==7487==    by 0x25C454C1: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2465)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487== 
+==7487== 184 bytes in 1 blocks are possibly lost in loss record 342 of 416
+==7487==    at 0x4C2FD5F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0xF8487D7: g_realloc (in /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2)
+==7487==    by 0x100059D8: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x1000B2CC: g_type_register_static (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFF5799: g_param_type_register_static (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFF7AFB: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0xFFE418B: ??? (in /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2)
+==7487==    by 0x40104E9: call_init.part.0 (dl-init.c:72)
+==7487==    by 0x40105FA: call_init (dl-init.c:30)
+==7487==    by 0x40105FA: _dl_init (dl-init.c:120)
+==7487==    by 0x4000CF9: ??? (in /lib/x86_64-linux-gnu/ld-2.23.so)
+==7487==    by 0xE: ???
+==7487==    by 0xFFF00006E: ???
+==7487== 
+==7487== 960 bytes in 6 blocks are possibly lost in loss record 364 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C433CA: BaconServiceManager::createGenericConnection(Content_t*) (BaconServiceManager.cc:2004)
+==7487==    by 0x25C43C39: BaconServiceManager::createClientSidedConnection(WaveShortMessage*) (BaconServiceManager.cc:2125)
+==7487==    by 0x25C3ED90: BaconServiceManager::handleInterestReplyMessage(WaveShortMessage*) (BaconServiceManager.cc:951)
+==7487==    by 0x25C3DA51: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:681)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487== 
+==7487== 1,320 (528 direct, 792 indirect) bytes in 22 blocks are definitely lost in loss record 369 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C4196B: BaconServiceManager::transmitDataChunks(Connection_t*, std::vector<int, std::allocator<int> >*) (BaconServiceManager.cc:1647)
+==7487==    by 0x25C3E7C4: BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage*) (BaconServiceManager.cc:864)
+==7487==    by 0x25C3DAA6: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:683)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487== 
+==7487== 1,436 (1,144 direct, 292 indirect) bytes in 13 blocks are definitely lost in loss record 371 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C4462C: BaconServiceManager::createInterest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int) (BaconServiceManager.cc:2344)
+==7487==    by 0x25C3F876: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1160)
+==7487==    by 0x25C3D9FC: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:679)
+==7487==    by 0x25C45617: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2487)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487== 
+==7487== 1,584 bytes in 18 blocks are definitely lost in loss record 372 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C3559C: BaconStatistics::increaseHopCountResult(int) (BaconStatistics.cc:673)
+==7487==    by 0x25C3B487: BaconServiceManager::cleanConnections() (BaconServiceManager.cc:125)
+==7487==    by 0x25C43085: BaconServiceManager::replyAfterContentInclusion(Connection_t*) (BaconServiceManager.cc:1969)
+==7487==    by 0x25C429E3: BaconServiceManager::fulfillPendingInterest(Connection_t*) (BaconServiceManager.cc:1874)
+==7487==    by 0x25C4282E: BaconServiceManager::completeRemoteDataTransfer(Connection_t*) (BaconServiceManager.cc:1800)
+==7487==    by 0x25C421C3: BaconServiceManager::requestChunkRetransmission(Connection_t*) (BaconServiceManager.cc:1727)
+==7487==    by 0x25C40089: BaconServiceManager::handleContentMessage(WaveShortMessage*) (BaconServiceManager.cc:1288)
+==7487==    by 0x25C3DAFB: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:685)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487== 
+==7487== 2,224 (88 direct, 2,136 indirect) bytes in 1 blocks are definitely lost in loss record 376 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C2DFAB: __gnu_cxx::new_allocator<std::_List_node<Content_t> >::allocate(unsigned long, void const*) (new_allocator.h:104)
+==7487==    by 0x25C2DE33: std::__cxx11::_List_base<Content_t, std::allocator<Content_t> >::_M_get_node() (stl_list.h:392)
+==7487==    by 0x25C2DB02: std::_List_node<Content_t>* std::__cxx11::list<Content_t, std::allocator<Content_t> >::_M_create_node<Content_t const&>(Content_t const&) (stl_list.h:571)
+==7487==    by 0x25C2D6FF: void std::__cxx11::list<Content_t, std::allocator<Content_t> >::_M_insert<Content_t const&>(std::_List_iterator<Content_t>, Content_t const&) (stl_list.h:1763)
+==7487==    by 0x25C316EB: std::__cxx11::list<Content_t, std::allocator<Content_t> >::push_front(Content_t const&) (stl_list.h:1048)
+==7487==    by 0x25C2F9C8: BaconContentProvider::addContentToLibrary(Content_t*) (BaconContentProvider.cc:301)
+==7487==    by 0x25C44383: BaconServiceManager::addContentToCache(Connection_t*) (BaconServiceManager.cc:2311)
+==7487==    by 0x25C43E90: BaconServiceManager::runCachePolicy(Connection_t*) (BaconServiceManager.cc:2167)
+==7487==    by 0x25C429BD: BaconServiceManager::fulfillPendingInterest(Connection_t*) (BaconServiceManager.cc:1865)
+==7487==    by 0x25C4282E: BaconServiceManager::completeRemoteDataTransfer(Connection_t*) (BaconServiceManager.cc:1800)
+==7487==    by 0x25C3CFA5: BaconServiceManager::handleSelfTimer(WaveShortMessage*) (BaconServiceManager.cc:512)
+==7487== 
+==7487== 2,224 (88 direct, 2,136 indirect) bytes in 1 blocks are definitely lost in loss record 377 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C2DFAB: __gnu_cxx::new_allocator<std::_List_node<Content_t> >::allocate(unsigned long, void const*) (new_allocator.h:104)
+==7487==    by 0x25C2DE33: std::__cxx11::_List_base<Content_t, std::allocator<Content_t> >::_M_get_node() (stl_list.h:392)
+==7487==    by 0x25C2DB02: std::_List_node<Content_t>* std::__cxx11::list<Content_t, std::allocator<Content_t> >::_M_create_node<Content_t const&>(Content_t const&) (stl_list.h:571)
+==7487==    by 0x25C2D6FF: void std::__cxx11::list<Content_t, std::allocator<Content_t> >::_M_insert<Content_t const&>(std::_List_iterator<Content_t>, Content_t const&) (stl_list.h:1763)
+==7487==    by 0x25C316EB: std::__cxx11::list<Content_t, std::allocator<Content_t> >::push_front(Content_t const&) (stl_list.h:1048)
+==7487==    by 0x25C2F9C8: BaconContentProvider::addContentToLibrary(Content_t*) (BaconContentProvider.cc:301)
+==7487==    by 0x25C44383: BaconServiceManager::addContentToCache(Connection_t*) (BaconServiceManager.cc:2311)
+==7487==    by 0x25C43F25: BaconServiceManager::runCachePolicy(Connection_t*) (BaconServiceManager.cc:2180)
+==7487==    by 0x25C4281B: BaconServiceManager::completeRemoteDataTransfer(Connection_t*) (BaconServiceManager.cc:1797)
+==7487==    by 0x25C3CFA5: BaconServiceManager::handleSelfTimer(WaveShortMessage*) (BaconServiceManager.cc:512)
+==7487==    by 0x25C454C1: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2465)
+==7487== 
+==7487== 4,475 (4,200 direct, 275 indirect) bytes in 25 blocks are definitely lost in loss record 383 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C9FFEC: BaseWaveApplLayer::initialize(int) (BaseWaveApplLayer.cc:46)
+==7487==    by 0x25C22078: BaconClient::initialize(int) (BaconClient.cc:15)
+==7487==    by 0x60CF2D3: omnetpp::cModule::initializeModules(int) (cmodule.cc:1374)
+==7487==    by 0x60CF337: omnetpp::cModule::initializeModules(int) (cmodule.cc:1387)
+==7487==    by 0x60CEEF3: omnetpp::cModule::callInitialize() (cmodule.cc:1318)
+==7487==    by 0x25CD9E88: Veins::TraCIScenarioManager::addModule(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Coord const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, double, double) (TraCIScenarioManager.cc:441)
+==7487==    by 0x25CDD744: Veins::TraCIScenarioManager::processVehicleSubscription(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Veins::TraCIBuffer&) (TraCIScenarioManager.cc:879)
+==7487==    by 0x25CDDD65: Veins::TraCIScenarioManager::processSubcriptionResult(Veins::TraCIBuffer&) (TraCIScenarioManager.cc:902)
+==7487==    by 0x25CDADFD: Veins::TraCIScenarioManager::subscribeToVehicleVariables(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (TraCIScenarioManager.cc:575)
+==7487==    by 0x25CDC7BF: Veins::TraCIScenarioManager::processVehicleSubscription(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Veins::TraCIBuffer&) (TraCIScenarioManager.cc:770)
+==7487==    by 0x25CDDD65: Veins::TraCIScenarioManager::processSubcriptionResult(Veins::TraCIBuffer&) (TraCIScenarioManager.cc:902)
+==7487== 
+==7487== 4,475 (4,200 direct, 275 indirect) bytes in 25 blocks are definitely lost in loss record 384 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C9FFEC: BaseWaveApplLayer::initialize(int) (BaseWaveApplLayer.cc:46)
+==7487==    by 0x25C3AD98: BaconServiceManager::initialize(int) (BaconServiceManager.cc:28)
+==7487==    by 0x60CF2D3: omnetpp::cModule::initializeModules(int) (cmodule.cc:1374)
+==7487==    by 0x60CF337: omnetpp::cModule::initializeModules(int) (cmodule.cc:1387)
+==7487==    by 0x60CEEF3: omnetpp::cModule::callInitialize() (cmodule.cc:1318)
+==7487==    by 0x25CD9E88: Veins::TraCIScenarioManager::addModule(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Coord const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, double, double) (TraCIScenarioManager.cc:441)
+==7487==    by 0x25CDD744: Veins::TraCIScenarioManager::processVehicleSubscription(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Veins::TraCIBuffer&) (TraCIScenarioManager.cc:879)
+==7487==    by 0x25CDDD65: Veins::TraCIScenarioManager::processSubcriptionResult(Veins::TraCIBuffer&) (TraCIScenarioManager.cc:902)
+==7487==    by 0x25CDADFD: Veins::TraCIScenarioManager::subscribeToVehicleVariables(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (TraCIScenarioManager.cc:575)
+==7487==    by 0x25CDC7BF: Veins::TraCIScenarioManager::processVehicleSubscription(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Veins::TraCIBuffer&) (TraCIScenarioManager.cc:770)
+==7487==    by 0x25CDDD65: Veins::TraCIScenarioManager::processSubcriptionResult(Veins::TraCIBuffer&) (TraCIScenarioManager.cc:902)
+==7487== 
+==7487== 10,240 bytes in 64 blocks are possibly lost in loss record 387 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C433CA: BaconServiceManager::createGenericConnection(Content_t*) (BaconServiceManager.cc:2004)
+==7487==    by 0x25C4382A: BaconServiceManager::createServerSidedConnection(WaveShortMessage*) (BaconServiceManager.cc:2071)
+==7487==    by 0x25C3F49A: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1088)
+==7487==    by 0x25C3D9FC: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:679)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487== 
+==7487== 10,553 (7,216 direct, 3,337 indirect) bytes in 82 blocks are definitely lost in loss record 388 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C3559C: BaconStatistics::increaseHopCountResult(int) (BaconStatistics.cc:673)
+==7487==    by 0x25C3B487: BaconServiceManager::cleanConnections() (BaconServiceManager.cc:125)
+==7487==    by 0x25C43085: BaconServiceManager::replyAfterContentInclusion(Connection_t*) (BaconServiceManager.cc:1969)
+==7487==    by 0x25C429E3: BaconServiceManager::fulfillPendingInterest(Connection_t*) (BaconServiceManager.cc:1874)
+==7487==    by 0x25C4282E: BaconServiceManager::completeRemoteDataTransfer(Connection_t*) (BaconServiceManager.cc:1800)
+==7487==    by 0x25C3CFA5: BaconServiceManager::handleSelfTimer(WaveShortMessage*) (BaconServiceManager.cc:512)
+==7487==    by 0x25C454C1: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2465)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487== 
+==7487== 11,120 (120 direct, 11,000 indirect) bytes in 5 blocks are definitely lost in loss record 389 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C2FC77: BaconContentProvider::buildContentLibrary() (BaconContentProvider.cc:346)
+==7487==    by 0x25C2E7C7: BaconContentProvider::initialize(int) (BaconContentProvider.cc:43)
+==7487==    by 0x60CF2D3: omnetpp::cModule::initializeModules(int) (cmodule.cc:1374)
+==7487==    by 0x60CF337: omnetpp::cModule::initializeModules(int) (cmodule.cc:1387)
+==7487==    by 0x60CEEF3: omnetpp::cModule::callInitialize() (cmodule.cc:1318)
+==7487==    by 0x25CD9E88: Veins::TraCIScenarioManager::addModule(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Coord const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, double, double) (TraCIScenarioManager.cc:441)
+==7487==    by 0x25CDD744: Veins::TraCIScenarioManager::processVehicleSubscription(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Veins::TraCIBuffer&) (TraCIScenarioManager.cc:879)
+==7487==    by 0x25CDDD65: Veins::TraCIScenarioManager::processSubcriptionResult(Veins::TraCIBuffer&) (TraCIScenarioManager.cc:902)
+==7487==    by 0x25CDADFD: Veins::TraCIScenarioManager::subscribeToVehicleVariables(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (TraCIScenarioManager.cc:575)
+==7487==    by 0x25CDC7BF: Veins::TraCIScenarioManager::processVehicleSubscription(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Veins::TraCIBuffer&) (TraCIScenarioManager.cc:770)
+==7487==    by 0x25CDDD65: Veins::TraCIScenarioManager::processSubcriptionResult(Veins::TraCIBuffer&) (TraCIScenarioManager.cc:902)
+==7487== 
+==7487== 15,568 (616 direct, 14,952 indirect) bytes in 7 blocks are definitely lost in loss record 390 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C2DFAB: __gnu_cxx::new_allocator<std::_List_node<Content_t> >::allocate(unsigned long, void const*) (new_allocator.h:104)
+==7487==    by 0x25C2DE33: std::__cxx11::_List_base<Content_t, std::allocator<Content_t> >::_M_get_node() (stl_list.h:392)
+==7487==    by 0x25C2DB02: std::_List_node<Content_t>* std::__cxx11::list<Content_t, std::allocator<Content_t> >::_M_create_node<Content_t const&>(Content_t const&) (stl_list.h:571)
+==7487==    by 0x25C2D6FF: void std::__cxx11::list<Content_t, std::allocator<Content_t> >::_M_insert<Content_t const&>(std::_List_iterator<Content_t>, Content_t const&) (stl_list.h:1763)
+==7487==    by 0x25C316EB: std::__cxx11::list<Content_t, std::allocator<Content_t> >::push_front(Content_t const&) (stl_list.h:1048)
+==7487==    by 0x25C2F9C8: BaconContentProvider::addContentToLibrary(Content_t*) (BaconContentProvider.cc:301)
+==7487==    by 0x25C44383: BaconServiceManager::addContentToCache(Connection_t*) (BaconServiceManager.cc:2311)
+==7487==    by 0x25C43E90: BaconServiceManager::runCachePolicy(Connection_t*) (BaconServiceManager.cc:2167)
+==7487==    by 0x25C429BD: BaconServiceManager::fulfillPendingInterest(Connection_t*) (BaconServiceManager.cc:1865)
+==7487==    by 0x25C4282E: BaconServiceManager::completeRemoteDataTransfer(Connection_t*) (BaconServiceManager.cc:1800)
+==7487==    by 0x25C40125: BaconServiceManager::handleContentMessage(WaveShortMessage*) (BaconServiceManager.cc:1312)
+==7487== 
+==7487== 17,792 (704 direct, 17,088 indirect) bytes in 8 blocks are definitely lost in loss record 393 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C2DFAB: __gnu_cxx::new_allocator<std::_List_node<Content_t> >::allocate(unsigned long, void const*) (new_allocator.h:104)
+==7487==    by 0x25C2DE33: std::__cxx11::_List_base<Content_t, std::allocator<Content_t> >::_M_get_node() (stl_list.h:392)
+==7487==    by 0x25C2DB02: std::_List_node<Content_t>* std::__cxx11::list<Content_t, std::allocator<Content_t> >::_M_create_node<Content_t const&>(Content_t const&) (stl_list.h:571)
+==7487==    by 0x25C2D6FF: void std::__cxx11::list<Content_t, std::allocator<Content_t> >::_M_insert<Content_t const&>(std::_List_iterator<Content_t>, Content_t const&) (stl_list.h:1763)
+==7487==    by 0x25C316EB: std::__cxx11::list<Content_t, std::allocator<Content_t> >::push_front(Content_t const&) (stl_list.h:1048)
+==7487==    by 0x25C2F9C8: BaconContentProvider::addContentToLibrary(Content_t*) (BaconContentProvider.cc:301)
+==7487==    by 0x25C44383: BaconServiceManager::addContentToCache(Connection_t*) (BaconServiceManager.cc:2311)
+==7487==    by 0x25C43F25: BaconServiceManager::runCachePolicy(Connection_t*) (BaconServiceManager.cc:2180)
+==7487==    by 0x25C4281B: BaconServiceManager::completeRemoteDataTransfer(Connection_t*) (BaconServiceManager.cc:1797)
+==7487==    by 0x25C40125: BaconServiceManager::handleContentMessage(WaveShortMessage*) (BaconServiceManager.cc:1312)
+==7487==    by 0x25C3DAFB: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:685)
+==7487== 
+==7487== 62,140 (55,704 direct, 6,436 indirect) bytes in 633 blocks are definitely lost in loss record 399 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C4462C: BaconServiceManager::createInterest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int) (BaconServiceManager.cc:2344)
+==7487==    by 0x25C3F876: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1160)
+==7487==    by 0x25C3D9FC: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:679)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487== 
+==7487== 71,080 (67,936 direct, 3,144 indirect) bytes in 772 blocks are definitely lost in loss record 400 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C4462C: BaconServiceManager::createInterest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int) (BaconServiceManager.cc:2344)
+==7487==    by 0x25C3F876: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1160)
+==7487==    by 0x25C3E233: BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage*) (BaconServiceManager.cc:770)
+==7487==    by 0x25C3DB50: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:687)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487== 
+==7487== 72,449 (47,608 direct, 24,841 indirect) bytes in 541 blocks are definitely lost in loss record 401 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C3559C: BaconStatistics::increaseHopCountResult(int) (BaconStatistics.cc:673)
+==7487==    by 0x25C3B487: BaconServiceManager::cleanConnections() (BaconServiceManager.cc:125)
+==7487==    by 0x25C3F7B9: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1151)
+==7487==    by 0x25C3D9FC: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:679)
+==7487==    by 0x25C45617: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2487)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487== 
+==7487== 115,100 (115,040 direct, 60 indirect) bytes in 719 blocks are definitely lost in loss record 404 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C433CA: BaconServiceManager::createGenericConnection(Content_t*) (BaconServiceManager.cc:2004)
+==7487==    by 0x25C4382A: BaconServiceManager::createServerSidedConnection(WaveShortMessage*) (BaconServiceManager.cc:2071)
+==7487==    by 0x25C3F49A: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1088)
+==7487==    by 0x25C3E233: BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage*) (BaconServiceManager.cc:770)
+==7487==    by 0x25C3DB50: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:687)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487== 
+==7487== 169,379 (112,992 direct, 56,387 indirect) bytes in 1,284 blocks are definitely lost in loss record 405 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C3559C: BaconStatistics::increaseHopCountResult(int) (BaconStatistics.cc:673)
+==7487==    by 0x25C3B487: BaconServiceManager::cleanConnections() (BaconServiceManager.cc:125)
+==7487==    by 0x25C43085: BaconServiceManager::replyAfterContentInclusion(Connection_t*) (BaconServiceManager.cc:1969)
+==7487==    by 0x25C429E3: BaconServiceManager::fulfillPendingInterest(Connection_t*) (BaconServiceManager.cc:1874)
+==7487==    by 0x25C4282E: BaconServiceManager::completeRemoteDataTransfer(Connection_t*) (BaconServiceManager.cc:1800)
+==7487==    by 0x25C40125: BaconServiceManager::handleContentMessage(WaveShortMessage*) (BaconServiceManager.cc:1312)
+==7487==    by 0x25C3DAFB: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:685)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487== 
+==7487== 288,096 bytes in 3,001 blocks are definitely lost in loss record 407 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C2370A: BaconClient::startContentRequest(omnetpp::cMessage*) (BaconClient.cc:394)
+==7487==    by 0x25C24485: BaconClient::handleMessage(omnetpp::cMessage*) (BaconClient.cc:493)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487==    by 0x513ADBA: omnetpp::envir::setupUserInterface(int, char**) (startup.cc:235)
+==7487==    by 0x513BDAF: evMain (evmain.cc:40)
+==7487==    by 0x401EFB: main (opp_run.cc:290)
+==7487== 
+==7487== 443,680 bytes in 2,773 blocks are definitely lost in loss record 408 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C433CA: BaconServiceManager::createGenericConnection(Content_t*) (BaconServiceManager.cc:2004)
+==7487==    by 0x25C4382A: BaconServiceManager::createServerSidedConnection(WaveShortMessage*) (BaconServiceManager.cc:2071)
+==7487==    by 0x25C3F49A: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1088)
+==7487==    by 0x25C3D9FC: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:679)
+==7487==    by 0x25C45617: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2487)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487== 
+==7487== 598,536 (373,080 direct, 225,456 indirect) bytes in 15,545 blocks are definitely lost in loss record 410 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C3E56A: BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage*) (BaconServiceManager.cc:829)
+==7487==    by 0x25C3DB50: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:687)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487==    by 0x513ADBA: omnetpp::envir::setupUserInterface(int, char**) (startup.cc:235)
+==7487== 
+==7487== 853,928 (344,424 direct, 509,504 indirect) bytes in 14,351 blocks are definitely lost in loss record 412 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C3E56A: BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage*) (BaconServiceManager.cc:829)
+==7487==    by 0x25C3DAA6: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:683)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487==    by 0x514199B: omnetpp::envir::EnvirBase::run(int, char**, omnetpp::cConfiguration*) (envirbase.cc:300)
+==7487==    by 0x513ADBA: omnetpp::envir::setupUserInterface(int, char**) (startup.cc:235)
+==7487== 
+==7487== 1,762,914 (1,532,320 direct, 230,594 indirect) bytes in 9,577 blocks are definitely lost in loss record 413 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C433CA: BaconServiceManager::createGenericConnection(Content_t*) (BaconServiceManager.cc:2004)
+==7487==    by 0x25C43C39: BaconServiceManager::createClientSidedConnection(WaveShortMessage*) (BaconServiceManager.cc:2125)
+==7487==    by 0x25C3ED90: BaconServiceManager::handleInterestReplyMessage(WaveShortMessage*) (BaconServiceManager.cc:951)
+==7487==    by 0x25C3DA51: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:681)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487== 
+==7487== 4,400,000 bytes in 50,000 blocks are possibly lost in loss record 415 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C2DFAB: __gnu_cxx::new_allocator<std::_List_node<Content_t> >::allocate(unsigned long, void const*) (new_allocator.h:104)
+==7487==    by 0x25C2DE33: std::__cxx11::_List_base<Content_t, std::allocator<Content_t> >::_M_get_node() (stl_list.h:392)
+==7487==    by 0x25C2DB02: std::_List_node<Content_t>* std::__cxx11::list<Content_t, std::allocator<Content_t> >::_M_create_node<Content_t const&>(Content_t const&) (stl_list.h:571)
+==7487==    by 0x25C2D6FF: void std::__cxx11::list<Content_t, std::allocator<Content_t> >::_M_insert<Content_t const&>(std::_List_iterator<Content_t>, Content_t const&) (stl_list.h:1763)
+==7487==    by 0x25C2D375: std::__cxx11::list<Content_t, std::allocator<Content_t> >::push_back(Content_t const&) (stl_list.h:1089)
+==7487==    by 0x25C2C7E5: BaconLibrary::buildContentList() (BaconLibrary.cc:117)
+==7487==    by 0x25C2C23A: BaconLibrary::initialize(int) (BaconLibrary.cc:20)
+==7487==    by 0x60CF2D3: omnetpp::cModule::initializeModules(int) (cmodule.cc:1374)
+==7487==    by 0x60CF337: omnetpp::cModule::initializeModules(int) (cmodule.cc:1387)
+==7487==    by 0x60CEEF3: omnetpp::cModule::callInitialize() (cmodule.cc:1318)
+==7487==    by 0x6100EC8: omnetpp::cSimulation::callInitialize() (csimulation.cc:445)
+==7487== 
+==7487== 20,276,223 (19,653,120 direct, 623,103 indirect) bytes in 122,832 blocks are definitely lost in loss record 416 of 416
+==7487==    at 0x4C2E0EF: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==7487==    by 0x25C433CA: BaconServiceManager::createGenericConnection(Content_t*) (BaconServiceManager.cc:2004)
+==7487==    by 0x25C4382A: BaconServiceManager::createServerSidedConnection(WaveShortMessage*) (BaconServiceManager.cc:2071)
+==7487==    by 0x25C3F49A: BaconServiceManager::handleInterestMessage(WaveShortMessage*) (BaconServiceManager.cc:1088)
+==7487==    by 0x25C3D9FC: BaconServiceManager::onNetworkMessage(WaveShortMessage*) (BaconServiceManager.cc:679)
+==7487==    by 0x25C45650: BaconServiceManager::handleLowerMsg(omnetpp::cMessage*) (BaconServiceManager.cc:2491)
+==7487==    by 0x25C454E3: BaconServiceManager::handleMessage(omnetpp::cMessage*) (BaconServiceManager.cc:2469)
+==7487==    by 0x6101E7A: omnetpp::cSimulation::doMessageEvent(omnetpp::cMessage*, omnetpp::cSimpleModule*) (csimulation.cc:692)
+==7487==    by 0x6101B55: omnetpp::cSimulation::executeEvent(omnetpp::cEvent*) (csimulation.cc:634)
+==7487==    by 0x4E45BE8: omnetpp::cmdenv::Cmdenv::simulate() (cmdenv.cc:396)
+==7487==    by 0x4E455CA: omnetpp::cmdenv::Cmdenv::doRun() (cmdenv.cc:276)
+==7487==    by 0x5143413: omnetpp::envir::EnvirBase::run() (envirbase.cc:580)
+==7487== 
+==7487== LEAK SUMMARY:
+==7487==    definitely lost: 23,054,664 bytes in 172,237 blocks
+==7487==    indirectly lost: 1,731,808 bytes in 39,866 blocks
+==7487==      possibly lost: 4,413,032 bytes in 50,108 blocks
+==7487==    still reachable: 4,518,406 bytes in 50,332 blocks
+==7487==                       of which reachable via heuristic:
+==7487==                         newarray           : 1,536 bytes in 16 blocks
+==7487==         suppressed: 0 bytes in 0 blocks
+==7487== Reachable blocks (those to which a pointer was found) are not shown.
+==7487== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==7487== 
+==7487== For counts of detected and suppressed errors, rerun with: -v
+==7487== ERROR SUMMARY: 2409 errors from 53 contexts (suppressed: 0 from 0)
