@@ -23,14 +23,17 @@ void BaconStatistics::initialize(int stage) {
         collectingRequestNames = par("collectingRequestNames").boolValue();
         collectingPositions = par("collectingPositions").boolValue();
         collectingLoad = par("collectingLoad").boolValue();
+        collectingNeighborhood = par("collectingNeighborhood").boolValue();
         statisticsStartTime = par("statisticsStartTime").doubleValue();
         statisticsStopTime = par("statisticsStopTime").doubleValue();
 
         locationStatisticsFile = par("locationStatisticsFile").stringValue();
+        neighborhoodStatisticsFile = par("neighborhoodStatisticsFile").stringValue();
         contentPopularityStatisticsFile = par("contentNameStatisticsFile").stringValue();
         networkInstantLoadStatisticsFile = par("networkInstantLoadStatisticsFile").stringValue();
         networkAverageLoadStatisticsFile = par("networkAverageLoadStatisticsFile").stringValue();
         generalStatisticsFile = par("generalStatisticsFile").stringValue();
+        participationLengthStatsFile = par("participationLengthStatsFile").stringValue();
 
         startStatistics();
 
@@ -157,24 +160,21 @@ void BaconStatistics::startStatistics() {
     emergencyUnservedPackets = 0;
     emergencyLostPackets = 0;
     emergencyLostChunks = 0;
-
     localCacheLateHits = 0;
     localCacheHits = 0;
     remoteCacheHits = 0;
     localCacheMisses = 0;
     remoteCacheMisses = 0;
     cacheReplacements = 0;
-
 	serverCacheHits = 0;
 	backloggedResponses = 0;
-
     createdInterests = 0;
     registeredInterests = 0;
     fulfilledInterests = 0;
-
     totalTransmissionDelay = 0;
     completeTransmissionDelay = 0;
     incompleteTranmissionDelay = 0;
+    lastContactTime = 0;
 
     packetsSentHist.setName("PacketsSent");
     packetsForwardedHist.setName("PacketsForwarded");
@@ -231,6 +231,11 @@ void BaconStatistics::startStatistics() {
 
     statisticsTimekeepingVect.setName("CompletionPercentage");
 
+    neighborCountVect.setName("ContactTime");
+    participationLengthVect.setName("ParticipationTime");
+
+    participationLengthVect.record(0);
+    neighborCountVect.record(0);
     requestsStartedVect.record(0);
     packetsSentVect.record(0);
     packetsUnservedVect.record(0);
@@ -292,6 +297,23 @@ void BaconStatistics::stopStatistics() {
         fprintf(pFile, "X,Y,Count\n");
         for(auto iterator = locationMap.begin(); iterator != locationMap.end(); iterator++) {
             fprintf(pFile, "%s,%i\n",iterator->first.c_str(),iterator->second);
+        }
+        fclose(pFile);
+    }
+
+    //If we're logging Contact Times
+    if (collectingNeighborhood) {
+        pFile = fopen ( neighborhoodStatisticsFile, "w");
+        fprintf(pFile, "Duration,Count\n");
+        for(auto iterator = contactDurationMap.begin(); iterator != contactDurationMap.end(); iterator++) {
+            fprintf(pFile, "%f,%i\n",iterator->first,iterator->second);
+        }
+        fclose(pFile);
+
+        pFile = fopen ( participationLengthStatsFile, "w");
+        fprintf(pFile, "Length,Count\n");
+        for(auto iterator = participationLengthMap.begin(); iterator != participationLengthMap.end(); iterator++) {
+            fprintf(pFile, "%f,%i\n",iterator->first,iterator->second);
         }
         fclose(pFile);
     }
@@ -366,53 +388,6 @@ void BaconStatistics::stopStatistics() {
 
     fclose(pFile);
 
-    //I have since decided not to record statistics using the stuff provided by omnet, it takes too much space.
-    /*
-    //Recording Scalar Variables
-    recordScalar("packetsSent",packetsSent);
-    recordScalar("packetsForwarded",packetsForwarded);
-    recordScalar("packetsUnserved",packetsUnserved);
-    recordScalar("packetsLost",packetsLost);
-    recordScalar("chunksLost",chunksLost);
-    //
-    recordScalar("totalVehicles",totalVehicles);
-    recordScalar("activeVehicles",activeVehicles);
-    //
-    recordScalar("multimediaSentPackets",multimediaSentPackets);
-    recordScalar("multimediaUnservedPackets",multimediaUnservedPackets);
-    recordScalar("multimediaLostPackets",multimediaLostPackets);
-    recordScalar("multimediaLostChunks",multimediaLostChunks);
-    recordScalar("trafficSentPackets",trafficSentPackets);
-    recordScalar("trafficUnservedPackets",trafficUnservedPackets);
-    recordScalar("trafficLostPackets",trafficLostPackets);
-    recordScalar("trafficLostChunks",trafficLostChunks);
-    recordScalar("networkSentPackets",networkSentPackets);
-    recordScalar("networkUnservedPackets",networkUnservedPackets);
-    recordScalar("networkLostPackets",networkLostPackets);
-    recordScalar("networkLostChunks",networkLostChunks);
-    recordScalar("emergencySentPackets",emergencySentPackets);
-    recordScalar("emergencyUnservedPackets",emergencyUnservedPackets);
-    recordScalar("emergencyLostPackets",emergencyLostPackets);
-    recordScalar("emergencyLostChunks",emergencyLostChunks);
-    //
-    recordScalar("localCacheHits",localCacheHits);
-    recordScalar("remoteCacheHits",remoteCacheHits);
-    recordScalar("localCacheMisses",localCacheMisses);
-    recordScalar("remoteCacheMisses",remoteCacheMisses);
-    recordScalar("cacheReplacements",cacheReplacements);
-    //
-    //
-    //Recording Histograms
-    packetsSentHist.recordAs("PacketsSent");
-    packetsUnservedHist.recordAs("PacketsUnserved");
-    packetsLostHist.recordAs("PacketsLost");
-    chunksLostHist.recordAs("ChunksLost");
-    serverBusyHist.recordAs("ServerBusy");
-    contentUnavailableHist.recordAs("ContentUnavailable");
-    hopCountHist.recordAs("HopCount");
-    duplicateRequestHist.recordAs("DuplicateRequests");
-    */
-
     hasStopped = true;
 
     std::cout << "\t\\--> (St) STATISTICS COLLECTION IS DONE!\n";
@@ -431,6 +406,35 @@ void BaconStatistics::logPosition(double x, double y) {
     if(locationMap.insert(std::make_pair(currentLocation, 1)).second == false) {
         //If object already exists lets increase its value
         locationMap[currentLocation] = locationMap[currentLocation] + 1;
+    }
+}
+
+//
+void BaconStatistics::logContactDuration(double contactDuration) {
+    if (!collectingNeighborhood) return;
+
+    neighborCountVect.record(lastContactTime);
+    lastContactTime = contactDuration;
+
+    //Trying to insert new content request tuple
+    //NOTE: Content requests are added as 0 because we include them ALL when initializing the content library
+    if(contactDurationMap.insert(std::make_pair(contactDuration, 1)).second == false) {
+        //If object already exists lets increase its value
+        contactDurationMap[contactDuration] = contactDurationMap[contactDuration] + 1;
+    }
+}
+
+void BaconStatistics::logParticipationDuration(double participationLength) {
+    if (!collectingNeighborhood) return;
+
+    participationLengthVect.record(lastParticipationlength);
+    lastParticipationlength = participationLength;
+
+    //Trying to insert new content request tuple
+    //NOTE: Content requests are added as 0 because we include them ALL when initializing the content library
+    if(participationLengthMap.insert(std::make_pair(participationLength, 1)).second == false) {
+        //If object already exists lets increase its value
+        participationLengthMap[participationLength] = participationLengthMap[participationLength] + 1;
     }
 }
 
