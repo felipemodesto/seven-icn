@@ -201,8 +201,7 @@ rm "${SCENARIO_NAME}.*"
 #### (This is not really being used, but in theory is passed as an argument to the RandomTrips script)
 #printf "Writing Restriction Class Document...\n"
 echo "<additional>" > ${TRIP_CONFIG_FILE}
-echo "	<vType id=\"fastCar\" accel=\"0.8\" decel=\"4.5\" sigma=\"0.5\" maxSpeed=\"33\" vClass=\"passenger\" probability=\"0.5\" speedFactor=\"1\" speedDev=\"0.3\"/>" >> ${TRIP_CONFIG_FILE}
-echo "	<vType id=\"slowCar\" accel=\"0.8\" decel=\"4.5\" sigma=\"0.5\" maxSpeed=\"22\" vClass=\"truck\" probability=\"0.5\" speedFactor=\"1\" speedDev=\"0.3\"/>" >> ${TRIP_CONFIG_FILE}
+echo "	<vType id=\"fastCar\" accel=\"0.8\" decel=\"4.5\" sigma=\"0.5\" maxSpeed=\"45\" vClass=\"passenger\" probability=\"1.0\" speedFactor=\"1.2\" speedDev=\"0.3\" impatience=\"0.5\"/>" >> ${TRIP_CONFIG_FILE}
 echo "</additional>" >> ${TRIP_CONFIG_FILE}
 echo " \\--> done.\n"
 
