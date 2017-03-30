@@ -90,6 +90,8 @@ class BaconServiceManager : public BaseWaveApplLayer {
         int lowMediumBandwidth = 50;
         int mediumHighBandwidth = 80;
 
+        simtime_t enterSimulation;
+
         std::vector<cMessage*> cancelMessageTimerVector;
         std::list<Interest_t*> PIT;
         std::list<Connection_t*> connectionList;

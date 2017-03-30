@@ -79,6 +79,8 @@ void BaconServiceManager::initialize(int stage) {
             networkBitLoad = 0;
             multimediaBitLoad = 0;
 
+            enterSimulation = simTime();
+
             WATCH(currentBitLoad);
             WATCH(transitBitLoad);
             WATCH(networkBitLoad);
@@ -129,6 +131,10 @@ void BaconServiceManager::finish() {
     stats->setChunksLost(totalChunksLost);
     stats->setServerBusy(totalServerBusyResponses);
     stats->setContentUnavailable(totalContentUnavailableResponses);
+
+    simtime_t duration = simTime() - enterSimulation;
+    stats->logParticipationDuration(duration.dbl());
+
     bool error = stats->decreaseActiveVehicles(myId);
 
     //For log purposes we'll inform our position data if we have vehicle exit issues
@@ -2604,6 +2610,8 @@ void BaconServiceManager::refreshNeighborhood() {
     double beaconInterval = par("beaconInterval").doubleValue();
     for (auto it = neighborList.begin(); it != neighborList.end();) {
         if ((*it).lastContact < simTime() - (beaconInterval * 5)) {
+            simtime_t timeDif = (*it).lastContact - (*it).firstContact;
+            stats->logContactDuration(roundf((timeDif.dbl() * 100) / 100));
             it = neighborList.erase(it);
         } else {
             it++;
@@ -2772,6 +2780,9 @@ void BaconServiceManager::sendBeacon() {
     //Updating neighbor prior to beacon broadcast
     refreshNeighborhood();
 
+    //std::cout << "(SM) <" << myId << "> Sending Beacon!\n";
+
+
     WaveShortMessage * beaconMessage = prepareWSM(MessageClass::BEACON, beaconLengthBits, type_CCH, beaconPriority, -1, -1);
 
     //Adding Centrality of node
@@ -2848,17 +2859,13 @@ void BaconServiceManager::handleLowerMsg(cMessage* msg) {
 
 //IGNORE : Function from Base Class
 void BaconServiceManager::onBeacon(WaveShortMessage* wsm) {
-    //EV_WARN << "(SM) WARNING: OnBeacon Got a Message!\n";
-    //EV_WARN.flush();
+    //std::cout << "(SM) <" << myId << "> Got a Beacon!\n";
     addNeighbor(wsm);
     delete (wsm);
 }
 
 //IGNORE : Function from Base Class
 void BaconServiceManager::onData(WaveShortMessage* wsm) {
-    //EV_WARN << "(SM) WARNING: OnData Got a Message!\n";
-    //EV_WARN.flush();
-    //delete (wsm);
     handleContentMessage(wsm);
 }
 
