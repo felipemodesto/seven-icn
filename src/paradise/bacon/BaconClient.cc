@@ -11,6 +11,7 @@ Define_Module(BaconClient);
 
 //Initialization Function
 void BaconClient::initialize(int stage) {
+
     //Initializing
     BaseWaveApplLayer::initialize(stage);
 
@@ -228,8 +229,9 @@ void BaconClient::refreshDisplay() const {
 //*/
 
 
-
 Coord BaconClient::getPosition() {
+    //std::cout << "(Cl) Enter getPosition\n";
+    //std::cout.flush();
     Enter_Method_Silent();
     Coord currentPosition;
     currentPosition.x = lastX;
@@ -240,6 +242,8 @@ Coord BaconClient::getPosition() {
 
 //
 void BaconClient::resetLocationTimer() {
+    //std::cout << "(Cl) Enter resetLocationTimer\n";
+    //std::cout.flush();
     if (runtimeTimer == NULL) {
         runtimeTimer = new cMessage("runtimeTimer");
     } else {
@@ -250,6 +254,8 @@ void BaconClient::resetLocationTimer() {
 
 //
 void BaconClient::notifyLocation() {
+    //std::cout << "(Cl) Enter notifyLocation\n";
+    //std::cout.flush();
     //Getting Vehicle's current position
     Coord currPos = traci->getCurrentPosition();
 
@@ -274,6 +280,8 @@ void BaconClient::startNewMessageTimer() {
 
 //
 void BaconClient::startNewMessageTimer(simtime_t timerTime) {
+    //std::cout << "(Cl) Enter startNewMessageTimer\n";
+    //std::cout.flush();
     if (contentTimerMessage == NULL) {
         contentTimerMessage = new cMessage("contentTimerMessage");
     } else {
@@ -294,7 +302,9 @@ void BaconClient::startNewMessageTimer(simtime_t timerTime) {
 //=============================================================
 bool BaconClient::suggestContentRequest(Content_t* suggestedContent) {
     //Perform context switching for incoming message
-    Enter_Method("suggestContentRequest(%s)",suggestedContent->contentPrefix);
+    Enter_Method_Silent();
+    //std::cout << "(Cl) Enter suggestContentRequest\n";
+    //std::cout.flush();
     //std::cout << "(Cl) Hey, lets ask for: <" << requestID << ">\n";
     //TODO: Decide on stuff?
 
@@ -304,6 +314,8 @@ bool BaconClient::suggestContentRequest(Content_t* suggestedContent) {
 //
 void BaconClient::cleanRequestList() {
     Enter_Method_Silent();
+    //std::cout << "(Cl) Enter cleanRequestList\n";
+    //std::cout.flush();
     //Checking Ongoing Connections
     for(auto it = ongoingRequests.begin(); it != ongoingRequests.end();) {
         //Checking if the request has gone super stale
@@ -359,6 +371,8 @@ bool BaconClient::startContentRequest() {
 
 //
 bool BaconClient::startContentRequest(Content_t* preferedRequest) {
+    //std::cout << "(Cl) Enter startContentRequest\n";
+    //std::cout.flush();
     Enter_Method_Silent();
     //Checking if we're in a ready communication state
     if (!stats->allowedToRun()) {
@@ -472,6 +486,8 @@ bool BaconClient::startContentRequest(Content_t* preferedRequest) {
 
 //Returns a candidate for a request given the internal properties of the client (class frequency, etc)
 Content_t*  BaconClient::selectObjectForRequest () {
+    //std::cout << "(Cl) Enter selectObjectForRequest\n";
+    //std::cout.flush();
 
     //Choosing content request type
     double contentInterest = multimediaInterest + networkInterest + trafficInterest + emergencyInterest;
@@ -544,7 +560,9 @@ Content_t*  BaconClient::selectObjectForRequest () {
 
 //
 void BaconClient::handleMessage(cMessage *msg) {
-    if ( msg == contentTimerMessage ) {
+    //std::cout << "(Cl) Enter handleMessage\n";
+    //std::cout.flush();
+    if ( msg == contentTimerMessage || strcmp(msg->getName(),"contentTimerMessage") == 0  ) {
         //Creating timer for next request
         startNewMessageTimer();
 
@@ -554,11 +572,14 @@ void BaconClient::handleMessage(cMessage *msg) {
         }
     } else if (msg == runtimeTimer || strcmp(msg->getName(),"runtimeTimer") == 0 ) {
         notifyLocation();
-    } else {
-        //std::cout << "(SOMETHING): " << msg->getName() << "\tand\t" << msg->getKind() << "\n";
-        //std::cout.flush();
+    } else if (strcmp(msg->getName(),MessageClass::DATA.c_str()) == 0) {
         handleLowerMsg(msg);
+    } else {
+        std::cout << "\t(Cl): Error: Unknown message: Name <" << msg->getName() << ">\tand kind\t<" << msg->getKind() << ">\n";
+        std::cout.flush();
     }
+    //std::cout << "(Cl) Exit handleMessage\n";
+    //std::cout.flush();
 }
 
 //=============================================================
@@ -590,6 +611,8 @@ void BaconClient::onBeacon(WaveShortMessage* wsm) {
 
 //
 void BaconClient::onData(WaveShortMessage* wsm) {
+    //std::cout << "(Cl) Enter onData\n";
+    //std::cout.flush();
     //Checking the message type
     if (strcmp(wsm->getName(),MessageClass::INTEREST.c_str()) == 0 ) {
         std::cerr << "(Cl) Error: Lookup Responses should be of type DATA (or similar replies to client...\n";
@@ -772,18 +795,26 @@ void BaconClient::onData(WaveShortMessage* wsm) {
 
 //IGNORE
 void BaconClient::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj) {
+    //std::cout << "(Cl) Enter receiveSignal\n";
+    //std::cout.flush();
 }
 
 //IGNORE
 void BaconClient::handleParkingUpdate(cObject* obj) {
+    std::cout << "(Cl) Enter handleParkingUpdate\n";
+    std::cout.flush();
 }
 
 //IGNORE
 void BaconClient::handlePositionUpdate(cObject* obj) {
+    //std::cout << "(Cl) Enter handleParkingUpdate\n";
+    //std::cout.flush();
 }
 
 //IGNORE
 void BaconClient::sendWSM(WaveShortMessage* wsm) {
+    //std::cout << "(Cl) Enter sendWSM\n";
+    //std::cout.flush();
     recordPacket(PassedMessage::OUTGOING, PassedMessage::LOWER_DATA, wsm);
     sendDelayed(wsm, 0, clientExchangeOut);
 }

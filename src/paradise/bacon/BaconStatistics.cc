@@ -29,15 +29,6 @@ void BaconStatistics::initialize(int stage) {
 
         simulationDirectoryFolder= par("simulationDirectoryFolder").stringValue();
 
-        //generalStatisticsFile =             par("generalStatisticsFile").stringValue();
-        //requestLocationStatsFile =          par("requestLocationStatsFile").stringValue();
-        //locationStatisticsFile =            par("locationStatisticsFile").stringValue();
-        //neighborhoodStatisticsFile =        par("neighborhoodStatisticsFile").stringValue();
-        //contentPopularityStatisticsFile =   par("contentNameStatisticsFile").stringValue();
-        //networkInstantLoadStatisticsFile =  par("networkInstantLoadStatisticsFile").stringValue();
-        //networkAverageLoadStatisticsFile =  par("networkAverageLoadStatisticsFile").stringValue();
-        //participationLengthStatsFile =      par("participationLengthStatsFile").stringValue();
-
         generalStatisticsFile =             string(simulationDirectoryFolder + par("generalStatisticsFile").stringValue()).c_str();
         requestLocationStatsFile =          string(simulationDirectoryFolder + par("requestLocationStatsFile").stringValue()).c_str();
         locationStatisticsFile =            string(simulationDirectoryFolder + par("locationStatisticsFile").stringValue()).c_str();
@@ -108,7 +99,9 @@ void BaconStatistics::keepTime() {
         double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
         begin = end;
 
-        std::cout << "(St) Current Time is: " << lastSecond << " \t CPU Time: " << round(elapsed_secs) << " sec(s)\n";
+        int simNumber = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
+
+        std::cout << "[" << simNumber << "]\t(St) Current Time is: " << lastSecond << " \t CPU Time: " << round(elapsed_secs) << " sec(s)\n";
         std::cout.flush();
 
         if (hasStarted && !hasStopped) statisticsTimekeepingVect.record( (lastSecond - statisticsStartTime) / (double) (statisticsStopTime - statisticsStartTime) );
@@ -197,7 +190,8 @@ void BaconStatistics::startStatistics() {
     serverBusyHist.setName("ServerBusy");
     contentUnavailableHist.setName("ContentUnavailable");
 
-    unviableRequestsVect.setName("unviableRequestsVect");
+    distanceFromTweetVect.setName("DistanceFromTweet");
+    unviableRequestsVect.setName("UnviableRequests");
 
     requestsStartedVect.setName("RequestsStarted");
     packetsSentVect.setName("SentPackets");
@@ -426,8 +420,8 @@ void BaconStatistics::stopStatistics() {
 
     std::cout << "\t\\--> (St) STATISTICS COLLECTION IS DONE!\n";
     std::cout.flush();
-
 }
+
 
 //
 void BaconStatistics::logPosition(double x, double y) {
@@ -538,6 +532,12 @@ void BaconStatistics::increasePacketsForwarded(int x) {
 void BaconStatistics::increasePacketsForwarded(){
     increasePacketsForwarded(1);
 }
+
+void BaconStatistics::logDistanceFromTweet(double distance) {
+    if (!shouldRecordData()) return;
+    distanceFromTweetVect.record(distance);
+}
+
 
 //Increase number of Packets were not served by X
 void BaconStatistics::increasePacketsUnserved(int x) {

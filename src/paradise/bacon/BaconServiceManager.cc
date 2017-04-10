@@ -154,6 +154,9 @@ void BaconServiceManager::finish() {
 
 //Maintenance function to reduce ConnectionList Sizes
 void BaconServiceManager::cleanConnections() {
+    //std::cout << "(SM) Enter cleanConnections\n";
+    //std::cout.flush();
+
     //Iterating through open and existing connectionsa
     for (auto it = connectionList.begin(); it != connectionList.end();) {
         simtime_t difTime = simTime() - (*it)->requestTime;
@@ -223,6 +226,8 @@ void BaconServiceManager::cleanConnections() {
             }
         }
     }
+    //std::cout << "(SM) Exit cleanConnections\n";
+    //std::cout.flush();
 }
 
 //=============================================================
@@ -231,6 +236,9 @@ void BaconServiceManager::cleanConnections() {
 
 //Function called to update the Debug Circle UI of objects
 void BaconServiceManager::updateNodeColor() {
+    //std::cout << "(SM) Enter updateNodeColor\n";
+    //std::cout.flush();
+
     bool providingContent = false;      //Red
     bool requestingContent = false;     //Green
     bool waitingForContent = false;     //Blue
@@ -299,6 +307,9 @@ void BaconServiceManager::updateNodeColor() {
     //Updating String Text for DisplayObject
     color = "r=" + radius + "," + color;
     findHost()->getDisplayString().updateWith(color.c_str());
+
+    //std::cout << "(SM) Exit updateNodeColor\n";
+    //std::cout.flush();
 }
 
 //Starts a new timer for the given message ID (assumed to be in connection list) with 1 second default delay
@@ -308,6 +319,9 @@ void BaconServiceManager::startTimer(Connection_t* connection) {
 
 //Starts a new timer for the given message ID (assumed to be in connection list) and specific delay
 void BaconServiceManager::startTimer(Connection_t* connection, double time) {
+    //std::cout << "(SM) Enter startTimer\n";
+    //std::cout.flush();
+
     if (cancelTimer(connection) == true) {
         EV_WARN << "(SM) Warning: Canceled a timer to start a timer.\n";
         EV_WARN.flush();
@@ -331,10 +345,16 @@ void BaconServiceManager::startTimer(Connection_t* connection, double time) {
     simtime_t timerTime = simTime() + time;
     cancelMessageTimerVector.push_back(messageTimer);
     scheduleAt(timerTime, messageTimer);
+
+    //std::cout << "(SM) Exit startTimer\n";
+    //std::cout.flush();
 }
 
 //Cancel/Update timer for connection timeouts
 bool BaconServiceManager::cancelTimer(Connection_t* connection) {
+    //std::cout << "(SM) Enter cancelTimer\n";
+    //std::cout.flush();
+
     if (connection == NULL) {
         return false;
     }
@@ -405,6 +425,9 @@ bool BaconServiceManager::cancelTimer(Connection_t* connection) {
 
 //Called after timer timeouts, manages
 void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
+    //std::cout << "(SM) Enter handleSelfTimer\n";
+    //std::cout.flush();
+
     //Pulling parameters from selfmessage to figure out what's going on
     cArray parArray = timerMessage->getParList();
     cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
@@ -669,6 +692,9 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
 
 //Function used to generate a basic outgoing message from a connection
 WaveShortMessage* BaconServiceManager::getGenericMessage(Connection_t* connection) {
+    //std::cout << "(SM) Enter getGenericMessage\n";
+    //std::cout.flush();
+
     //Preparing base message
     t_channel channel = dataOnSch ? type_SCH : type_CCH;
     WaveShortMessage * genericMessage = prepareWSM(MessageClass::DATA,dataLengthBits, channel, dataPriority, -1, 2);
@@ -728,6 +754,8 @@ WaveShortMessage* BaconServiceManager::getGenericMessage(Connection_t* connectio
 
 //Function called whenever we get a message coming from the network interfaces
 void BaconServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
+    //std::cout << "(SM) Enter onNetworkMessage\n";
+    //std::cout.flush();
 
     //Checking if we are the recipient
     if (wsm->getRecipientAddress() != -1 && wsm->getRecipientAddress() != myId) {
@@ -782,7 +810,8 @@ void BaconServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
 
 //
 void BaconServiceManager::handleInterestRejectMessage(WaveShortMessage* wsm) {
-    //std::cout << "(SM) <" << myId << "> Handling Reject Incoming from <" << wsm->getSenderAddress() << ">\n";
+    //std::cout << "(SM) Enter handleInterestRejectMessage\n";
+    //std::cout.flush();
 
     //Getting Basic Parameters used for evaluation
     cArray parArray = wsm->getParList();
@@ -807,7 +836,8 @@ void BaconServiceManager::handleInterestRejectMessage(WaveShortMessage* wsm) {
 
 //
 void BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
-    //std::cout << "(SM) <" << myId << "> Handling Accept Incoming from <" << wsm->getSenderAddress() << ">\n";
+    //std::cout << "(SM) Enter handleInterestAcceptMessage\n";
+    //std::cout.flush();
 
     //Checking Message Type
     if (strcmp(wsm->getName(), MessageClass::INTEREST_ACCEPT.c_str()) != 0 &&
@@ -951,8 +981,7 @@ void BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
 
 //
 void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
-
-    //std::cout << "(SM) Handling an Interest Reply Message.\n";
+    //std::cout << "(SM) Enter handleInterestReplyMessage\n";
     //std::cout.flush();
 
     //Checking Message Type
@@ -1108,7 +1137,8 @@ void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
 
 //
 void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
-    //std::cout << "(SM) Handling Interest Incoming from <" << wsm->getSenderAddress() << ">\n";
+    //std::cout << "(SM) Enter handleInterestMessage\n";
+    //std::cout.flush();
 
     //Checking Message Type
     if (strcmp(wsm->getName(), MessageClass::INTEREST.c_str()) != 0) {
@@ -1333,6 +1363,9 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
 
 //Function called upon data delivery
 void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
+    //std::cout << "(SM) Enter handleContentMessage\n";
+    //std::cout.flush();
+
     cArray parArray = wsm->getParList();
     cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
     cMsgPar* requestSequenceNumber = static_cast<cMsgPar*>(parArray.get(MessageParameter::SEQUENCE_NUMBER.c_str()));
@@ -1462,7 +1495,7 @@ void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
 
 //Function called to reply an interest message of content availability
 void BaconServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Connection_t* connection) {
-    //std::cout << "(SM) <" << myId << ">\tNotifying <" << connection->peerID << ">\tit has <" << connection->requestPrefix << ">\tTime: <" << simTime() << ">\n";
+    //std::cout << "(SM) Enter notifyOfContentAvailability\n";
     //std::cout.flush();
 
     //std::cout << "V";
@@ -1540,6 +1573,9 @@ void BaconServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Con
 
 //Function called to outsource content discovery, broadcasting an interest
 void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection_t* connection) {
+    //std::cout << "(SM) Enter forwardContentSearch\n";
+    //std::cout.flush();
+
     if (connection == NULL) {
         std::cerr << "(SM) <" << myId << "> Error: Connection on ForwardContentSearch is NULL.\n";
         std::cerr.flush();
@@ -1630,7 +1666,7 @@ void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection
 
 //Function called to accept a proposal for content offered by a remote server
 void BaconServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection_t* connection) {
-    //std::cout << "(SM) <" << myId << "> is asking to ACCEPT the request for <" << connection->requestPrefix << "> sent by <" << wsm->getSenderAddress() << "> Time: <" << simTime() << ">.\n";
+    //std::cout << "(SM) Enter acceptNetworkrequest\n";
     //std::cout.flush();
 
     //Checking our connection, which we assume is already configured as an upstream connection (connecting us to the server which will provide us with data)
@@ -1719,10 +1755,7 @@ void BaconServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection
 
 //Function called to reject a proposal for content offered by a remote server
 void BaconServiceManager::rejectNetworkrequest(WaveShortMessage* wsm, Connection_t* connection) {
-    //std::cout << "(SM) <" << myId << "> is REJECTING the request for <" << connection->requestPrefix << "> sent by <" << wsm->getSenderAddress() << ">.\n";
-    //std::cout.flush();
-
-    //std::cout << "(SM) <" << wsm->getSenderAddress() << "> -/-> nope -/-> <" << myId << ">. simTime: <" << simTime() << ">\n";
+    //std::cout << "(SM) Enter rejectNetworkrequest\n";
     //std::cout.flush();
 
     if (connection == NULL) {
@@ -1758,7 +1791,7 @@ void BaconServiceManager::rejectNetworkrequest(WaveShortMessage* wsm, Connection
 
 //Function called by transmitting node whenever it gets a data_missing message (notification of missing chunks)
 void BaconServiceManager::transmitDataChunks(Connection_t* connection, std::vector<int>* chunkVector) {
-    //std::cout << "(SM) <" << myId << "> Starting data transfer to <" << connection->peerID << ">.\n";
+    //std::cout << "(SM) Enter transmitDataChunks\n";
     //std::cout.flush();
 
     //Checking if the connection is null (not previously listed and therefore cannot be used for retransmission)
@@ -1861,6 +1894,9 @@ void BaconServiceManager::transmitDataChunks(Connection_t* connection, std::vect
 
 //
 void BaconServiceManager::requestChunkRetransmission(Connection_t* connection) {
+    //std::cout << "(SM) Enter requestChunkRetransmission\n";
+    //std::cout.flush();
+
     int requestSize = (int) ceil(connection->requestedContent->contentSize / (double) dataLengthBits);
 
     std::string missingChunkList = "";
@@ -1940,7 +1976,7 @@ void BaconServiceManager::requestChunkRetransmission(Connection_t* connection) {
 
 //
 void BaconServiceManager::completeRemoteDataTransfer(Connection_t* connection) {
-    //std::cout << "(SM) <" << myId << "> Connection <" << connection->requestID << "> for item <" << connection->requestPrefix << "> with node " << connection->peerID << " and status " << connection->connectionStatus << " at time " << simTime() << " is now complete!.\n";
+    //std::cout << "(SM) Enter completeRemoteDataTransfer\n";
     //std::cout.flush();
 
     if (connection->connectionStatus == ConnectionStatus::DONE_RECEIVED) {
@@ -1989,6 +2025,9 @@ void BaconServiceManager::completeRemoteDataTransfer(Connection_t* connection) {
 
 //
 void BaconServiceManager::fulfillPendingInterest(Connection_t* connection) {
+    //std::cout << "(SM) Enter fulfillPendingInterest\n";
+    //std::cout.flush();
+
     Interest_t* pendingInterest = getInterest(connection->requestedContent->contentPrefix);
 
     //This should be not null because even local requests have
@@ -2058,6 +2097,9 @@ void BaconServiceManager::fulfillPendingInterest(Connection_t* connection) {
 
 //Reply to node that we have content after some delay, possibly after getting it from another request and checking our PIT
 void BaconServiceManager::replyAfterContentInclusion(Connection_t* connection) {
+    //std::cout << "(SM) Enter replyAfterContentInclusion\n";
+    //std::cout.flush();
+
     t_channel channel = dataOnSch ? type_SCH : type_CCH;
     WaveShortMessage * responseMessage = prepareWSM(MessageClass::INTEREST_REPLY, headerLength, channel, dataPriority, -1, 2);
 
@@ -2138,6 +2180,9 @@ void BaconServiceManager::replyAfterContentInclusion(Connection_t* connection) {
 
 //Returns connection from list of connections. Will return NULL if ID is not listed
 Connection_t* BaconServiceManager::getConnection(long requestID, int peerID) {
+    //std::cout << "(SM) Enter getConnection\n";
+    //std::cout.flush();
+
     for (auto it = connectionList.begin(); it != connectionList.end(); it++) {
         //Checking Downstream
         //if (myId == 0 && requestID == 2) {
@@ -2157,6 +2202,9 @@ Connection_t* BaconServiceManager::getConnection(long requestID, int peerID) {
 
 //creates a generic connection (but does not add it to the connection list as the connection object has generic parameters set)
 Connection_t* BaconServiceManager::createGenericConnection(Content_t* content) {
+    //std::cout << "(SM) Enter createGenericConnection\n";
+    //std::cout.flush();
+
     if (content == NULL) {
         EV_ERROR << "(SM) CreateConnection got NULL WSM object.\n";
         EV_ERROR.flush();
@@ -2192,6 +2240,9 @@ Connection_t* BaconServiceManager::createGenericConnection(Content_t* content) {
 
 //
 Connection_t* BaconServiceManager::createServerSidedConnection(WaveShortMessage *wsm) {
+    //std::cout << "(SM) Enter createServerSidedConnection\n";
+    //std::cout.flush();
+
     //Unwrapping contents of request
     cArray parArray = wsm->getParList();
     cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
@@ -2250,6 +2301,9 @@ Connection_t* BaconServiceManager::createServerSidedConnection(WaveShortMessage 
 
 //
 Connection_t* BaconServiceManager::createClientSidedConnection(WaveShortMessage *wsm) {
+    //std::cout << "(SM) Enter createClientSidedConnection\n";
+    //std::cout.flush();
+
     //Unwrapping contents of request
     cArray parArray = wsm->getParList();
     cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
@@ -2319,9 +2373,9 @@ Connection_t* BaconServiceManager::createClientSidedConnection(WaveShortMessage 
 
 //In-network Cache Policy
 void BaconServiceManager::runCachePolicy(Connection_t* connection) {
-
-    //std::cout << "(SM) <" << myId << "> Running Cache Policy: <" << inNetworkCaching << "> for Connection <" << connection->requestID << "> with Up/Down <" << connection->upstreamHopCount << ";" << connection->downstreamHopCount << "> and status <" << connection->connectionStatus << ">. Time: <" << simTime() << ">\n";
+    //std::cout << "(SM) Enter runCachePolicy\n";
     //std::cout.flush();
+
 
     //We always add local requests to cache
     if (connection->peerID == myId) {
@@ -2472,12 +2526,18 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
 
 //Function called to request content be added to cache
 void BaconServiceManager::addContentToCache(Connection_t* connection) {
+    //std::cout << "(SM) Enter addContentToCache\n";
+    //std::cout.flush();
+
     cache->addContentToLibrary(connection->requestedContent);
     connection->downstreamCacheDistance = 0;
 }
 
 //Function called to request content be removed from cache (only called by move copy down)
 void BaconServiceManager::removeContentFromCache(Connection_t* connection) {
+    //std::cout << "(SM) Enter removeContentFromCache\n";
+    //std::cout.flush();
+
     cache->removeContentFromLibrary(connection->requestedContent);
 }
 
@@ -2487,6 +2547,9 @@ void BaconServiceManager::removeContentFromCache(Connection_t* connection) {
 
 //Function called to obtain connection from list of connections. Will return NULL if ID is not listed
 Interest_t* BaconServiceManager::getInterest(std::string interest) {
+    //std::cout << "(SM) Enter getInterest\n";
+    //std::cout.flush();
+
     for (auto it = PIT.begin(); it != PIT.end(); it++) {
         //Comparing Request ID
         if ((*it)->interestPrefix.compare(interest) == 0) {
@@ -2498,6 +2561,9 @@ Interest_t* BaconServiceManager::getInterest(std::string interest) {
 
 //
 bool BaconServiceManager::createInterest(std::string interestPrefix, int senderAddress) {
+    //std::cout << "(SM) Enter createInterest\n";
+    //std::cout.flush();
+
     //Checking if connection is already listed
     if (getInterest(interestPrefix) != NULL) {
         EV_WARN << "Interest already exists. Ignoring request.\n";
@@ -2523,6 +2589,9 @@ bool BaconServiceManager::createInterest(std::string interestPrefix, int senderA
 
 //Function used add another node to the interest list
 bool BaconServiceManager::addToInterest(std::string interestPrefix, int senderAddress) {
+    //std::cout << "(SM) Enter addToInterest\n";
+    //std::cout.flush();
+
     //Unwrapping contents of request
     Interest_t* interest = getInterest(interestPrefix);
     if (interest == NULL) {
@@ -2554,6 +2623,9 @@ bool BaconServiceManager::addToInterest(std::string interestPrefix, int senderAd
 
 //Function used remove a node to the interest list
 bool BaconServiceManager::removeFromInterest(std::string interestPrefix, int senderAddress) {
+    //std::cout << "(SM) Enter removeFromInterest\n";
+    //std::cout.flush();
+
     //Unwrapping contents of request
     Interest_t* interest = getInterest(interestPrefix);
     if (interest == NULL) {
@@ -2580,8 +2652,7 @@ bool BaconServiceManager::removeFromInterest(std::string interestPrefix, int sen
 
 //
 bool BaconServiceManager::deleteInterest(std::string interest) {
-
-    //std::cout << "(SM) <" << myId << "> Deleting the interest for prefix <" << interest << ">\n";
+    //std::cout << "(SM) Enter deleteInterest\n";
     //std::cout.flush();
 
     for (auto it = PIT.begin(); it != PIT.end(); it++) {
@@ -2603,6 +2674,9 @@ bool BaconServiceManager::deleteInterest(std::string interest) {
 
 //
 void BaconServiceManager::refreshNeighborhood() {
+    //std::cout << "(SM) Enter refreshNeighborhood\n";
+    //std::cout.flush();
+
     //Avoiding logging bad communication overhead prior to evaluation
     if (!stats->allowedToRun()) return;
 
@@ -2644,7 +2718,8 @@ void BaconServiceManager::refreshNeighborhood() {
 
 //
 bool BaconServiceManager::addNeighbor(WaveShortMessage *msg) {
-    //cArray* parArray = msg->getParListPtr();
+    //std::cout << "(SM) Enter addNeighbor\n";
+    //std::cout.flush();
 
     for (auto it = neighborList.begin(); it != neighborList.end();it++) {
         //If we already have this neighbor listed we just update its position and last contact  time
@@ -2671,6 +2746,9 @@ bool BaconServiceManager::addNeighbor(WaveShortMessage *msg) {
 
 //
 void BaconServiceManager::logNetworkmessage(WaveShortMessage *msg) {
+    //std::cout << "(SM) Enter logNetworkmessage\n";
+    //std::cout.flush();
+
     //Creating new Packet
     NetworkPacket_t freshPacket;
     freshPacket.arrival = simTime();
@@ -2705,50 +2783,52 @@ void BaconServiceManager::logNetworkmessage(WaveShortMessage *msg) {
     packetList.push_back(freshPacket);
 
     //Removing old packets from our count
-        for (auto it = packetList.begin();it != packetList.end();){
-            if ((*it).arrival + windowTimeSlotDuration < simTime()) {
-                //Reducing Load and Removing Old packet from List
-                currentBitLoad -= (*it).bitSize;
+    for (auto it = packetList.begin();it != packetList.end();){
+        if ((*it).arrival + windowTimeSlotDuration < simTime()) {
+            //Reducing Load and Removing Old packet from List
+            currentBitLoad -= (*it).bitSize;
 
-                //Checking which category we should reduce load from (if any)
-                switch((*it).type) {
-                    case ContentClass::TRAFFIC:
-                        transitBitLoad -= (*it).bitSize;
-                        break;
-                    case ContentClass::NETWORK:
-                        networkBitLoad -= (*it).bitSize;
-                        break;
-                    case ContentClass::MULTIMEDIA:
-                        multimediaBitLoad -= (*it).bitSize;
-                        break;
-                    default:
-                        //Nothing is done
-                        break;
-                }
-
-                //Removing from List
-                it = packetList.erase(it);
-            } else {
-                //Since network obtained packets are stored from older to newer, we can break
-                break;
+            //Checking which category we should reduce load from (if any)
+            switch((*it).type) {
+                case ContentClass::TRAFFIC:
+                    transitBitLoad -= (*it).bitSize;
+                    break;
+                case ContentClass::NETWORK:
+                    networkBitLoad -= (*it).bitSize;
+                    break;
+                case ContentClass::MULTIMEDIA:
+                    multimediaBitLoad -= (*it).bitSize;
+                    break;
+                default:
+                    //Nothing is done
+                    break;
             }
-        }
 
-        //Calculating network load for the current moment
-        instantBitLoad = 100 * (currentBitLoad/(double)bitrate);
-
-        //Establishing in which network state we are currently
-        if (instantBitLoad < lowMediumBandwidth) {
-            networkLoadStatus = NetworkLoadStatus::LOW_LOAD;
-        } else if (instantBitLoad > mediumHighBandwidth ) {
-            networkLoadStatus = NetworkLoadStatus::HIGH_LOAD;
+            //Removing from List
+            it = packetList.erase(it);
         } else {
-            networkLoadStatus = NetworkLoadStatus::MEDIUM_LOAD;
+            //Since network obtained packets are stored from older to newer, we can break
+            break;
         }
-        //if (myId == 12 && stats->allowedToRun()) {
-        //    std::cout << "instant Load: " << instantBitLoad << "\n";
-        //}
+    }
 
+    //Calculating network load for the current moment
+    instantBitLoad = 100 * (currentBitLoad/(double)bitrate);
+
+    //Establishing in which network state we are currently
+    if (instantBitLoad < lowMediumBandwidth) {
+        networkLoadStatus = NetworkLoadStatus::LOW_LOAD;
+    } else if (instantBitLoad > mediumHighBandwidth ) {
+        networkLoadStatus = NetworkLoadStatus::HIGH_LOAD;
+    } else {
+        networkLoadStatus = NetworkLoadStatus::MEDIUM_LOAD;
+    }
+    //if (myId == 12 && stats->allowedToRun()) {
+    //    std::cout << "instant Load: " << instantBitLoad << "\n";
+    //}
+
+    //std::cout << "(SM) Exit logNetworkmessage\n";
+    //std::cout.flush();
 }
 
 //=============================================================
@@ -2757,6 +2837,9 @@ void BaconServiceManager::logNetworkmessage(WaveShortMessage *msg) {
 
 //Function that Sends Message directly to the Client
 void BaconServiceManager::sendToClient(WaveShortMessage *msg) {
+    //std::cout << "(SM) Enter sendToClient\n";
+    //std::cout.flush();
+
     send(msg, "clientExchangeOut");
 }
 
@@ -2769,6 +2852,9 @@ void BaconServiceManager::sendWSM(WaveShortMessage* wsm) {
 
 //Function responsible for sending messages to lower layers
 void BaconServiceManager::sendWSM(WaveShortMessage* wsm, double forwardDelay) {
+    //std::cout << "(SM) Enter sendWSM\n";
+    //std::cout.flush();
+
     if (isParking && !sendWhileParking) return;
     logNetworkmessage(wsm);
 
@@ -2777,6 +2863,9 @@ void BaconServiceManager::sendWSM(WaveShortMessage* wsm, double forwardDelay) {
 }
 
 void BaconServiceManager::sendBeacon() {
+    //std::cout << "(SM) Enter sendBeacon\n";
+    //std::cout.flush();
+
     //Updating neighbor prior to beacon broadcast
     refreshNeighborhood();
 
@@ -2806,11 +2895,11 @@ void BaconServiceManager::sendBeacon() {
 //Function called on SelfMessages amongst others. Forwards to HandleLowerMsg() so message management can be centralized.
 //We override this function because VEINS has fucked up data typing policies and forces "Data" and "Beacon" types. Fuck that.
 void BaconServiceManager::handleMessage(cMessage *msg) {
+    //std::cout << "(SM) Enter handleMessage\n";
+    //std::cout.flush();
+
     //Handling Self-Timers before everything as self-timer messages are simpler and did not come from any interface but from ourselves
     if (strcmp(msg->getName(), MessageClass::SELF_TIMER.c_str()) == 0) {
-        EV_WARN << "(SM) We got a Timer Message!!!!\n";
-        EV_WARN.flush();
-
         WaveShortMessage* wsm = convertCMessage(msg);
         handleSelfTimer(wsm);
         return;
@@ -2828,6 +2917,8 @@ void BaconServiceManager::handleMessage(cMessage *msg) {
 
 //Function called to handle ALL messages from lower layers
 void BaconServiceManager::handleLowerMsg(cMessage* msg) {
+    //std::cout << "(SM) Enter handleLowerMsg\n";
+    //std::cout.flush();
 
     WaveShortMessage* wsm = convertCMessage(msg);
     cGate* inputGate = wsm->getArrivalGate();
@@ -2893,12 +2984,17 @@ void BaconServiceManager::handlePositionUpdate(cObject* obj) {
 //=============================================================
 
 WaveShortMessage* BaconServiceManager::convertCMessage(cMessage* msg) {
+    //std::cout << "(SM) Enter convertCMessage\n";
+    //std::cout.flush();
+
     WaveShortMessage* wsm = dynamic_cast<WaveShortMessage*>(msg);
     ASSERT(wsm);
     return wsm;
 }
 
 ContentClass BaconServiceManager::getClassFromPrefix(string prefix) {
+    //std::cout << "(SM) Enter getClassFromPrefix\n";
+    //std::cout.flush();
 
     //Getting the message request prefix
     if (prefix.c_str()[0] == '\"') {

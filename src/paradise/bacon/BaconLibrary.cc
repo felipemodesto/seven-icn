@@ -90,11 +90,17 @@ void BaconLibrary::finish() {
 }
 
 void BaconLibrary::registerClient(string clientPath){
+    //std::cout << "(Lib) Enter registerClient\n";
+    //std::cout.flush();
+
     Enter_Method_Silent();
     clientList.push_front(clientPath);
 }
 
 void BaconLibrary::deregisterClient(string clientPath) {
+    //std::cout << "(Lib) Enter deregisterClient\n";
+    //std::cout.flush();
+
     Enter_Method_Silent();
     for(auto it = clientList.begin(); it != clientList.end(); it++) {
         if (clientPath.compare(*it) == 0) {
@@ -105,6 +111,9 @@ void BaconLibrary::deregisterClient(string clientPath) {
 }
 
 void BaconLibrary::handleMessage(cMessage *msg) {
+    //std::cout << "(Lib) Enter handleMessage\n";
+    //std::cout.flush();
+
     if ( msg == requestTimer ) {
         if (requestTimer == NULL) return;
         setupPendingRequests();
@@ -112,6 +121,9 @@ void BaconLibrary::handleMessage(cMessage *msg) {
 }
 
 void BaconLibrary::setupPendingRequests() {
+    //std::cout << "(Lib) Enter setupPendingRequests\n";
+    //std::cout.flush();
+
     bool foundItem = true;
     simtime_t rangeLimit = 0.001;
 
@@ -122,8 +134,8 @@ void BaconLibrary::setupPendingRequests() {
     }
     */
 
-    std::cout << "\t(Lib) Starting new requests.\n";
-    std::cout.flush();
+    //std::cout << "\t(Lib) Starting new requests.\n";
+    //std::cout.flush();
 
     while (foundItem) {
         LocationRequest_t curRequest = preemptiveRequests.front();
@@ -180,8 +192,8 @@ void BaconLibrary::setupPendingRequests() {
                 if (response) {
                     closestClient = (*it);
                     foundVehicle = true;
-                    std::cout << "\t(Lib) Request <" << curRequest.object->contentPrefix << "> was fulfilled by <" << (*it)->getID() << ">\n";
-                    std::cout.flush();
+                    //std::cout << "\t(Lib) Request <" << curRequest.object->contentPrefix << "> was fulfilled by <" << (*it)->getID() << ">\n";
+                    //std::cout.flush();
                 } else {
                     viableVehicles.erase(it);
                 }
@@ -191,6 +203,7 @@ void BaconLibrary::setupPendingRequests() {
                 stats->increasedUnviableRequests();
                 //std::cout << "\t(Lib) Warning : No Viable Vehicle found out of <" << potentialVehicles << "> potentials with minimum distance <" << minDistance << ">.\n";
             } else {
+                stats->logDistanceFromTweet(requestLocation.distance(closestClient->getPosition()));
                 //std::cout << "\t(Lib) Found a Viable Vehicle!!.\n";
             }
             //if (closestClient != NULL) closestClient->suggestContentRequest(curRequest.object);
@@ -211,8 +224,8 @@ void BaconLibrary::setupPendingRequests() {
     if (preemptiveRequests.size() > 0) scheduleAt(preemptiveRequests.front().time, requestTimer);
     else std::cout << "(Lib) Warning: No more requests available for scheduling.\n";
 
-    std::cout << "\t(Lib) Completed Request Round.\n";
-    std::cout.flush();
+    //std::cout << "(Lib) exit setupPendingRequests\n";
+    //std::cout.flush();
 }
 
 //
@@ -317,6 +330,9 @@ void BaconLibrary::loadRequestSequence() {
 
 //
 bool BaconLibrary::requestServerStatus(int vehicleID) {
+    //std::cout << "(Lib) Enter requestServerStatus\n";
+    //std::cout.flush();
+
     if (!serverVehicles.empty()) {
         for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
             if ((*it) == vehicleID) return true;
@@ -336,6 +352,8 @@ bool BaconLibrary::requestServerStatus(int vehicleID) {
 
 //
 void BaconLibrary::releaseServerStatus(int vehicleID){
+    //std::cout << "(Lib) Enter releaseServerStatus\n";
+    //std::cout.flush();
     for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
         if ((*it) == vehicleID) {
             allocatedVehicleServers--;
@@ -352,15 +370,21 @@ void BaconLibrary::releaseServerStatus(int vehicleID){
 }
 
 int BaconLibrary::getActiveServers() {
+    //std::cout << "(Lib) Enter getActiveServers\n";
+    //std::cout.flush();
     return allocatedVehicleServers;
 }
 
 int BaconLibrary::getMaximumServers() {
+    //std::cout << "(Lib) Enter getMaximumServers\n";
+    //std::cout.flush();
     return maxVehicleServers;
 }
 
 //
 void BaconLibrary::buildContentList() {
+    //std::cout << "(Lib) Enter buildContentList\n";
+    //std::cout.flush();
     //Checking for previously existing Library (Using multimedia as an example -> built one, built all)
     if (multimediaLibrary != NULL) return;
 
@@ -418,6 +442,8 @@ void BaconLibrary::buildContentList() {
 
 //
 std::vector<double> BaconLibrary::buildCategoryLibrary(int count, int byteSize, ContentPriority priority, ContentClass category, std::string classPrefix) {
+    //std::cout << "(Lib) Enter buildCategoryLibrary\n";
+    //std::cout.flush();
 
     std::cout << "(Lib) Building Category <" << classPrefix << ">: Zipf <" << zipfCaracterization << "> Item Count <" << (count) << ">.\n";
     std::cout.flush();
@@ -481,7 +507,7 @@ std::vector<double> BaconLibrary::buildCategoryLibrary(int count, int byteSize, 
             break;
 
         default:
-            std::cerr << "(SM) Error: Weird Class during constructor\n";
+            std::cerr << "(Lib) Error: Weird Class during constructor\n";
             std::cerr.flush();
             break;
     }
@@ -507,7 +533,7 @@ std::list<Content_t>* BaconLibrary::getNetworkContentList() {
 
 //
 Content_t* BaconLibrary::getContent(std::string contentPrefix) {
-    //std::cout << "(BaconLibrary) Searching for content item <" << contentPrefix.c_str() << "> \n";
+    //std::cout << "(Lib) Enter getContent\n";
     //std::cout.flush();
 
     //Removing Stupid quotes
@@ -541,6 +567,8 @@ Content_t* BaconLibrary::getContent(std::string contentPrefix) {
 }
 
 bool BaconLibrary::independentOperationMode() {
+    //std::cout << "(Lib) Enter independentOperationMode\n";
+    //std::cout.flush();
     if (locationModel == LocationCorrelationModel::TWITTER) return false;
     return true;
 }
@@ -556,6 +584,8 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass ) {
 }
 
 int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, double xPos, double yPos ) {
+    //std::cout << "(Lib) Enter getIndexForDensity\n";
+    //std::cout.flush();
     int sector = 0;
     sector = floor(xPos/sectorWidth) + ( floor(yPos/sectorHeight) )*widthBlocks;
 
@@ -565,7 +595,7 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, do
             break;
 
         case LocationCorrelationModel::GRID:
-        case LocationCorrelationModel::DUMB:
+        case LocationCorrelationModel::SAW:
             //std::cout << "(Lib) <" << xPos << ";" << yPos << "> Maps to Sector <" << sector << "\\" << sectorCount << "> of <" << widthBlocks << "x" << heightBlocks << ">\n";
             return getIndexForDensity(value,contentClass,sector);
             break;
@@ -577,6 +607,8 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, do
 }
 
 int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, int sector ) {
+    //std::cout << "(Lib) Enter getIndexForDensity\n";
+    //std::cout.flush();
     std::vector<double> probabilityCurve;
     //Figuring out the appropriate list
     switch(contentClass) {
@@ -618,7 +650,7 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, in
                     shiftedIndex = ( (sector * (int)ceil(librarySize/sectorCount)) + itemIndex) % librarySize;
                     break;
 
-                case LocationCorrelationModel::DUMB:
+                case LocationCorrelationModel::SAW:
                     shiftedIndex = ( itemIndex + (librarySize % sector)) % librarySize;
                     break;
 

@@ -12,7 +12,6 @@
 //  INCLUDES (NOT A CARE IN THE WORLD ABOUT DECOUPLING CODE)
 ////////////////////////////////////////////////////////////////////
 
-
 #include <veins/modules/mobility/traci/TraCIMobility.h>
 #include <veins/modules/world/annotations/AnnotationManager.h>
 
@@ -21,6 +20,8 @@
 
 #include <omnetpp.h>
 #include <omnetpp/cmodule.h>
+#include <omnetpp/cconfiguration.h>
+#include <omnetpp/cenvir.h>
 
 #include <osgEarth/MapNode>
 #include <osgEarthAnnotation/CircleNode>
@@ -42,6 +43,15 @@ using Veins::AnnotationManager;
 ////////////////////////////////////////////////////////////////////
 //  POLICY & OTHER SIMULATION RELATED EVALUATION PARAMETERS
 ////////////////////////////////////////////////////////////////////
+
+enum LocationCorrelationModel {
+    NONE = 0,           //No correlation model
+    GRID = 1,           //GRID based rank shift
+    SAW = 2,            //Weird Saw-based Rank Shift
+    NORMAL = 3,         //Normal function based shift
+    BUCKET = 4,         //Bucket-based content placing
+    TWITTER = 5         //Data Trace based model
+};
 
 enum class AccessRestrictionPolicy {
     NO_RESTRICTION = 0,
@@ -76,13 +86,6 @@ enum CacheReplacementPolicy {
     ///Something///
     GOD_POPULARITY = 10,            //God-like Global Knowledge based Coordination
     //FREQ_POPULARITY = 20,           //Coordinate Frequency observation based popularity Replacement
-};
-
-enum LocationCorrelationModel {
-    NONE = 0,
-    GRID = 1,
-    DUMB = 2,
-    TWITTER = 5
 };
 
 
