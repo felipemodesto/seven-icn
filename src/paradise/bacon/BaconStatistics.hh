@@ -129,6 +129,7 @@ protected:
     omnetpp::cLongHistogram duplicateRequestHist;
     omnetpp::cLongHistogram requestsPerConnectionHist;
 
+    omnetpp::cOutVector distanceFromTweetVect;
     omnetpp::cOutVector unviableRequestsVect;
     omnetpp::cOutVector participationLengthVect;
     omnetpp::cOutVector neighborCountVect;
@@ -222,6 +223,7 @@ public:
     void increaseChunksLost(int x);             //Increase number of Chunks Lost by X
 
     void increaseServerCacheHits();
+    void logDistanceFromTweet(double distance);
 
     bool increaseActiveVehicles(int vehicleId); //Increase the number of active Vehicles by 1 (new vehicle spawned)
     bool decreaseActiveVehicles(int vehicleId); //Decrease the number of active Vehicles by 1 (vehicle "deleted" / journey complete)
