@@ -5,6 +5,7 @@
 			<stringMacro name="Wall Extra" type="VALUE_TEXT" value="-Wextra"/>
 			<stringMacro name="Pedantic Errors" type="VALUE_TEXT" value="-pedantic-errors"/>
 			<stringMacro name="Wall" type="VALUE_TEXT" value="-Wall"/>
+			<stringMacro name="No Protection" type="VALUE_TEXT" value="-fno-stack-protector-all"/>
 		</macros>
 		<externalSettings/>
 		<extensions>

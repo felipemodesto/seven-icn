@@ -23,20 +23,21 @@ network BaconScenario extends Scenario
         //@display("bgb=341,200;bgi=background/terrain,s");
         double playgroundLatitude; // geographic position of the playground's north-west corner
         double playgroundLongitude; // geographic position of the playground's north-west corner
-        double playgroundWidth @unit("m") = default(3000m);  // the E-W size of playground
-        double playgroundHeight @unit("m") = default(3000m); // the N-S size of playground
+        double playgroundWidth @unit("m") = default(10000m);  // the E-W size of playground
+        double playgroundHeight @unit("m") = default(10000m); // the N-S size of playground
         int numCows = default(0);  // the number of cows wandering around on the Boston Commons
         int numCars = default(0);  // the number of cars on the streets
-        @display("bgb=3000,3000");
+
+        //@display("bgb=10000,10000");
     submodules:
         statistics: BaconStatistics {
             parameters:
-                @display("p=72,59;i=block/bucket");
+                @display("p=66.088005,1694.2561;i=block/bucket");
         }
 
         library: BaconLibrary {
             parameters:
-                @display("p=72,59;i=block/bucket");
+                @display("p=66.088005,1297.728;i=block/bucket");
         }
 
         //osgEarthScene: OsgEarthScene {

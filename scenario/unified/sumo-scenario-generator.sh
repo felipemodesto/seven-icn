@@ -178,7 +178,6 @@ done
 printf "  \\--> Inter-Vehicle Spawn Time is set to: $INTER_VEHICLE_SPAWN_PERIOD\n"
 printf "  \\--> Vehicle Instantiation period is [$VEHICLE_SPAWN_START_TIME ; $VEHICLE_SPAWN_END_TIME]\n"
 
-
 #Removing previous simulation-related stuff
 printf "Removing old files"
 rm "${SCENARIO_NAME}.*"
@@ -212,9 +211,9 @@ printf " \\--> done.\n"
 
 
 #### ADD Polygon Features to Map (copy typemap.xml file from somewhere, possibly Wiki if you don't have one)
-#printf "Creating Feature Map XML File From OSM...\n"
-#${POLYCONVERT} --net-file ${NET_FILE} --osm-files ${OSM_CLEAN_FILE} --ignore-errors true --type-file typemap.xml -o ${OVERLAY_FILE}
-#printf " \\--> done.\n"
+printf "Creating Feature Map XML File From OSM...\n"
+${POLYCONVERT} --net-file ${NET_FILE} --osm-files ${OSM_CLEAN_FILE} --ignore-errors true --type-file typemap.xml -o ${OVERLAY_FILE}
+printf " \\--> done.\n"
 
 
 #### Running SUMO's python script that generates random trips

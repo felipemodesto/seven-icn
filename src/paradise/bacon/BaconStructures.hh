@@ -8,6 +8,17 @@
 #ifndef BACONSTRUCTURES_H
 #define BACONSTRUCTURES_H
 
+////////////////////////////////////////////////////////////////////
+//  INCLUDES (NOT A CARE IN THE WORLD ABOUT DECOUPLING CODE)
+////////////////////////////////////////////////////////////////////
+
+
+#include <veins/modules/mobility/traci/TraCIMobility.h>
+#include <veins/modules/world/annotations/AnnotationManager.h>
+
+#include <veins/modules/application/ieee80211p/BaseWaveApplLayer.h>
+#include <veins/modules/messages/WaveShortMessage_m.h>
+
 #include <omnetpp.h>
 #include <omnetpp/cmodule.h>
 
@@ -25,26 +36,12 @@
 #include <list>
 #include <ctime>
 
-#include <veins/modules/mobility/traci/TraCIMobility.h>
-#include <veins/modules/world/annotations/AnnotationManager.h>
-
-#include <veins/modules/application/ieee80211p/BaseWaveApplLayer.h>
-#include <veins/modules/messages/WaveShortMessage_m.h>
-
 using Veins::TraCIMobility;
 using Veins::AnnotationManager;
 
-enum class ContentPriority      {PRIORITY_EMERGENCY = 0, PRIORITY_HIGH = 1, PRIORITY_MEDIUM = 2, PRIORITY_LOW = 3, PRIORITY_PRIVATE = 4};
-enum class ContentStatus        {UNSERVED, LOCAL, UNAVAILABLE, AVAILABLE, STALE, PARCIAL, PRIVATE, LIVE_FEED, SERVED};
-
-enum class ContentClass {
-    BEACON = 0,
-    MULTIMEDIA = 1,
-    TRAFFIC = 2,
-    NETWORK = 3,
-    EMERGENCY_SERVICE = 4,
-    GPS_DATA = 5
-};
+////////////////////////////////////////////////////////////////////
+//  POLICY & OTHER SIMULATION RELATED EVALUATION PARAMETERS
+////////////////////////////////////////////////////////////////////
 
 enum class AccessRestrictionPolicy {
     NO_RESTRICTION = 0,
@@ -76,10 +73,79 @@ enum CacheReplacementPolicy {
     BIG = 5,                        //BIGGEST ITEM
     MULT_FIRST = 6,                 //REPLACE multimedia objects first (LRU within group)
     GPS_FIRST = 7,                  //REPLACE GPS dependent data first (LRU within group)
-
+    ///Something///
     GOD_POPULARITY = 10,            //God-like Global Knowledge based Coordination
     //FREQ_POPULARITY = 20,           //Coordinate Frequency observation based popularity Replacement
 };
+
+enum LocationCorrelationModel {
+    NONE = 0,
+    GRID = 1,
+    DUMB = 2,
+    TWITTER = 5
+};
+
+
+////////////////////////////////////////////////////////////////////
+//  CONTENT RELATED DEFINITIONS
+////////////////////////////////////////////////////////////////////
+
+enum class ContentClass {
+    BEACON = 0,
+    MULTIMEDIA = 1,
+    TRAFFIC = 2,
+    NETWORK = 3,
+    EMERGENCY_SERVICE = 4,
+    GPS_DATA = 5
+};
+
+enum class ContentPriority {
+    PRIORITY_EMERGENCY = 0,
+    PRIORITY_HIGH = 1,
+    PRIORITY_MEDIUM = 2,
+    PRIORITY_LOW = 3,
+    PRIORITY_PRIVATE = 4
+};
+
+enum class ContentStatus {
+    UNSERVED,
+    LOCAL,
+    UNAVAILABLE,
+    AVAILABLE,
+    STALE,
+    PARCIAL,
+    PRIVATE,
+    LIVE_FEED,
+    SERVED
+};
+
+//Generic object description
+struct Content_t {
+    std::string contentPrefix;              //String name representation of content prefix
+    ContentClass contentClass;              //Type of Content
+    ContentPriority priority;               //Content Class Specific Ranking (1 = top rank, highest probability)
+    long popularityRanking;                 //Content Popularity
+    long contentSize;                       //Content Size in Bytes
+};
+
+struct CachedContent_t {
+    Content_t* referenceObject;             //NOTE: This is a reference and not an extension to save memory
+    simtime_t lastAccessTime;               //Time in which object was obtained
+    long useCount;                          //Number of times content was "requested" while in a Library
+    ContentStatus contentStatus;            //Status of Content
+    //simtime_t expireTime;                 //Time in which object will become Stale
+};
+
+//Variation of a general content object used by Clients to track status of object requests
+struct PendingContent_t : CachedContent_t {
+    int pendingID;                          //ID for pending request
+    simtime_t requestTime;                  //Time in which content was requested
+    simtime_t fullfillTime;                 //Time in which content was fulfilled
+};
+
+////////////////////////////////////////////////////////////////////
+//  CONNECTION & NETWORK RELATED DEFINITIONS
+////////////////////////////////////////////////////////////////////
 
 enum ConnectionStatus {
     ERROR = 0,                  //SOME WEIRD ERROR HAPPENED
@@ -177,32 +243,6 @@ struct NetworkPacket_t {
     ContentClass type;
 };
 
-//Information Structure that contains the "description" of a piece of content
-struct Content_t {
-    std::string contentPrefix;              //String name representation of content prefix
-    ContentClass contentClass;              //Type of Content
-    ContentPriority priority;               //Content Class Specific Ranking (1 = top rank, highest probability)
-    long popularityRanking;                 //Content Popularity
-    long contentSize;                       //Content Size in Bytes
-    //long useCount;                          //Number of times content was "requested" while in a Library
-    //simtime_t lastAccessTime;               //Time in which object was obtained
-    //ContentStatus contentStatus;            //Status of Content
-};
-
-struct CachedContent_t {
-    Content_t* referenceObject;
-    simtime_t lastAccessTime;               //Time in which object was obtained
-    long useCount;                          //Number of times content was "requested" while in a Library
-    ContentStatus contentStatus;            //Status of Content
-    //simtime_t expireTime;                 //Time in which object will become Stale
-};
-
-//Variation of a general content object used by Clients to track status of object requests
-struct PendingContent_t : CachedContent_t {
-    int pendingID;                          //ID for pending request
-    simtime_t requestTime;                  //Time in which content was requested
-    simtime_t fullfillTime;                 //Time in which content was fulfilled
-};
 
 struct Connection_t {
     long requestID;                                         //Unique ID assigned to 1st Node in Connection
@@ -269,5 +309,16 @@ struct Interest_t {
     Connection_t* providingConnection;                      //Connection that
     std::vector<int> pendingConnections;                    //Clients that have requested the content
 };
+
+struct LocationRequest_t {
+    double x;
+    double y;
+    simtime_t time;
+    Content_t* object;
+};
+
+inline std::string loadFile (const std::string& path) {
+  std::ostringstream buf; std::ifstream input (path.c_str()); buf << input.rdbuf(); return buf.str();
+}
 
 #endif

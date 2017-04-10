@@ -1,4 +1,3 @@
 <additional>
-	<vType id="fastCar" accel="0.8" decel="4.5" sigma="0.5" maxSpeed="33" vClass="passenger" probability="0.5" speedFactor="1" speedDev="0.3"/>
-	<vType id="slowCar" accel="0.8" decel="4.5" sigma="0.5" maxSpeed="22" vClass="truck" probability="0.5" speedFactor="1" speedDev="0.3"/>
+	<vType id="fastCar" accel="0.8" decel="4.5" sigma="0.5" maxSpeed="45" vClass="passenger" probability="1.0" speedFactor="1.2" speedDev="0.3" impatience="0.5"/>
 </additional>

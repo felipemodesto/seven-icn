@@ -33,6 +33,9 @@ simple BaconStatistics {
         bool collectingNeighborhood = default(false);
 		double statisticsStartTime  = default(0); 		//First Time Stamp before statistics data is collected
 		double statisticsStopTime  = default(100); 		//Final moment until which statistics are collected
+		
+		string simulationDirectoryFolder = default("results/");
+		string requestLocationStatsFile = default("requestLocationMap.csv");
 		string locationStatisticsFile  = default("heatmap.csv");
 		string contentNameStatisticsFile  = default("library.csv");
 		string networkInstantLoadStatisticsFile  = default("instantLoad.csv");

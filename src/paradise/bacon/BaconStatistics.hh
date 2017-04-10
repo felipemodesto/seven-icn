@@ -40,6 +40,8 @@ protected:
     bool collectingLoad;
     bool collectingNeighborhood;
 
+    long int unviableRequests;      //Requests that were not initiated because the client was busy or something similar
+
     //Data Packet Related Statistics
     long int packetsSent;
     long int packetsForwarded;
@@ -94,25 +96,27 @@ protected:
     double completeTransmissionDelay;
     double incompleteTranmissionDelay;
 
-    std::map<std::string,int> locationMap;
-    std::map<std::string,int> contentRequestMap;
+    std::map<std::string,int> vehicleLocationMap;
+    std::map<std::string,int> contentRequestLocationMap;
+    std::map<std::string,int> contentNameFrequencyMap;
     std::map<double,int> contactDurationMap;
     std::map<double,int> participationLengthMap;
 
     std::map<int,int> hopDistanceCountMap;
-    //std::map<int,omnetpp::cOutVector> hopDistanceVectorMap;
     std::list<omnetpp::cOutVector*> hopDistanceVectorMap;
 
     std::list<LoadAtTime_t> instantLoadList;
     std::list<LoadAtTime_t> averageLoadList;
 
-    const char * locationStatisticsFile;
-    const char * participationLengthStatsFile;
-    const char * neighborhoodStatisticsFile;
-    const char * contentPopularityStatisticsFile;
-    const char * networkInstantLoadStatisticsFile;
-    const char * networkAverageLoadStatisticsFile;
-    const char * generalStatisticsFile;
+    string simulationDirectoryFolder;
+    string requestLocationStatsFile;
+    string locationStatisticsFile;
+    string participationLengthStatsFile;
+    string neighborhoodStatisticsFile;
+    string contentPopularityStatisticsFile;
+    string networkInstantLoadStatisticsFile;
+    string networkAverageLoadStatisticsFile;
+    string generalStatisticsFile;
 
     omnetpp::cLongHistogram packetsSentHist;
     omnetpp::cLongHistogram packetsForwardedHist;
@@ -125,6 +129,7 @@ protected:
     omnetpp::cLongHistogram duplicateRequestHist;
     omnetpp::cLongHistogram requestsPerConnectionHist;
 
+    omnetpp::cOutVector unviableRequestsVect;
     omnetpp::cOutVector participationLengthVect;
     omnetpp::cOutVector neighborCountVect;
     omnetpp::cOutVector serverHitVect;
@@ -200,7 +205,7 @@ public:
     void logAverageLoad(int node, double load);
 
     void logPosition(double x, double y);                                   //Vehicles record their position every second of simulation
-    void logContentRequest(std::string contentName, bool shouldCount);    //Recording the name of each item requested
+    void logContentRequest(std::string contentName, bool shouldCount, double x, double y);    //Recording the name of each item requested
 
     void logParticipationDuration(double participationLength);
     void logContactDuration(double contactDuration);
@@ -260,6 +265,7 @@ public:
     void increaseRegisteredInterests();
     void increaseFulfilledInterests();
 
+    void increasedUnviableRequests();
     void increasedBackloggedResponses();
 
     //HISTOGRAMS

@@ -16,12 +16,7 @@ void BaconClient::initialize(int stage) {
 
     switch(stage){
         case 0: {
-            //Getting TraCI Manager (SUMO Connection & Annotations Ready)
-            //traci = TraCIMobilityAccess().get(getParentModule());
-            traci =  check_and_cast<Veins::TraCIMobility*>(getParentModule()->getSubmodule("veinsmobility"));
 
-            annotations = AnnotationManagerAccess().getIfExists();
-            ASSERT(annotations);
 
             //Setting Gates
             clientExchangeIn  = findGate("clientExchangeIn");
@@ -57,6 +52,14 @@ void BaconClient::initialize(int stage) {
             lastY = 0;
 
             break;
+        }
+
+        case 1: {
+            //Getting TraCI Manager (SUMO Connection & Annotations Ready)
+            //traci = TraCIMobilityAccess().get(getParentModule());
+
+            annotations = AnnotationManagerAccess().getIfExists();
+            ASSERT(annotations);
         }
 
         case 2: {
@@ -115,6 +118,7 @@ void BaconClient::initialize(int stage) {
 //            // add the locator node to the scene
 //            mapNode->getModelLayerGroup()->addChild(locatorNode);
 
+            traci =  check_and_cast<Veins::TraCIMobility*>(getParentModule()->getSubmodule("veinsmobility"));
             cache = check_and_cast<BaconContentProvider *>(getParentModule()->getSubmodule("content"));
             cSimulation *sim = getSimulation();
             cModule *modp = sim->getModuleByPath("BaconScenario.statistics");
@@ -122,6 +126,9 @@ void BaconClient::initialize(int stage) {
 
             cModule *modlib = sim->getModuleByPath("BaconScenario.library");
             library = check_and_cast<BaconLibrary *>(modlib);
+            library->registerClient(getFullPath());
+
+            contentTimerMessage = NULL;
 
             isServer = library->requestServerStatus(myId);
             if (isServer) {
@@ -129,28 +136,26 @@ void BaconClient::initialize(int stage) {
                 maximumRequestDelay = -1;
             }
 
-            //pendingRequest = NULL;
-            contentTimerMessage = NULL;
+            //Starting up request timer cycle if we're independently generating our own requests
+            if (library->independentOperationMode()) {
+                //pendingRequest = NULL;
 
-            //Won't start timer for server nodes or if we're one of those nodes that doesn't make its own requests (MULE)
-            if (minimumRequestDelay != -1 || maximumRequestDelay != -1) {
-                //Starting First Request for after warmup time
-                if (simTime() < stats->getStartTime()) {
-                    simtime_t firstTimerTime = uniform(minimumRequestDelay,maximumRequestDelay);
-                    startNewMessageTimer(firstTimerTime + stats->getStartTime() - minimumRequestDelay - simTime());
+                //Won't start timer for server nodes or if we're one of those nodes that doesn't make its own requests (MULE)
+                if (minimumRequestDelay != -1 || maximumRequestDelay != -1) {
+                    //Starting First Request for after warmup time
+                    if (simTime() < stats->getStartTime()) {
+                        simtime_t firstTimerTime = uniform(minimumRequestDelay,maximumRequestDelay);
+                        startNewMessageTimer(firstTimerTime + stats->getStartTime() - minimumRequestDelay - simTime());
+                    } else {
+                        startNewMessageTimer();
+                    }
                 } else {
-                    startNewMessageTimer();
+                    //We're a server. Should we do something?
                 }
-            } else {
-                //We're a server. Should we do something?
             }
 
-            runtimeTimer = NULL;
-            //Checking if we're recording location
-            if (stats->recordingPosition()) {
-                runtimeTimer = new cMessage("runtimeTimer");
-                resetLocationTimer();
-            }
+            runtimeTimer = new cMessage("runtimeTimer");
+            resetLocationTimer();
 
             break;
         }
@@ -171,6 +176,7 @@ void BaconClient::finish() {
         runtimeTimer = NULL;
     }
 
+    library->deregisterClient(getFullPath());
     //Log Good, Bad and Unserved Requests
     //std::cout << "(Cl) Stats for <" << myId << "> (" << GoodReplyRequests << "-" << BadReplyRequests << "-" << NoReplyRequests << ")\n";
     //std::cout.flush();
@@ -221,10 +227,25 @@ void BaconClient::refreshDisplay() const {
 }
 //*/
 
+
+
+Coord BaconClient::getPosition() {
+    Enter_Method_Silent();
+    Coord currentPosition;
+    currentPosition.x = lastX;
+    currentPosition.y = lastY;
+    currentPosition.z = 0;
+    return currentPosition;
+}
+
 //
 void BaconClient::resetLocationTimer() {
-    if (runtimeTimer == NULL) return;
-    scheduleAt(simTime() + 1, runtimeTimer);
+    if (runtimeTimer == NULL) {
+        runtimeTimer = new cMessage("runtimeTimer");
+    } else {
+        cancelEvent(runtimeTimer);
+    }
+    scheduleAt(simTime() + locationTimerDelay, runtimeTimer);
 }
 
 //
@@ -271,15 +292,35 @@ void BaconClient::startNewMessageTimer(simtime_t timerTime) {
 //=============================================================
 // CONTENT REQUEST MANIPULATION FUNCTIONS
 //=============================================================
+bool BaconClient::suggestContentRequest(Content_t* suggestedContent) {
+    //Perform context switching for incoming message
+    Enter_Method("suggestContentRequest(%s)",suggestedContent->contentPrefix);
+    //std::cout << "(Cl) Hey, lets ask for: <" << requestID << ">\n";
+    //TODO: Decide on stuff?
 
+    return startContentRequest(suggestedContent);
+}
+
+//
 void BaconClient::cleanRequestList() {
+    Enter_Method_Silent();
     //Checking Ongoing Connections
     for(auto it = ongoingRequests.begin(); it != ongoingRequests.end();) {
         //Checking if the request has gone super stale
-        if ((*it)->requestTime + requestTimeout < simTime()) {
-            (*it)->contentStatus = ContentStatus::UNSERVED;
-            (*it)->fullfillTime = simTime();
-            backloggedRequests.push_front(*it);
+        PendingContent_t* currentRequest = (*it);
+        if (currentRequest->requestTime + requestTimeout < simTime()) {
+            currentRequest->contentStatus = ContentStatus::UNSERVED;
+            currentRequest->fullfillTime = simTime();
+            //std::cout << "\t(Cl) Aw hell no <" << currentRequest << "> <" << backloggedRequests.size() << "> ps. I AM: <" << myId << ">\n";
+
+            /*
+            for (auto it = backloggedRequests.begin() ; it != backloggedRequests.end() ; it++) {
+                std::cout << "\t <" << (*it)->referenceObject->contentPrefix << ">\n";
+            }
+            std::cout.flush();
+            */
+
+            backloggedRequests.push_front(currentRequest);
 
             NoReplyRequests++;
             it = ongoingRequests.erase(it);
@@ -312,96 +353,44 @@ void BaconClient::cleanRequestList() {
 }
 
 //
-void BaconClient::startContentRequest() {
+bool BaconClient::startContentRequest() {
+    return startContentRequest(NULL);
+}
 
-    //std::cout << "\t(Cl) <" << myId << "> is attempting a new request at <" << simTime() << ">\n";
-
+//
+bool BaconClient::startContentRequest(Content_t* preferedRequest) {
+    Enter_Method_Silent();
     //Checking if we're in a ready communication state
     if (!stats->allowedToRun()) {
-        return;
+        return false;
     }
 
     //Checking if we are a server
     if (minimumRequestDelay == -1 && maximumRequestDelay == -1) {
         //Being a Server we don't request content
-        return;
+        return false;
     }
 
+    //For the sake of us being able to make new requests, we attempt to clean the request list
     cleanRequestList();
 
     //TODO: (DECIDE) Decide if we should limit concurrent requests at the client level
     if ((int)ongoingRequests.size() >= (int)maxOpenRequests) {
         //std::cout << "\t\t(Cl) <" << myId << "> MAXED OUT\n";
         //std::cout.flush();
-        return;
+        return false;
     }
 
     t_channel channel = dataOnSch ? type_SCH : type_CCH;
     WaveShortMessage * requestMessage = prepareWSM(MessageClass::INTEREST, headerLength, channel, dataPriority, -1, 2);
 
-    //Choosing content request type
-    double contentInterest = multimediaInterest + networkInterest + trafficInterest + emergencyInterest;
-    double contentRequestInterstType = uniform(0, contentInterest);
-    int contentClass = 0;
-    Content_t* curRequest;
-    int requestedContentIndex = 0;
-
-    //WE'll use the following sequence / ranges:
-    //      TRAFFIC                 NETWORK                 MULTIMEDIA
-    //range 0-->traffic / traffic-->traffic+network / traffic+network->sum
-    std::list<Content_t>* appropriateLibrary;
-
-    //TRAFFIC
-    if (contentRequestInterstType < trafficInterest) {
-        appropriateLibrary = library->getTrafficContentList();
-        contentClass = library->getContentClass(ContentClass::TRAFFIC);
-        double randomIndex = uniform(0,1);
-        requestedContentIndex = library->getIndexForDensity(randomIndex,ContentClass::TRAFFIC);
-
-    //NETWORK
-    } else if (contentRequestInterstType < trafficInterest + networkInterest ) {
-        appropriateLibrary = library->getNetworkContentList();
-        contentClass = library->getContentClass(ContentClass::NETWORK);
-        double randomIndex = uniform(0,1);
-        requestedContentIndex = library->getIndexForDensity(randomIndex,ContentClass::NETWORK);
-
-    //MULTIMEDIA
-    } else if (contentRequestInterstType < trafficInterest + networkInterest + multimediaInterest ) {
-        appropriateLibrary = library->getMultimediaContentList();
-        contentClass = library->getContentClass(ContentClass::MULTIMEDIA);
-        double randomIndex = uniform(0,1);
-        requestedContentIndex = library->getIndexForDensity(randomIndex,ContentClass::MULTIMEDIA);
-
-    } else {
-        //TODO (IMPLEMENT) Emergency and GPS related request Events
-        /*
-        //Setting request parameters
-        requestedContent = 1;
-
-        //Attaching location info to message
-        //Veins::TraCIMobility* mobility =  check_and_cast<Veins::TraCIMobility*>(getParentModule()->getSubmodule("veinsmobility"));
-        Coord currPos = traci->getCurrentPosition();
-        std::string coordString = std::to_string(floor(currPos.x)) + ";" + std::to_string(floor(currPos.y)) + ";" + std::to_string(floor(currPos.z));
-
-        EV << "(Cl) Current Vehicle Position < " << coordString << " >\n";
-        EV.flush();
-
-        //Adding Coordinate Parameter to Request Message
-        cMsgPar* locationParameter = new cMsgPar(MessageParameter::COORDINATES.c_str());
-        locationParameter->setStringValue(coordString.c_str());
-        requestMessage->addPar(locationParameter);
-        */
-    }
-
-    //Looking for item in content library
-    int itemCounter = 0;
-    for (auto it = appropriateLibrary->begin(); itemCounter < requestedContentIndex; it++, itemCounter++) {
-        curRequest = &*it;
+    if (preferedRequest == NULL) {
+        preferedRequest = selectObjectForRequest();
     }
 
     //Copying data from currentRequest to our PendingRequest (I don't know an easier way to memcopy the object pointed by an iterator, please bear with me on this one
     PendingContent_t* pendingRequest = new PendingContent_t();
-    pendingRequest->referenceObject = curRequest;
+    pendingRequest->referenceObject = preferedRequest;
     pendingRequest->requestTime = simTime();
     pendingRequest->fullfillTime = SimTime::ZERO;   //We set it to zero so we know this can't have happened
     int messageID = library->getRequestIndex();
@@ -411,21 +400,16 @@ void BaconClient::startContentRequest() {
     if (pendingRequest == NULL) {
         std::cerr << "(Cl) Error: <" << myId << "> Generated broken Request for Object <" + pendingRequest->referenceObject->contentPrefix + ">";
         std::cerr .flush();
-        return;
+        return false;
     }
-
-    //std::cout << "\t(Cl) <" << myId << "> NR for <" << pendingRequest->referenceObject->contentPrefix << "> of class <" << static_cast<int>(pendingRequest->referenceObject->contentClass) << "> Time<" << simTime() << ">\n";
-    //std::cout.flush();
-
-    //std::cout << "(Cl) <" << contentRequestInterstType << ">\t->\t<" << pendingRequest->contentPrefix << ">\n";
-    //std::cout.flush();
 
     //Adding new request to our request list
     ongoingRequests.push_back(pendingRequest);
+    //std::cout << "(Cl) <" << myId << "> Pushed Ongoing <" << pendingRequest->referenceObject->contentPrefix << ">\n";
 
     //Content Type
     cMsgPar* contentTypeParameter = new cMsgPar(MessageParameter::CLASS.c_str());
-    contentTypeParameter->setLongValue(contentClass);
+    contentTypeParameter->setLongValue(library->getContentClass(preferedRequest->contentClass));
     requestMessage->addPar(contentTypeParameter);
 
     //Named Prefix for specific content
@@ -464,15 +448,98 @@ void BaconClient::startContentRequest() {
     hopsParameter->setLongValue(-1);    //Negative Uphop count at client level (set to 0 locally at Service Manager)
     requestMessage->addPar(hopsParameter);
 
+    Coord curPos = traci->getCurrentPosition();
+    lastX = curPos.x;
+    lastY = curPos.y;
+    //Coord curPos;
+    curPos.x = lastX;
+    curPos.y = lastY;
+
     //Adding our local position at time of content request
-    requestMessage->setSenderPos(traci->getPositionAt(simTime()));
+    requestMessage->setSenderPos(curPos);
     requestMessage->setSenderAddress(myId);
 
     //Logging the statistics about the content request about to be made
-    stats->logContentRequest(pendingRequest->referenceObject->contentPrefix, true);
+    stats->logContentRequest(pendingRequest->referenceObject->contentPrefix, true, curPos.x, curPos.y);
+
+    //std::cout << "(Cl) <" << myId << "> Vehicle starting a new request for item <" << pendingRequest->referenceObject->contentPrefix << ">\n";
 
     //Sending request
     sendWSM(requestMessage);
+    return true;
+}
+
+
+//Returns a candidate for a request given the internal properties of the client (class frequency, etc)
+Content_t*  BaconClient::selectObjectForRequest () {
+
+    //Choosing content request type
+    double contentInterest = multimediaInterest + networkInterest + trafficInterest + emergencyInterest;
+    double contentRequestInterstType = uniform(0, contentInterest);
+    ContentClass contentClass = ContentClass::EMERGENCY_SERVICE;
+    Content_t* requestedObjectReference;
+    int requestedContentIndex = 0;
+
+    double randomIndex = uniform(0,1);
+
+    //WE'll use the following sequence / ranges:
+    //      TRAFFIC                 NETWORK                 MULTIMEDIA
+    //range 0-->traffic / traffic-->traffic+network / traffic+network->sum
+    std::list<Content_t>* appropriateLibrary;
+
+    //TRAFFIC
+    if (contentRequestInterstType < trafficInterest) {
+        appropriateLibrary = library->getTrafficContentList();
+        contentClass = ContentClass::TRAFFIC;
+
+    //NETWORK
+    } else if (contentRequestInterstType < trafficInterest + networkInterest ) {
+        appropriateLibrary = library->getNetworkContentList();
+        contentClass = ContentClass::NETWORK;
+
+    //MULTIMEDIA
+    } else if (contentRequestInterstType < trafficInterest + networkInterest + multimediaInterest ) {
+        appropriateLibrary = library->getMultimediaContentList();
+        contentClass = ContentClass::MULTIMEDIA;
+
+    } else {
+        //TODO (IMPLEMENT) Emergency and GPS related request Events
+        /*
+        //Setting request parameters
+        requestedContent = 1;
+
+        //Attaching location info to message
+        //Veins::TraCIMobility* mobility =  check_and_cast<Veins::TraCIMobility*>(getParentModule()->getSubmodule("veinsmobility"));
+        Coord currPos = traci->getCurrentPosition();
+        std::string coordString = std::to_string(floor(currPos.x)) + ";" + std::to_string(floor(currPos.y)) + ";" + std::to_string(floor(currPos.z));
+
+        //Adding Coordinate Parameter to Request Message
+        cMsgPar* locationParameter = new cMsgPar(MessageParameter::COORDINATES.c_str());
+        locationParameter->setStringValue(coordString.c_str());
+        requestMessage->addPar(locationParameter);
+        */
+
+        EV_ERROR << "(Cl) Error! Request from undefined category.\n";
+        EV_ERROR.flush();
+
+        std::cerr << "(Cl) Error: Request from undefined category.\n";
+        std::cerr.flush();
+
+    }
+
+    //Figuring out the Index of the item we want from the library and distribution function we use
+    //requestedContentIndex = library->getIndexForDensity(randomIndex,contentClass);
+    Coord curPosition = traci->getCurrentPosition();
+    requestedContentIndex = library->getIndexForDensity(randomIndex,contentClass,curPosition.x, curPosition.y);
+
+
+    //Looking for item in content library
+    int itemCounter = 0;
+    for (auto it = appropriateLibrary->begin(); itemCounter < requestedContentIndex; it++, itemCounter++) {
+        requestedObjectReference = &*it;
+    }
+
+    return requestedObjectReference;
 }
 
 //
@@ -481,12 +548,16 @@ void BaconClient::handleMessage(cMessage *msg) {
         //Creating timer for next request
         startNewMessageTimer();
 
-        //Starting a new request
-        startContentRequest();
-    } else if (msg == runtimeTimer) {
+        //Attempting to start a new request
+        if (!startContentRequest()) {
+            stats->increasedUnviableRequests();
+        }
+    } else if (msg == runtimeTimer || strcmp(msg->getName(),"runtimeTimer") == 0 ) {
         notifyLocation();
     } else {
-       handleLowerMsg(msg);
+        //std::cout << "(SOMETHING): " << msg->getName() << "\tand\t" << msg->getKind() << "\n";
+        //std::cout.flush();
+        handleLowerMsg(msg);
     }
 }
 
@@ -657,6 +728,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     //std::cout.flush();
 
                     //Adding an incomplete transfer to our backlogged list for future tests
+                    //std::cout << "\tBoom\n";
                     backloggedRequests.push_front(desiredRequest);
                 }
                 break;
@@ -669,6 +741,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     //std::cout << "-";
                     //Adding an incomplete transfer to our backlogged list for future tests
                     backloggedRequests.push_front(desiredRequest);
+                    std::cout << "\tBam\n";
                     stats->increaseMessagesLost(desiredRequest->referenceObject->contentClass);
 
                     //std::cout << "(Cl) <" << myId << "> Partial Request for <" << desiredRequest->referenceObject->contentPrefix << ">.\n";

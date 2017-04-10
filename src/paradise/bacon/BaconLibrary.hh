@@ -11,7 +11,9 @@
 #include <paradise/bacon/BaconStructures.hh>
 
 #include <paradise/bacon/BaconStatistics.hh>
+#include <paradise/bacon/BaconClient.hh>
 class BaconStatistics;
+class BaconClient;
 
 using namespace omnetpp;
 using namespace std;
@@ -30,6 +32,8 @@ protected:
     virtual void initialize(int stage);
     virtual void finish();
 
+    void handleMessage(cMessage *msg);
+
     virtual int numInitStages () const {
         return 2;
     }
@@ -44,7 +48,6 @@ protected:
     std::list<Content_t>* multimediaLibrary;
     std::list<Content_t>* networkLibrary;
     std::list<Content_t>* trafficLibrary;
-    //std::list<Content_t>* fullLibrary;          //Duplicate reference to objects from other categories
 
     std::vector<double> multimediaCummulativeProbabilityCurve;
     std::vector<double> networkCummulativeProbabilityCurve;
@@ -52,6 +55,13 @@ protected:
 
     std::vector<double> buildCategoryLibrary(int count, int byteSize, ContentPriority priority, ContentClass category, std::string classPrefix);
     void buildContentList();
+
+    LocationCorrelationModel locationModel;
+    int sectorCount = 1;
+    int widthBlocks = 1;
+    int heightBlocks = 1;
+    double sectorWidth = 250;       //Unit = Meters
+    double sectorHeight = 200;      //Unit = Meters
 
     int maxVehicleServers = 0;
     int allocatedVehicleServers = 0;
@@ -71,12 +81,24 @@ protected:
 
     std::list<int> serverVehicles;
 
+    cMessage* requestTimer;             //Running Timer
+    std::list<LocationRequest_t> preemptiveRequests;
+    string requestSequenceFile;
+
+    BaseWorldUtility *world;
     BaconStatistics* stats;
 
 public:
     std::string transitPrefix = "t";
     std::string networkPrefix = "n";
     std::string multimediaPrefix = "m";
+
+    bool independentOperationMode();
+    void setupPendingRequests();
+    void loadRequestSequence();
+    void registerClient(string clientPath);
+    void deregisterClient(string clientPath);
+    std::list<string> clientList;
 
     bool requestServerStatus(int vehicleID);
     void releaseServerStatus(int vehicleID);
@@ -91,6 +113,8 @@ public:
     std::list<Content_t>* getNetworkContentList();
 
     int getIndexForDensity(double value, ContentClass contentClass);
+    int getIndexForDensity(double value, ContentClass contentClass, int sector );
+    int getIndexForDensity(double value, ContentClass contentClass, double xPos, double yPos );
     int getContentClass(ContentClass cClass);
 };
 

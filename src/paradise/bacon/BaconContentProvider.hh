@@ -27,6 +27,8 @@
 #include <paradise/bacon/BaconLibrary.hh>
 #include <paradise/bacon/BaconServiceManager.hh>
 class BaconServiceManager;
+class BaconLibrary;
+class BaconStatistics;
 
 using namespace omnetpp;
 using namespace std;

@@ -53,89 +53,89 @@ O = $(PROJECT_OUTPUT_DIR)/$(CONFIGNAME)/$(PROJECTRELATIVE_PATH)
 
 # Object files for local .cc, .msg and .sm files
 OBJS = \
-    $O/paradise/bacon/OsgEarthScene.o \
-    $O/paradise/bacon/BaconContentProvider.o \
     $O/paradise/bacon/BaconClient.o \
-    $O/paradise/bacon/BaconServiceManager.o \
+    $O/paradise/bacon/BaconContentProvider.o \
+    $O/paradise/bacon/OsgEarthScene.o \
     $O/paradise/bacon/BaconLibrary.o \
-    $O/paradise/bacon/BaconStructures.o \
     $O/paradise/bacon/BaconStatistics.o \
+    $O/paradise/bacon/BaconStructures.o \
+    $O/paradise/bacon/BaconServiceManager.o \
     $O/veins/base/connectionManager/BaseConnectionManager.o \
+    $O/veins/base/connectionManager/ChannelAccess.o \
     $O/veins/base/connectionManager/NicEntryDirect.o \
     $O/veins/base/connectionManager/NicEntryDebug.o \
-    $O/veins/base/connectionManager/ChannelAccess.o \
     $O/veins/base/connectionManager/ConnectionManager.o \
-    $O/veins/base/modules/BaseWorldUtility.o \
     $O/veins/base/modules/BaseModule.o \
-    $O/veins/base/modules/BaseApplLayer.o \
-    $O/veins/base/modules/BatteryAccess.o \
     $O/veins/base/modules/BaseMacLayer.o \
     $O/veins/base/modules/BaseMobility.o \
+    $O/veins/base/modules/BaseApplLayer.o \
+    $O/veins/base/modules/BaseWorldUtility.o \
     $O/veins/base/modules/BaseBattery.o \
     $O/veins/base/modules/BaseLayer.o \
-    $O/veins/base/phyLayer/MappingBase.o \
-    $O/veins/base/phyLayer/Decider.o \
-    $O/veins/base/phyLayer/Signal.o \
+    $O/veins/base/modules/BatteryAccess.o \
     $O/veins/base/phyLayer/MappingUtils.o \
+    $O/veins/base/phyLayer/Signal.o \
+    $O/veins/base/phyLayer/ChannelState.o \
     $O/veins/base/phyLayer/PhyUtils.o \
     $O/veins/base/phyLayer/BaseDecider.o \
-    $O/veins/base/phyLayer/ChannelInfo.o \
     $O/veins/base/phyLayer/BasePhyLayer.o \
-    $O/veins/base/phyLayer/ChannelState.o \
+    $O/veins/base/phyLayer/Decider.o \
+    $O/veins/base/phyLayer/ChannelInfo.o \
+    $O/veins/base/phyLayer/MappingBase.o \
     $O/veins/base/utils/SimpleAddress.o \
     $O/veins/base/utils/asserts.o \
-    $O/veins/base/utils/NetwToMacControlInfo.o \
-    $O/veins/base/utils/Coord.o \
     $O/veins/base/utils/winsupport.o \
-    $O/veins/modules/analogueModel/TwoRayInterferenceModel.o \
-    $O/veins/modules/analogueModel/NakagamiFading.o \
-    $O/veins/modules/analogueModel/SimplePathlossModel.o \
+    $O/veins/base/utils/Coord.o \
+    $O/veins/base/utils/NetwToMacControlInfo.o \
     $O/veins/modules/analogueModel/LogNormalShadowing.o \
     $O/veins/modules/analogueModel/PERModel.o \
-    $O/veins/modules/analogueModel/JakesFading.o \
+    $O/veins/modules/analogueModel/TwoRayInterferenceModel.o \
     $O/veins/modules/analogueModel/SimpleObstacleShadowing.o \
     $O/veins/modules/analogueModel/BreakpointPathlossModel.o \
+    $O/veins/modules/analogueModel/NakagamiFading.o \
+    $O/veins/modules/analogueModel/SimplePathlossModel.o \
+    $O/veins/modules/analogueModel/JakesFading.o \
     $O/veins/modules/application/ieee80211p/BaseWaveApplLayer.o \
-    $O/veins/modules/application/traci/TraCITestApp.o \
     $O/veins/modules/application/traci/TraCIDemo11p.o \
+    $O/veins/modules/application/traci/TraCITestApp.o \
     $O/veins/modules/application/traci/TraCIDemoRSU11p.o \
     $O/veins/modules/mac/ieee80211p/Mac1609_4.o \
+    $O/veins/modules/mobility/traci/TraCIScreenRecorder.o \
+    $O/veins/modules/mobility/traci/TraCIScenarioManagerInet.o \
+    $O/veins/modules/mobility/traci/TraCIScenarioManagerLaunchd.o \
+    $O/veins/modules/mobility/traci/TraCICommandInterface.o \
     $O/veins/modules/mobility/traci/TraCIColor.o \
+    $O/veins/modules/mobility/traci/TraCIBuffer.o \
     $O/veins/modules/mobility/traci/TraCIMobility.o \
     $O/veins/modules/mobility/traci/TraCIScenarioManager.o \
     $O/veins/modules/mobility/traci/TraCIConnection.o \
-    $O/veins/modules/mobility/traci/TraCIScreenRecorder.o \
-    $O/veins/modules/mobility/traci/TraCIScenarioManagerInet.o \
-    $O/veins/modules/mobility/traci/TraCICommandInterface.o \
-    $O/veins/modules/mobility/traci/TraCIBuffer.o \
-    $O/veins/modules/mobility/traci/TraCIScenarioManagerLaunchd.o \
     $O/veins/modules/obstacle/Obstacle.o \
     $O/veins/modules/obstacle/ObstacleControl.o \
     $O/veins/modules/phy/NistErrorRate.o \
+    $O/veins/modules/phy/Decider80211p.o \
     $O/veins/modules/phy/PhyLayer80211p.o \
     $O/veins/modules/phy/SNRThresholdDecider.o \
-    $O/veins/modules/phy/Decider80211p.o \
     $O/veins/modules/world/annotations/AnnotationDummy.o \
     $O/veins/modules/world/annotations/AnnotationManager.o \
-    $O/veins/base/messages/MacPkt_m.o \
     $O/veins/base/messages/BorderMsg_m.o \
-    $O/veins/base/messages/AirFrame_m.o \
+    $O/veins/base/messages/MacPkt_m.o \
     $O/veins/base/messages/ChannelSenseRequest_m.o \
-    $O/veins/modules/messages/PhyControlMessage_m.o \
+    $O/veins/base/messages/AirFrame_m.o \
     $O/veins/modules/messages/WaveShortMessage_m.o \
-    $O/veins/modules/messages/Mac80211Pkt_m.o \
-    $O/veins/modules/messages/AirFrame11p_m.o
+    $O/veins/modules/messages/PhyControlMessage_m.o \
+    $O/veins/modules/messages/AirFrame11p_m.o \
+    $O/veins/modules/messages/Mac80211Pkt_m.o
 
 # Message files
 MSGFILES = \
-    veins/base/messages/MacPkt.msg \
     veins/base/messages/BorderMsg.msg \
-    veins/base/messages/AirFrame.msg \
+    veins/base/messages/MacPkt.msg \
     veins/base/messages/ChannelSenseRequest.msg \
-    veins/modules/messages/PhyControlMessage.msg \
+    veins/base/messages/AirFrame.msg \
     veins/modules/messages/WaveShortMessage.msg \
-    veins/modules/messages/Mac80211Pkt.msg \
-    veins/modules/messages/AirFrame11p.msg
+    veins/modules/messages/PhyControlMessage.msg \
+    veins/modules/messages/AirFrame11p.msg \
+    veins/modules/messages/Mac80211Pkt.msg
 
 # SM files
 SMFILES =
