@@ -29,6 +29,8 @@
 #include <paradise/bacon/BaconStatistics.hh>
 #include <paradise/bacon/BaconContentProvider.hh>
 class BaconContentProvider;
+class BaconLibrary;
+class BaconStatistics;
 
 using Veins::TraCIMobility;
 using Veins::AnnotationManager;
@@ -186,7 +188,7 @@ class BaconServiceManager : public BaseWaveApplLayer {
 
     public:
         static WaveShortMessage* convertCMessage(cMessage* msg);               //Convert cMessage to WaveShortMessage (Cast for now)
-        ContentClass getClassFromPrefix(string prefix);
+        ContentClass getClassFromPrefix(std::string prefix);
 
 };
 

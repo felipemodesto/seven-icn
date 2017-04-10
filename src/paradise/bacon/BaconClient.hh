@@ -25,6 +25,9 @@
 
 #include <paradise/bacon/BaconLibrary.hh>
 #include <paradise/bacon/BaconContentProvider.hh>
+class BaconContentProvider;
+class BaconLibrary;
+class BaconStatistics;
 
 using namespace omnetpp;
 using namespace osgEarth;
@@ -47,6 +50,10 @@ class BaconClient : public BaseWaveApplLayer {
         //double getLatitude() const override { return OsgEarthScene::getInstance()->toLatitude(y); }
         //double getLongitude() const override { return OsgEarthScene::getInstance()->toLongitude(x); }
         //double getTxRange() const override { return txRange; }
+
+        bool suggestContentRequest(Content_t* suggestedContent);
+        Coord getPosition();
+        int getID() { return myId; }
 
     protected:
         //==========================================//
@@ -134,6 +141,7 @@ class BaconClient : public BaseWaveApplLayer {
         virtual void resetLocationTimer();                          //RESETS THE TIMER DELAY FOR LOCATION TIMER MESSAGE
         virtual void notifyLocation();                              //NOTIFIES STATISTICS CLASS OF POSITION (SHOULD BE CALLED EVERY SECOND)
         void cleanRequestList();                                    //Deletes old entries from our request lists
+        Content_t* selectObjectForRequest();                              //Selects the target for a request
         //==========================================//
         void onBeacon(WaveShortMessage* wsm)  override;             //ON WSM BEACON MESSAGE
         void onData(WaveShortMessage* wsm)  override;               //ON WSM DATA MESSAGE
@@ -144,7 +152,8 @@ class BaconClient : public BaseWaveApplLayer {
         //==========================================//
         void startNewMessageTimer(simtime_t timerTime);
         void startNewMessageTimer();
-        void startContentRequest();
+        bool startContentRequest();
+        bool startContentRequest(Content_t* preferedRequest);
         void handleMessage(cMessage *msg)  override;                //CALLBACK FROM SELF MESSAGE, GENERALLY USED AS RANDOM TIMER CALLBACK
         void sendToServiceManager(cMessage *msg);
 };

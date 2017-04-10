@@ -27,13 +27,25 @@ void BaconStatistics::initialize(int stage) {
         statisticsStartTime = par("statisticsStartTime").doubleValue();
         statisticsStopTime = par("statisticsStopTime").doubleValue();
 
-        locationStatisticsFile = par("locationStatisticsFile").stringValue();
-        neighborhoodStatisticsFile = par("neighborhoodStatisticsFile").stringValue();
-        contentPopularityStatisticsFile = par("contentNameStatisticsFile").stringValue();
-        networkInstantLoadStatisticsFile = par("networkInstantLoadStatisticsFile").stringValue();
-        networkAverageLoadStatisticsFile = par("networkAverageLoadStatisticsFile").stringValue();
-        generalStatisticsFile = par("generalStatisticsFile").stringValue();
-        participationLengthStatsFile = par("participationLengthStatsFile").stringValue();
+        simulationDirectoryFolder= par("simulationDirectoryFolder").stringValue();
+
+        //generalStatisticsFile =             par("generalStatisticsFile").stringValue();
+        //requestLocationStatsFile =          par("requestLocationStatsFile").stringValue();
+        //locationStatisticsFile =            par("locationStatisticsFile").stringValue();
+        //neighborhoodStatisticsFile =        par("neighborhoodStatisticsFile").stringValue();
+        //contentPopularityStatisticsFile =   par("contentNameStatisticsFile").stringValue();
+        //networkInstantLoadStatisticsFile =  par("networkInstantLoadStatisticsFile").stringValue();
+        //networkAverageLoadStatisticsFile =  par("networkAverageLoadStatisticsFile").stringValue();
+        //participationLengthStatsFile =      par("participationLengthStatsFile").stringValue();
+
+        generalStatisticsFile =             string(simulationDirectoryFolder + par("generalStatisticsFile").stringValue()).c_str();
+        requestLocationStatsFile =          string(simulationDirectoryFolder + par("requestLocationStatsFile").stringValue()).c_str();
+        locationStatisticsFile =            string(simulationDirectoryFolder + par("locationStatisticsFile").stringValue()).c_str();
+        neighborhoodStatisticsFile =        string(simulationDirectoryFolder + par("neighborhoodStatisticsFile").stringValue()).c_str();
+        contentPopularityStatisticsFile =   string(simulationDirectoryFolder + par("contentNameStatisticsFile").stringValue()).c_str();
+        networkInstantLoadStatisticsFile =  string(simulationDirectoryFolder + par("networkInstantLoadStatisticsFile").stringValue()).c_str();
+        networkAverageLoadStatisticsFile =  string(simulationDirectoryFolder + par("networkAverageLoadStatisticsFile").stringValue()).c_str();
+        participationLengthStatsFile =      string(simulationDirectoryFolder + par("participationLengthStatsFile").stringValue()).c_str();
 
         startStatistics();
 
@@ -123,7 +135,7 @@ void BaconStatistics::startStatistics() {
     library = check_and_cast<BaconLibrary *>(modlib);
 
     //Checking if we already have simulation results for this file
-    FILE *  pFile = fopen ( generalStatisticsFile, "r");
+    FILE *  pFile = fopen ( generalStatisticsFile.c_str(), "r");
     if (pFile != NULL) {
         std::cerr << "(St) Error: Simulation file already present in folder. Skipping simulation to accelerate simulation.\n";
         std::cerr.flush();
@@ -175,6 +187,7 @@ void BaconStatistics::startStatistics() {
     completeTransmissionDelay = 0;
     incompleteTranmissionDelay = 0;
     lastContactTime = 0;
+    unviableRequests = 0;
 
     packetsSentHist.setName("PacketsSent");
     packetsForwardedHist.setName("PacketsForwarded");
@@ -183,6 +196,8 @@ void BaconStatistics::startStatistics() {
     chunksLostHist.setName("ChunksLost");
     serverBusyHist.setName("ServerBusy");
     contentUnavailableHist.setName("ContentUnavailable");
+
+    unviableRequestsVect.setName("unviableRequestsVect");
 
     requestsStartedVect.setName("RequestsStarted");
     packetsSentVect.setName("SentPackets");
@@ -234,6 +249,7 @@ void BaconStatistics::startStatistics() {
     neighborCountVect.setName("ContactTime");
     participationLengthVect.setName("ParticipationTime");
 
+    unviableRequestsVect.record(0);
     participationLengthVect.record(0);
     neighborCountVect.record(0);
     requestsStartedVect.record(0);
@@ -286,6 +302,17 @@ void BaconStatistics::stopStatistics() {
         return;
     }
 
+    std::cout << "(St) File Folder <" << simulationDirectoryFolder << ">\n";
+
+    std::cout << "(St) Saving File <" << requestLocationStatsFile << ">\n";
+    std::cout << "(St) Saving File <" << locationStatisticsFile << ">\n";
+    std::cout << "(St) Saving File <" << neighborhoodStatisticsFile << ">\n";
+    std::cout << "(St) Saving File <" << contentPopularityStatisticsFile << ">\n";
+    std::cout << "(St) Saving File <" << networkInstantLoadStatisticsFile << ">\n";
+    std::cout << "(St) Saving File <" << networkAverageLoadStatisticsFile << ">\n";
+    std::cout << "(St) Saving File <" << generalStatisticsFile << ">\n";
+    std::cout << "(St) Saving File <" << participationLengthStatsFile << ">\n";
+
     std::cout << "(St) Statistics Collection has stopped. Saving Statistics.\n";
     std::cout.flush();
 
@@ -293,9 +320,9 @@ void BaconStatistics::stopStatistics() {
 
     //If we're logging vehicle positions, we'll save a log csv file with our position matrix
     if (collectingPositions) {
-        pFile = fopen ( locationStatisticsFile, "w");
+        pFile = fopen ( locationStatisticsFile.c_str(), "w");
         fprintf(pFile, "X,Y,Count\n");
-        for(auto iterator = locationMap.begin(); iterator != locationMap.end(); iterator++) {
+        for(auto iterator = vehicleLocationMap.begin(); iterator != vehicleLocationMap.end(); iterator++) {
             fprintf(pFile, "%s,%i\n",iterator->first.c_str(),iterator->second);
         }
         fclose(pFile);
@@ -303,14 +330,14 @@ void BaconStatistics::stopStatistics() {
 
     //If we're logging Contact Times
     if (collectingNeighborhood) {
-        pFile = fopen ( neighborhoodStatisticsFile, "w");
+        pFile = fopen ( neighborhoodStatisticsFile.c_str(), "w");
         fprintf(pFile, "Duration,Count\n");
         for(auto iterator = contactDurationMap.begin(); iterator != contactDurationMap.end(); iterator++) {
             fprintf(pFile, "%f,%i\n",iterator->first,iterator->second);
         }
         fclose(pFile);
 
-        pFile = fopen ( participationLengthStatsFile, "w");
+        pFile = fopen ( participationLengthStatsFile.c_str(), "w");
         fprintf(pFile, "Length,Count\n");
         for(auto iterator = participationLengthMap.begin(); iterator != participationLengthMap.end(); iterator++) {
             fprintf(pFile, "%f,%i\n",iterator->first,iterator->second);
@@ -320,12 +347,19 @@ void BaconStatistics::stopStatistics() {
 
     //If we're logging vehicle positions, we'll save a log csv file with our position matrix
     if (collectingRequestNames) {
-        pFile = fopen ( contentPopularityStatisticsFile, "w");
+        pFile = fopen ( contentPopularityStatisticsFile.c_str(), "w");
         fprintf(pFile, "#name,requests\n");
-        for(auto iterator = contentRequestMap.begin(); iterator != contentRequestMap.end(); iterator++) {
+        for(auto iterator = contentNameFrequencyMap.begin(); iterator != contentNameFrequencyMap.end(); iterator++) {
             //if (iterator->second != 0) {
                 fprintf(pFile, "%s,%i\n",iterator->first.c_str(),iterator->second);
             //}
+        }
+        fclose(pFile);
+
+        pFile = fopen ( requestLocationStatsFile.c_str(), "w");
+        fprintf(pFile, "X,Y,Count\n");
+        for(auto iterator = contentRequestLocationMap.begin(); iterator != contentRequestLocationMap.end(); iterator++) {
+            fprintf(pFile, "%s,%i\n",iterator->first.c_str(),iterator->second);
         }
         fclose(pFile);
     }
@@ -337,13 +371,13 @@ void BaconStatistics::stopStatistics() {
 
     //Saving Network Load Statistics
     if (collectingLoad) {
-        pFile = fopen ( networkInstantLoadStatisticsFile, "w");
+        pFile = fopen ( networkInstantLoadStatisticsFile.c_str(), "w");
         fprintf(pFile, "#time,id,load\n");
         for(auto iterator = instantLoadList.begin(); iterator != instantLoadList.end(); iterator++) {
             fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
         }
         fclose(pFile);
-        pFile = fopen ( networkAverageLoadStatisticsFile, "w");
+        pFile = fopen ( networkAverageLoadStatisticsFile.c_str(), "w");
         fprintf(pFile, "#time,id,load\n");
         for(auto iterator = averageLoadList.begin(); iterator != averageLoadList.end(); iterator++) {
             fprintf(pFile,"%f,%i,%f\n",iterator->simTime.dbl(),iterator->vehicleId,iterator->loadValue);
@@ -352,7 +386,7 @@ void BaconStatistics::stopStatistics() {
     }
 
     //Saving Communication statistics previously saved as scalar and vector files
-    pFile = fopen ( generalStatisticsFile, "w");
+    pFile = fopen ( generalStatisticsFile.c_str(), "w");
     fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency,packetsSent,packetsForwarded,packetsUnserved,packetsLost,chunksLost,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements\n");
 
     fprintf(pFile,",%F",totalTransmissionDelay);
@@ -403,9 +437,9 @@ void BaconStatistics::logPosition(double x, double y) {
     std::string currentLocation = "" + std::to_string(floor(x)) + "," + std::to_string(floor(y));
 
     //Trying to insert new location tuple
-    if(locationMap.insert(std::make_pair(currentLocation, 1)).second == false) {
+    if(vehicleLocationMap.insert(std::make_pair(currentLocation, 1)).second == false) {
         //If object already exists lets increase its value
-        locationMap[currentLocation] = locationMap[currentLocation] + 1;
+        vehicleLocationMap[currentLocation] = vehicleLocationMap[currentLocation] + 1;
     }
 }
 
@@ -439,7 +473,7 @@ void BaconStatistics::logParticipationDuration(double participationLength) {
 }
 
 //
-void BaconStatistics::logContentRequest(std::string contentName, bool shouldLogContent) {
+void BaconStatistics::logContentRequest(std::string contentName, bool shouldLogContent, double x, double y) {
     if (shouldLogContent) {
         requestsStarted++;
         requestsStartedVect.record(requestsStarted);
@@ -449,11 +483,27 @@ void BaconStatistics::logContentRequest(std::string contentName, bool shouldLogC
 
     //Trying to insert new content request tuple
     //NOTE: Content requests are added as 0 because we include them ALL when initializing the content library
-    if(contentRequestMap.insert(std::make_pair(contentName, 0)).second == false) {
+    if(contentNameFrequencyMap.insert(std::make_pair(contentName, 0)).second == false) {
         //If object already exists lets increase its value
-        contentRequestMap[contentName] = contentRequestMap[contentName] + 1;
+        contentNameFrequencyMap[contentName] = contentNameFrequencyMap[contentName] + 1;
+    }
+
+    std::string currentLocation = "" + std::to_string(floor(x)) + "," + std::to_string(floor(y));
+    //Trying to insert new location tuple
+    if(contentRequestLocationMap.insert(std::make_pair(currentLocation, 1)).second == false) {
+        //If object already exists lets increase its value
+        contentRequestLocationMap[currentLocation] = contentRequestLocationMap[currentLocation] + 1;
     }
 }
+
+
+void BaconStatistics::increasedUnviableRequests(){
+    BaconStatistics::unviableRequests++;
+    if (!shouldRecordData()) return;
+
+    unviableRequestsVect.record(unviableRequests);
+}
+
 
 void BaconStatistics::increasedBackloggedResponses(){
     BaconStatistics::backloggedResponses++;

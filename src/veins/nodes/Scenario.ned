@@ -38,22 +38,22 @@ network Scenario
             @display("p=72,59");
         }
         annotations: AnnotationManager {
-            @display("p=72,59");
+            @display("p=961.28,54.072002");
         }
         connectionManager: ConnectionManager {
             parameters:
-                @display("p=72,59;i=abstract/multicast");
+                @display("p=66.088005,889.184;i=abstract/multicast");
         }
         world: BaseWorldUtility {
             parameters:
                 playgroundSizeX = playgroundSizeX;
                 playgroundSizeY = playgroundSizeY;
                 playgroundSizeZ = playgroundSizeZ;
-                @display("p=72,59;i=misc/globe");
+                @display("p=66.088005,474.63202;i=misc/globe");
         }
         manager: TraCIScenarioManagerLaunchd {
             parameters:
-                @display("p=72,59");
+                @display("p=492.656,54.072002");
         }
 
     connections allowunconnected:

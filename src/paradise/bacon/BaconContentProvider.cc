@@ -367,22 +367,30 @@ void BaconContentProvider::buildContentLibrary() {
         std::list<Content_t>* networkLibrary = library->getNetworkContentList();
         std::list<Content_t>* trafficLibrary = library->getTrafficContentList();
 
-        for (auto it = multimediaLibrary->begin(); it != multimediaLibrary->end(); it++) {
-            //std::cout << "\t\\--> Adding <" << it->contentPrefix << ">to Library.\n";
-            addContentToLibrary(&*it);
+        librarySize = 0;
+        if (multimediaLibrary != NULL) {
+            for (auto it = multimediaLibrary->begin(); it != multimediaLibrary->end(); it++) {
+                //std::cout << "\t\\--> Adding <" << it->contentPrefix << ">to Library.\n";
+                addContentToLibrary(&*it);
+            }
+            librarySize += multimediaLibrary->size();
         }
 
-        for (auto it = networkLibrary->begin(); it != networkLibrary->end(); it++) {
-            //std::cout << "\t\\--> Adding <" << it->contentPrefix << ">to Library.\n";
-            addContentToLibrary(&*it);
+        if (networkLibrary != NULL) {
+            for (auto it = networkLibrary->begin(); it != networkLibrary->end(); it++) {
+                //std::cout << "\t\\--> Adding <" << it->contentPrefix << ">to Library.\n";
+                addContentToLibrary(&*it);
+            }
+            librarySize += networkLibrary->size();
         }
 
-        for (auto it = trafficLibrary->begin(); it != trafficLibrary->end(); it++) {
-            //std::cout << "\t\\--> Adding <" << it->contentPrefix << ">to Library.\n";
-            addContentToLibrary(&*it);
+        if (trafficLibrary != NULL) {
+            for (auto it = trafficLibrary->begin(); it != trafficLibrary->end(); it++) {
+                //std::cout << "\t\\--> Adding <" << it->contentPrefix << ">to Library.\n";
+                addContentToLibrary(&*it);
+            }
+            librarySize += trafficLibrary->size();
         }
-
-        librarySize = multimediaLibrary->size() + networkLibrary->size() + trafficLibrary->size();
 
     } else if (startingCache > 0) {
         //std::cout << "(CP) Assistant <" << myId << "> Standing By.\n";

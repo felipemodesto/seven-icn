@@ -14,6 +14,8 @@ void BaconLibrary::initialize(int stage) {
 
     //Initializing
     if (stage == 0) {
+        world = FindModule<BaseWorldUtility*>::findGlobalModule();
+
         zipfCaracterization = par("zipfCaracterization").doubleValue();
         sizeMultimedia = par("sizeMultimedia").longValue();
         sizeNetwork = par("sizeNetwork").longValue();
@@ -27,48 +29,294 @@ void BaconLibrary::initialize(int stage) {
         priorityNetwork = static_cast<ContentPriority>(par("priorityNetwork").longValue());
         priorityMultimedia = static_cast<ContentPriority>(par("priorityMultimedia").longValue());
 
+        locationModel = static_cast<LocationCorrelationModel>(par("locationCorrelationModel").longValue());
+
         maxVehicleServers = par("maxVehicleServers").longValue();
+        requestSequenceFile = par("requestSequenceFile").stringValue();
 
         multimediaLibrary = NULL;
         networkLibrary = NULL;
         trafficLibrary = NULL;
-        buildContentList();
 
-        //Sequencial request index
+        //Calculating world size in sections
+        double scenarioWidth = world->getPgs()->x;
+        double scenarioHeight = world->getPgs()->y;
+
+        widthBlocks = (int)ceil(scenarioWidth/sectorWidth);
+        heightBlocks = (int)ceil(scenarioHeight/sectorHeight);
+
+        sectorCount = widthBlocks*heightBlocks;
+
+        std::cout << "(Lib) Request Location Correlation follows Distribution <" << locationModel << "> in <" << widthBlocks << ";" << heightBlocks << "> Grid.\n";
+        std::cout.flush();
+
+        //Setting Sequential request index
         currentIndex = 0;
     }
 
     //After we've been built and assume that the statistics object has also, we fill our content list
     if (stage == 1) {
+
         cSimulation *sim = getSimulation();
         cModule *modp = sim->getModuleByPath("BaconScenario.statistics");
         stats = check_and_cast<BaconStatistics *>(modp);
 
+        buildContentList();
+
         std::cout << "(Lib) Writing Content List to Statistics for collection (warning: might be ignored).\n";
         std::cout.flush();
 
-        //Adding all items from all libraries
-        for (auto it = multimediaLibrary->begin(); it != multimediaLibrary->end(); it++) {
-            stats->logContentRequest(it->contentPrefix, false);
-        }
-        for (auto it = networkLibrary->begin(); it != networkLibrary->end(); it++) {
-            stats->logContentRequest(it->contentPrefix, false);
-        }
-        for (auto it = trafficLibrary->begin(); it != trafficLibrary->end(); it++) {
-            stats->logContentRequest(it->contentPrefix, false);
+        //TODO: Fix so that our twitter shit still maps to content categories
+        if (locationModel != LocationCorrelationModel::TWITTER) {
+            //Adding all items from all libraries
+            for (auto it = multimediaLibrary->begin(); it != multimediaLibrary->end(); it++) {
+                stats->logContentRequest(it->contentPrefix, false, 0, 0);
+            }
+            for (auto it = networkLibrary->begin(); it != networkLibrary->end(); it++) {
+                stats->logContentRequest(it->contentPrefix, false, 0, 0);
+            }
+            for (auto it = trafficLibrary->begin(); it != trafficLibrary->end(); it++) {
+                stats->logContentRequest(it->contentPrefix, false, 0, 0);
+            }
         }
     }
 }
 
 //Finalization Function (not a destructor!)
 void BaconLibrary::finish() {
-    multimediaLibrary->clear();
-    networkLibrary->clear();
-    trafficLibrary->clear();
+    if (multimediaLibrary) multimediaLibrary->clear();
+    if (networkLibrary) networkLibrary->clear();
+    if (trafficLibrary) trafficLibrary->clear();
+}
+
+void BaconLibrary::registerClient(string clientPath){
+    Enter_Method_Silent();
+    clientList.push_front(clientPath);
+}
+
+void BaconLibrary::deregisterClient(string clientPath) {
+    Enter_Method_Silent();
+    for(auto it = clientList.begin(); it != clientList.end(); it++) {
+        if (clientPath.compare(*it) == 0) {
+            clientList.erase(it);
+           return;
+        }
+    }
+}
+
+void BaconLibrary::handleMessage(cMessage *msg) {
+    if ( msg == requestTimer ) {
+        if (requestTimer == NULL) return;
+        setupPendingRequests();
+    }
+}
+
+void BaconLibrary::setupPendingRequests() {
+    bool foundItem = true;
+    simtime_t rangeLimit = 0.001;
+
+    /*
+    for (auto it = preemptiveRequests.begin() ; it != preemptiveRequests.end() ; it++) {
+        std::cout << "(Lib) Item <" << (*it).x << ";" << (*it).y << "> <" << (*it).time << "> <" << (*it).object->contentPrefix << "> \n";
+        std::cout.flush();
+    }
+    */
+
+    std::cout << "\t(Lib) Starting new requests.\n";
+    std::cout.flush();
+
+    while (foundItem) {
+        LocationRequest_t curRequest = preemptiveRequests.front();
+        simtime_t timeDif = (curRequest.time - simTime());
+        if (-rangeLimit < timeDif && timeDif < rangeLimit ) {
+            //std::cout << "\t(Lib) Starting a new request for item <" << curRequest.object->contentPrefix << "> \t at position <" << curRequest.x << ";" << curRequest.y << "> \n";
+
+            Coord requestLocation;
+            requestLocation.x = curRequest.x;
+            requestLocation.y = curRequest.y;
+
+            double minDistance = DBL_MAX;
+            BaconClient* closestClient = NULL;
+
+            //Checking neighbors for closest neighbor
+            for(auto it = clientList.begin(); it != clientList.end();) {
+                cModule* module = getModuleByPath((*it).c_str());
+                if (module != NULL) {
+                    BaconClient* currentClient = check_and_cast<BaconClient *>(module);
+                    double distance = requestLocation.distance(currentClient->getPosition());
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestClient = currentClient;
+                    }
+                    it++;
+                } else {
+                    it = clientList.erase(it);
+                }
+            }
+
+            std::list<BaconClient*> viableVehicles;
+            viableVehicles.push_front(closestClient);
+            //Rechecking list for other neighbors that might be close
+            for(auto it = clientList.begin(); it != clientList.end();it++) {
+                cModule* module = getModuleByPath((*it).c_str());
+                    BaconClient* currentClient = check_and_cast<BaconClient *>(module);
+                    double distance = requestLocation.distance(currentClient->getPosition());
+                    //Filtering vehicles up to 10% further or up to 100m from the closest car
+                    if (distance < minDistance * 1.1 || distance < minDistance + 100) {
+                        viableVehicles.push_front(currentClient);
+                    }
+            }
+
+            //Trying to select a viable vehicle
+            bool foundVehicle = false;
+            //int potentialVehicles = viableVehicles.size();
+            while (!foundVehicle && viableVehicles.size() > 0) {
+                int selectedVehicleIndex = floor(uniform(0,viableVehicles.size()));
+                auto it = viableVehicles.begin();
+                for (int i = 0; i < selectedVehicleIndex && it != viableVehicles.end() ;it++,i++); //Iterating to desired object
+
+                //Attempting to get the client to send the packet
+                bool response = (*it)->suggestContentRequest(curRequest.object);
+                if (response) {
+                    closestClient = (*it);
+                    foundVehicle = true;
+                    std::cout << "\t(Lib) Request <" << curRequest.object->contentPrefix << "> was fulfilled by <" << (*it)->getID() << ">\n";
+                    std::cout.flush();
+                } else {
+                    viableVehicles.erase(it);
+                }
+            }
+
+            if (!foundVehicle) {
+                stats->increasedUnviableRequests();
+                //std::cout << "\t(Lib) Warning : No Viable Vehicle found out of <" << potentialVehicles << "> potentials with minimum distance <" << minDistance << ">.\n";
+            } else {
+                //std::cout << "\t(Lib) Found a Viable Vehicle!!.\n";
+            }
+            //if (closestClient != NULL) closestClient->suggestContentRequest(curRequest.object);
+
+            preemptiveRequests.front().object = NULL;
+            preemptiveRequests.pop_front();
+        } else {
+            foundItem = false;
+            //std::cout << "(Lib) Time Shift is off, not sure why: " << simTime() << " dif " << timeDif << "\n";
+            //std::cout.flush();
+        }
+    }
+
+    //Starting a new timer for the next item that is in front of our list
+    //std::cout << "(Lib) Current Time <" << simTime() << "> Next Request is scheduled after time: "  << preemptiveRequests.front().time << std::endl;
+    //std::cout.flush();
+
+    if (preemptiveRequests.size() > 0) scheduleAt(preemptiveRequests.front().time, requestTimer);
+    else std::cout << "(Lib) Warning: No more requests available for scheduling.\n";
+
+    std::cout << "\t(Lib) Completed Request Round.\n";
+    std::cout.flush();
 }
 
 //
-bool BaconLibrary::requestServerStatus(int vehicleID){
+void BaconLibrary::loadRequestSequence() {
+    std::cout << "(Lib) Loading Request List..." << std::endl;
+
+    clock_t buildClockTime = clock();
+
+    string fileString = loadFile(requestSequenceFile);
+    std::string token;
+    std::string lineDelimiter = "\n";
+    size_t pos = 0;
+
+    //std::list<Content_t>* newLibrary = new std::list<Content_t>();
+    multimediaLibrary = new std::list<Content_t>();
+    int j = 1;
+    //Reading Lines
+    while ((pos = fileString.find(lineDelimiter)) != std::string::npos) {
+        token = fileString.substr(0, pos);
+
+        //std::cout << "(Lib) Parsing < " << token << " >\n";
+
+        //Getting String Components
+        string arr[4];
+        int i = 0;
+
+        for (int i=0; i< (int)token.length(); i++) {
+            if (token[i] == ',')
+                token[i] = ' ';
+        }
+
+        stringstream ssin(token);
+        while (ssin.good() && i < 4){
+            ssin >> arr[i];
+            ++i;
+        }
+
+        //Searching the library to see if we already have this content object
+        string contentPrefix = "m/" + arr[3];
+        bool foundDuplicate = false;
+        if (multimediaLibrary->size() > 0) {
+            for (auto it = multimediaLibrary->begin() ; it != multimediaLibrary->end() ; it++) {
+                if (contentPrefix.compare((*it).contentPrefix) == 0 ) {
+                    foundDuplicate = true;
+                    break;
+                }
+            }
+        }
+
+        if (!foundDuplicate) {
+            Content_t newContent;
+            //newContent.popularityRanking = j;         //Used as shorthand to the ranking of the object in its relative popularity queue
+            newContent.popularityRanking = 1;
+            newContent.priority = ContentPriority::PRIORITY_LOW;
+            newContent.contentClass = ContentClass::MULTIMEDIA;
+            newContent.contentSize = sizeMultimedia;
+            newContent.contentPrefix = contentPrefix;
+            //std::cout << "(Lib) Pushed Library Item: <" << newContent.contentPrefix << "> to library>\n";
+            multimediaLibrary->push_back(newContent);
+        }
+
+        LocationRequest_t newRequest;
+        newRequest.time = SIMTIME_ZERO + atof(arr[0].c_str()) + stats->getStartTime();  //Ta ligado gambiarra?
+        newRequest.x = atof(arr[1].c_str());
+        newRequest.y = atof(arr[2].c_str());
+        newRequest.object = getContent(contentPrefix);
+        preemptiveRequests.push_back(newRequest);
+
+        //std::cout << "(Lib) Pushed Library Item: <" << newRequest.object->contentPrefix << "> and time <" << newRequest.time << ">\n";
+        //std::cout << "(Lib) Current Last Item: <" << preemptiveRequests.back().object->contentPrefix << "> and time <" << preemptiveRequests.back().time << ">\n";
+
+        //Skipping to next item
+        fileString.erase(0, pos + lineDelimiter.length());
+        j++;
+    }
+
+    //Setting Multimedia Content Parameters
+    multimediaContent.category = ContentClass::MULTIMEDIA;
+    multimediaContent.byteSize = sizeMultimedia;
+    multimediaContent.count =  j - 1;
+    multimediaContent.priority = priorityMultimedia;
+    multimediaPrefix = "m";
+
+    simtime_t firstTime = preemptiveRequests.front().time;
+    std::cout << "(Lib) First Request is scheduled for: "  << firstTime << "\n";
+
+    /*
+    for (auto it = preemptiveRequests.begin() ; it != preemptiveRequests.end() ; it++) {
+        std::cout << "(Lib) Item <" << (*it).x << ";" << (*it).y << "> <" << (*it).time << "> <" << (*it).object->contentPrefix << "> \n";
+        std::cout.flush();
+    }
+    */
+
+    requestTimer = new cMessage("requestTimer");
+    scheduleAt(firstTime, requestTimer);
+
+    clock_t buildEndTime = clock();
+    double elapsed_secs = double(buildEndTime - buildClockTime) / CLOCKS_PER_SEC;
+
+    std::cout << "\t Done. Build took : " << elapsed_secs << " second(s)" << std::endl;
+}
+
+//
+bool BaconLibrary::requestServerStatus(int vehicleID) {
     if (!serverVehicles.empty()) {
         for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
             if ((*it) == vehicleID) return true;
@@ -79,22 +327,20 @@ bool BaconLibrary::requestServerStatus(int vehicleID){
         allocatedVehicleServers++;
         serverVehicles.push_front(vehicleID);
 
-        std::cout << "\t(Lib) Add to <" << allocatedVehicleServers << "> servers by vehicle <" << vehicleID << "> \n";
-        std::cout.flush();
+        //std::cout << "\t(Lib) Add to <" << allocatedVehicleServers << "> servers by vehicle <" << vehicleID << "> \n";
+        //std::cout.flush();
         return true;
     }
     return false;
 }
 
-
 //
 void BaconLibrary::releaseServerStatus(int vehicleID){
-
     for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
         if ((*it) == vehicleID) {
             allocatedVehicleServers--;
-            std::cout << "\t(Lib) Sub to <" << allocatedVehicleServers << "> servers by vehicle <" << vehicleID << "> \n";
-            std::cout.flush();
+            //std::cout << "\t(Lib) Sub to <" << allocatedVehicleServers << "> servers by vehicle <" << vehicleID << "> \n";
+            //std::cout.flush();
 
             serverVehicles.erase(it);
             return;
@@ -118,10 +364,15 @@ void BaconLibrary::buildContentList() {
     //Checking for previously existing Library (Using multimedia as an example -> built one, built all)
     if (multimediaLibrary != NULL) return;
 
-    std::cout << "(Lib) Building Library with size <" << (sizeMultimedia+sizeNetwork+sizeTransit) << ">.\n";
-    std::cout.flush();
+    if (locationModel == LocationCorrelationModel::TWITTER) {
+        loadRequestSequence();
+        return;
+    }
 
     //ContentCategoryDistribution_t* contentCategories[libraryCategoriesSize];
+
+    std::cout << "(Lib) Building Library with size <" << (libraryMultimedia+libraryNetwork+libraryTransit) << ">.\n";
+    std::cout.flush();
 
     //Setting Emergency Content Parameters
     emergencyContent.category = ContentClass::EMERGENCY_SERVICE;
@@ -289,16 +540,44 @@ Content_t* BaconLibrary::getContent(std::string contentPrefix) {
     return NULL;
 }
 
+bool BaconLibrary::independentOperationMode() {
+    if (locationModel == LocationCorrelationModel::TWITTER) return false;
+    return true;
+}
+
 //
 int BaconLibrary::getContentClass(ContentClass cClass) {
     return static_cast<int>(cClass);
 }
 
-
 //
 int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass ) {
-    std::vector<double> probabilityCurve;
+    return getIndexForDensity(value,contentClass,0);
+}
 
+int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, double xPos, double yPos ) {
+    int sector = 0;
+    sector = floor(xPos/sectorWidth) + ( floor(yPos/sectorHeight) )*widthBlocks;
+
+    switch (locationModel) {
+        case LocationCorrelationModel::NONE:
+            return getIndexForDensity(value,contentClass,0);
+            break;
+
+        case LocationCorrelationModel::GRID:
+        case LocationCorrelationModel::DUMB:
+            //std::cout << "(Lib) <" << xPos << ";" << yPos << "> Maps to Sector <" << sector << "\\" << sectorCount << "> of <" << widthBlocks << "x" << heightBlocks << ">\n";
+            return getIndexForDensity(value,contentClass,sector);
+            break;
+
+        default:
+            std::cerr << "(Lib) ERROR: Not Implemented\n";
+            return getIndexForDensity(value,contentClass);
+    }
+}
+
+int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, int sector ) {
+    std::vector<double> probabilityCurve;
     //Figuring out the appropriate list
     switch(contentClass) {
         case ContentClass::MULTIMEDIA:
@@ -325,9 +604,32 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass ) {
 
     //Checking which item meets the minimum probability
     int librarySize = probabilityCurve.size();
+    int itemIndex = -1;
     for (int j = 0 ; j < librarySize ; j++) {
         if (value <= probabilityCurve[j]) {
-            return j + 1;
+            //return j + 1;
+            itemIndex = j+1;
+
+            int shiftedIndex = 0;
+
+            switch (locationModel) {
+                case LocationCorrelationModel::NONE:
+                case LocationCorrelationModel::GRID:
+                    shiftedIndex = ( (sector * (int)ceil(librarySize/sectorCount)) + itemIndex) % librarySize;
+                    break;
+
+                case LocationCorrelationModel::DUMB:
+                    shiftedIndex = ( itemIndex + (librarySize % sector)) % librarySize;
+                    break;
+
+                default:
+                    std::cout << "(Lib) Error!!\n";
+                    break;
+            }
+
+            //std::cout << "(Lib) Shift to <" << shiftedIndex << "<   <--<  <" << itemIndex << "> for <" << sector << "\\" << sectorCount << ">\n";
+            return shiftedIndex;
+            break;
         }
     }
 
