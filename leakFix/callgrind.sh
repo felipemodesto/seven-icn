@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+make MODE=debug
 #
 cd /home/felipe/Simulation/BaconNet/scenario/unified
 #

@@ -167,14 +167,14 @@ void BaconLibrary::setupPendingRequests() {
             }
 
             std::list<BaconClient*> viableVehicles;
-            viableVehicles.push_front(closestClient);
+            //viableVehicles.push_front(closestClient);
             //Rechecking list for other neighbors that might be close
             for(auto it = clientList.begin(); it != clientList.end();it++) {
                 cModule* module = getModuleByPath((*it).c_str());
                     BaconClient* currentClient = check_and_cast<BaconClient *>(module);
                     double distance = requestLocation.distance(currentClient->getPosition());
                     //Filtering vehicles up to 10% further or up to 100m from the closest car
-                    if (distance < minDistance * 1.1 || distance < minDistance + 100) {
+                    if ( distance <= 250 && (distance < minDistance * 1.1 || distance < minDistance + 100)) {
                         viableVehicles.push_front(currentClient);
                     }
             }

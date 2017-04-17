@@ -31,12 +31,14 @@ void BaconStatistics::initialize(int stage) {
 
         generalStatisticsFile =             string(simulationDirectoryFolder + par("generalStatisticsFile").stringValue()).c_str();
         requestLocationStatsFile =          string(simulationDirectoryFolder + par("requestLocationStatsFile").stringValue()).c_str();
+        hopcountFile =                      string(simulationDirectoryFolder + par("hopcountFile").stringValue()).c_str();
         locationStatisticsFile =            string(simulationDirectoryFolder + par("locationStatisticsFile").stringValue()).c_str();
         neighborhoodStatisticsFile =        string(simulationDirectoryFolder + par("neighborhoodStatisticsFile").stringValue()).c_str();
         contentPopularityStatisticsFile =   string(simulationDirectoryFolder + par("contentNameStatisticsFile").stringValue()).c_str();
         networkInstantLoadStatisticsFile =  string(simulationDirectoryFolder + par("networkInstantLoadStatisticsFile").stringValue()).c_str();
         networkAverageLoadStatisticsFile =  string(simulationDirectoryFolder + par("networkAverageLoadStatisticsFile").stringValue()).c_str();
         participationLengthStatsFile =      string(simulationDirectoryFolder + par("participationLengthStatsFile").stringValue()).c_str();
+
 
         startStatistics();
 
@@ -65,32 +67,38 @@ void BaconStatistics::finish() {
 
 //
 bool BaconStatistics::allowedToRun() {
+    Enter_Method_Silent();
     if (statisticsStartTime < omnetpp::simTime().dbl() && omnetpp::simTime().dbl() < statisticsStopTime ) return true;
     return false;
 }
 
 //Getter for Simulation Start Time
 double BaconStatistics::getStartTime() {
+    Enter_Method_Silent();
     return statisticsStartTime;
 }
 
 //Getter for Simulation Stop Time
 double BaconStatistics::getStopTime() {
+    Enter_Method_Silent();
     return statisticsStopTime;
 }
 
 //Getter for Simulation Control parameter related to statistics collection
 bool BaconStatistics::recordingStatistics() {
+    Enter_Method_Silent();
     return collectingStatistics;
 }
 
 //Getter for Simulation Control parameter related to position tracking
 bool BaconStatistics::recordingPosition() {
+    Enter_Method_Silent();
     return collectingPositions;
 }
 
 //
 void BaconStatistics::keepTime() {
+    Enter_Method_Silent();
     int newTime = static_cast<int>(simTime().dbl());
     if (lastSecond < newTime) {
         lastSecond = newTime;
@@ -110,7 +118,7 @@ void BaconStatistics::keepTime() {
 
 //
 bool BaconStatistics::shouldRecordData() {
-    //keepTime();
+    Enter_Method_Silent();
 
     if (!allowedToRun()) return false;
     if (!collectingStatistics and !collectingPositions) return false;
@@ -120,6 +128,7 @@ bool BaconStatistics::shouldRecordData() {
 
 //
 void BaconStatistics::startStatistics() {
+    Enter_Method_Silent();
     if (hasStarted || hasStopped || !collectingStatistics) return;
 
     //Getting a reference to the content Library
@@ -181,6 +190,7 @@ void BaconStatistics::startStatistics() {
     incompleteTranmissionDelay = 0;
     lastContactTime = 0;
     unviableRequests = 0;
+    fallbackOutsourcedRequests = 0;
 
     packetsSentHist.setName("PacketsSent");
     packetsForwardedHist.setName("PacketsForwarded");
@@ -220,6 +230,8 @@ void BaconStatistics::startStatistics() {
     serverHitVect.setName("ServerCacheHits");
     backloggedClientResponseVect.setName("BackloggedResponses");
 
+    fallbackOutsourcedRequestsVect.setName("FallbackOutsourcedRequests");
+
     createdInterestVect.setName("InterestsCreated");
     registeredInterestVect.setName("InterestsRegistered");
     fulfilledInterestVect.setName("InterestsFulfilled");
@@ -243,6 +255,7 @@ void BaconStatistics::startStatistics() {
     neighborCountVect.setName("ContactTime");
     participationLengthVect.setName("ParticipationTime");
 
+    fallbackOutsourcedRequestsVect.record(0);
     unviableRequestsVect.record(0);
     participationLengthVect.record(0);
     neighborCountVect.record(0);
@@ -288,6 +301,7 @@ void BaconStatistics::startStatistics() {
 
 //
 void BaconStatistics::stopStatistics() {
+    Enter_Method_Silent();
     if (hasStopped) return;
 
     if (simTime() < statisticsStopTime) {
@@ -311,6 +325,14 @@ void BaconStatistics::stopStatistics() {
     std::cout.flush();
 
     FILE * pFile;
+
+    //Saving Hop Statistics
+    pFile = fopen ( hopcountFile.c_str(), "w");
+    fprintf(pFile, "Hop,Count\n");
+    for(auto iterator = hopDistanceCountMap.begin(); iterator != hopDistanceCountMap.end(); iterator++) {
+        fprintf(pFile, "%i,%i\n",iterator->first,iterator->second);
+    }
+    fclose(pFile);
 
     //If we're logging vehicle positions, we'll save a log csv file with our position matrix
     if (collectingPositions) {
@@ -358,6 +380,7 @@ void BaconStatistics::stopStatistics() {
         fclose(pFile);
     }
 
+
     //Calculating Average Delays
     totalTransmissionDelay = totalTransmissionDelay/(double)totalTransmissionCount;
     completeTransmissionDelay = completeTransmissionDelay/(double)completeTransmissionCount;
@@ -381,7 +404,7 @@ void BaconStatistics::stopStatistics() {
 
     //Saving Communication statistics previously saved as scalar and vector files
     pFile = fopen ( generalStatisticsFile.c_str(), "w");
-    fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency,packetsSent,packetsForwarded,packetsUnserved,packetsLost,chunksLost,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements\n");
+    fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency,packetsSent,packetsForwarded,packetsUnserved,packetsLost,chunksLost,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements,fallbackRequests\n");
 
     fprintf(pFile,",%F",totalTransmissionDelay);
     fprintf(pFile,",%F",completeTransmissionDelay);
@@ -413,6 +436,8 @@ void BaconStatistics::stopStatistics() {
     fprintf(pFile,",%ld",localCacheMisses);
     fprintf(pFile,",%ld",remoteCacheMisses);
     fprintf(pFile,",%ld",cacheReplacements);
+    fprintf(pFile,",%ld",fallbackOutsourcedRequests);
+
 
     fclose(pFile);
 
@@ -425,6 +450,7 @@ void BaconStatistics::stopStatistics() {
 
 //
 void BaconStatistics::logPosition(double x, double y) {
+    Enter_Method_Silent();
     if (!collectingPositions) return;
     //if (!shouldRecordData()) return;
 
@@ -439,6 +465,7 @@ void BaconStatistics::logPosition(double x, double y) {
 
 //
 void BaconStatistics::logContactDuration(double contactDuration) {
+    Enter_Method_Silent();
     if (!collectingNeighborhood) return;
 
     neighborCountVect.record(lastContactTime);
@@ -453,6 +480,7 @@ void BaconStatistics::logContactDuration(double contactDuration) {
 }
 
 void BaconStatistics::logParticipationDuration(double participationLength) {
+    Enter_Method_Silent();
     if (!collectingNeighborhood) return;
 
     participationLengthVect.record(lastParticipationlength);
@@ -471,25 +499,31 @@ void BaconStatistics::logContentRequest(std::string contentName, bool shouldLogC
     if (shouldLogContent) {
         requestsStarted++;
         requestsStartedVect.record(requestsStarted);
-    }
 
-    if (!collectingRequestNames) return;
+        if (!collectingRequestNames) return;
 
-    //Trying to insert new content request tuple
-    //NOTE: Content requests are added as 0 because we include them ALL when initializing the content library
-    if(contentNameFrequencyMap.insert(std::make_pair(contentName, 0)).second == false) {
-        //If object already exists lets increase its value
-        contentNameFrequencyMap[contentName] = contentNameFrequencyMap[contentName] + 1;
-    }
+        //Trying to insert new content request tuple
+        //NOTE: Content requests are added as 0 because we include them ALL when initializing the content library
+        if(contentNameFrequencyMap.insert(std::make_pair(contentName, 0)).second == false) {
+            //If object already exists lets increase its value
+            contentNameFrequencyMap[contentName] = contentNameFrequencyMap[contentName] + 1;
+        }
 
-    std::string currentLocation = "" + std::to_string(floor(x)) + "," + std::to_string(floor(y));
-    //Trying to insert new location tuple
-    if(contentRequestLocationMap.insert(std::make_pair(currentLocation, 1)).second == false) {
-        //If object already exists lets increase its value
-        contentRequestLocationMap[currentLocation] = contentRequestLocationMap[currentLocation] + 1;
+        std::string currentLocation = "" + std::to_string(floor(x)) + "," + std::to_string(floor(y));
+        //Trying to insert new location tuple
+        if(contentRequestLocationMap.insert(std::make_pair(currentLocation, 1)).second == false) {
+            //If object already exists lets increase its value
+            contentRequestLocationMap[currentLocation] = contentRequestLocationMap[currentLocation] + 1;
+        }
     }
 }
 
+void BaconStatistics::increaseFallbackRequests() {
+    BaconStatistics::fallbackOutsourcedRequests++;
+    if (!shouldRecordData()) return;
+
+    fallbackOutsourcedRequestsVect.record(fallbackOutsourcedRequests);
+}
 
 void BaconStatistics::increasedUnviableRequests(){
     BaconStatistics::unviableRequests++;
@@ -974,6 +1008,7 @@ void BaconStatistics::addincompleteTransmissionDelay(double delay) {
 }
 
 void BaconStatistics::increaseHopCountResult(int hopCount) {
+    Enter_Method_Silent();
     if (!shouldRecordData()) return;
 
     std::string vectorName = "HopCount-" + std::to_string(hopCount);

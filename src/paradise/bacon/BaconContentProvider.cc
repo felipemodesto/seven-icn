@@ -22,8 +22,6 @@ void BaconContentProvider::initialize(int stage) {
 
         librarySize = 0;
         WATCH(librarySize);
-
-        contentLibrary = NULL;
     }
 
     if (stage == 1) {
@@ -51,6 +49,7 @@ void BaconContentProvider::initialize(int stage) {
 //Finalization Function (not a destructor!)
 void BaconContentProvider::finish() {
     if (isServer) library->releaseServerStatus(myId);
+    contentLibrary.empty();
 }
 
 //=============================================================
@@ -67,7 +66,7 @@ void BaconContentProvider::runCacheReplacement(){
         return;
     }
 
-    int cacheSize = contentLibrary->size();
+    int cacheSize = contentLibrary.size();
     int cacheOverflow = cacheSize - maxCachedContents + 1;
 
     //Checking if we actually have to get worried about cache replacement
@@ -85,7 +84,7 @@ void BaconContentProvider::runCacheReplacement(){
             {
                 int removableIndex = uniform(0,maxCachedContents);
                 int currentIndex = 0;
-                for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
+                for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
                     if (currentIndex == removableIndex) {
                         std::string itemName = it->referenceObject->contentPrefix;
 
@@ -95,7 +94,7 @@ void BaconContentProvider::runCacheReplacement(){
                         //std::cout << "(CP) <" << myId << "> Removing Item <" << itemName << "> from Cache.\n";
                         //std::cout.flush();
 
-                        it = contentLibrary->erase(it);
+                        it = contentLibrary.erase(it);
                         stats->increaseCacheReplacements();
                         librarySize--;
                         break;
@@ -111,7 +110,7 @@ void BaconContentProvider::runCacheReplacement(){
                 //Looking for earliest time
                 int sameTimeCount = 1;
                 simtime_t earliestTime = SIMTIME_MAX;
-                for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
+                for (auto it = contentLibrary.begin(); it != contentLibrary.end() ; it++) {
                     if (it->lastAccessTime < earliestTime) {
                         earliestTime = it->lastAccessTime;
                         sameTimeCount = 1;
@@ -135,7 +134,7 @@ void BaconContentProvider::runCacheReplacement(){
                 bool foundRemoval = false;
                 //Searching for last item with desired time value to be removed
                 while (foundRemoval == false) {
-                    for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
+                    for (auto it = contentLibrary.begin(); it != contentLibrary.end() ; it++) {
                         if (it->lastAccessTime == earliestTime) {
                             //Randomly selecting one of the items with the last access time with equal probability
                             if ( (foundRemoval == false) &&
@@ -146,7 +145,7 @@ void BaconContentProvider::runCacheReplacement(){
                                 //std::cout << "(CP) <" << myId << "> Removing Item <" << it->contentPrefix << "> from Cache with Use Count <" << it->useCount << ">\t last access <" << it->lastAccessTime << ">.\n";
                                 //std::cout.flush();
 
-                                it = contentLibrary->erase(it);
+                                it = contentLibrary.erase(it);
                                 stats->increaseCacheReplacements();
                                 librarySize--;
                                 break;
@@ -166,7 +165,7 @@ void BaconContentProvider::runCacheReplacement(){
                 //Looking for least used messages (aware of multiple occurences of same metric value)
                 int sameUseCount = 1;
                 int timesUsed = library->getCurrentIndex()+1;
-                for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
+                for (auto it = contentLibrary.begin(); it != contentLibrary.end() ; it++) {
                     if (it->useCount < timesUsed) {
                         timesUsed = it->useCount;
                         sameUseCount = 1;
@@ -190,7 +189,7 @@ void BaconContentProvider::runCacheReplacement(){
                 bool foundRemoval = false;
                 //Searching for last item with desired time value to be removed
                 while (foundRemoval == false) {
-                    for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
+                    for (auto it = contentLibrary.begin(); it != contentLibrary.end() ; it++) {
                         if (it->useCount == timesUsed) {
                             if ( (foundRemoval == false) &&
                                  (sameUseCount == 1 || uniform(0,1) < individualProbability)) {
@@ -199,7 +198,7 @@ void BaconContentProvider::runCacheReplacement(){
                                 //std::cout << "(CP) <" << myId << "> Removing Item <" << it->contentPrefix << "> from Cache with Uses <" << it->useCount << ">.\n";
                                 //std::cout.flush();
 
-                                it = contentLibrary->erase(it);
+                                it = contentLibrary.erase(it);
                                 stats->increaseCacheReplacements();
                                 librarySize--;
                                 break;
@@ -211,26 +210,26 @@ void BaconContentProvider::runCacheReplacement(){
             }
 
             case FIFO: {
-                contentLibrary->pop_front();
+                contentLibrary.pop_front();
                 break;
             }
 
             case GOD_POPULARITY: {
                 int largestRanking = 0;
                 //std::list<Content_t>::iterator contentPointer;
-                for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
+                for (auto it = contentLibrary.begin(); it != contentLibrary.end() ; it++) {
                     if (it->referenceObject->popularityRanking >= largestRanking) {
                         largestRanking = it->referenceObject->popularityRanking;
                     }
                 }
 
                 //TODO: (REVIEW) This is inneficient and I should rewrite for a single-loop
-                for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
+                for (auto it = contentLibrary.begin(); it != contentLibrary.end() ; it++) {
                 if (it->referenceObject->popularityRanking == largestRanking) {
                         //std::cout <<  "(CP) Removing item <" << it->contentPrefix << "> with Popularity : <" << to_string(it->popularityRanking) << ">\n";
                         //std::cout.flush();
 
-                        contentLibrary->erase(it);
+                        contentLibrary.erase(it);
                         stats->increaseCacheReplacements();
                         librarySize--;
                         break;
@@ -271,7 +270,7 @@ void BaconContentProvider::addContentToLibrary(Content_t* contentObject) {
     //if (simTime() >= stats->getStartTime()) {
     if (!isServer) {
         //Looking for item in content library
-        for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
+        for (auto it = contentLibrary.begin(); it != contentLibrary.end() ; it++) {
             if (it->referenceObject->contentPrefix.compare(contentObject->contentPrefix) == 0) {
                 //std::cout << "(CP) <" << myId << "> Already has " << contentObject->contentPrefix << " in local Library.\n";
                 //std::cout.flush();
@@ -282,7 +281,7 @@ void BaconContentProvider::addContentToLibrary(Content_t* contentObject) {
     }
 
     //Checking for Content replacement prior to adding content to library to ensure content will not be instantly removed based on policy behavior
-    int cacheSize = contentLibrary->size();
+    int cacheSize = contentLibrary.size();
     if ( cacheSize >= maxCachedContents && maxCachedContents != -1) {
         //std::cout << "(CP) Cache is full.\n";
         //std::cout.flush();
@@ -300,7 +299,7 @@ void BaconContentProvider::addContentToLibrary(Content_t* contentObject) {
     newContent.lastAccessTime = simTime();
     newContent.useCount = 0;
     //newContent.expireTime = SIMTIME_S;
-    contentLibrary->push_front(newContent);
+    contentLibrary.push_front(newContent);
     librarySize++;
 
     //EV << "(CP) Added content object " << contentObject->contentPrefix << " to local Library.\n";
@@ -327,11 +326,11 @@ void BaconContentProvider::removeContentFromLibrary(Content_t* newContent) {
     */
 
     //Searching for content
-    for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
+    for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
         if (newContent->contentPrefix.compare(it->referenceObject->contentPrefix) == 0) {
             std::cout << "(CP) <" << myId << "> Removing Item <" << it->referenceObject->contentPrefix << "> from Cache with Use Count <" << it->useCount << ">.\n";
             std::cout.flush();
-            it = contentLibrary->erase(it);
+            it = contentLibrary.erase(it);
             librarySize--;
             return;
         }
@@ -344,8 +343,8 @@ void BaconContentProvider::removeContentFromLibrary(Content_t* newContent) {
 //
 void BaconContentProvider::buildContentLibrary() {
     //Building Content Database
-    if (contentLibrary != NULL) return;
-    contentLibrary = new std::list<CachedContent_t>();
+    if (hasLibrary) return;
+    hasLibrary = true;
 
     //std::cout << "<" << myId << "> Building Library <" << startingCache << ">.\n";
     //std::cout.flush();
@@ -460,7 +459,7 @@ void BaconContentProvider::increaseUseCount(int addedUses, std::string prefix) {
     }
 
     //Looking for Item
-    for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
+    for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
         if (prefix.compare(it->referenceObject->contentPrefix) == 0) {
             it->useCount += addedUses;
             it->lastAccessTime = simTime();
@@ -484,7 +483,7 @@ int BaconContentProvider::getUseCount(std::string prefix) {
     }
 
     //Looking for Item
-    for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
+    for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
         if (prefix.compare(it->referenceObject->contentPrefix) == 0) {
             return it->useCount;
         }
@@ -515,17 +514,12 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
     }
 
     buildContentLibrary();
-    if (contentLibrary == NULL) {
-        std::cerr << "(CP) Error: Content Library is NULL.\n";
-        std::cerr.flush();
-        return false;
-    }
 
     //std::cout << "(CP) <" << myId << "> Checking Availability of <" << lookupValue << ">\n";
     //std::cout.flush();
 
     //Looking for item in content library
-    for (auto it = contentLibrary->begin(); it != contentLibrary->end() ; it++) {
+    for (auto it = contentLibrary.begin(); it != contentLibrary.end() ; it++) {
         int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
 
         if (comparison == 0) {
@@ -586,13 +580,13 @@ CacheReplacementPolicy BaconContentProvider::getCachePolicy() {
 //Decision algorithm function whether item should be cached
 bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection) {
     int sum = 0;
-    int minUseCount = contentLibrary->size() > 0 ? INT_MAX : -1;
+    int minUseCount = contentLibrary.size() > 0 ? INT_MAX : -1;
     //Looking for Item
     if (minUseCount == -1) {
         sum = 0;
         minUseCount = 0;
     } else {
-        for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
+        for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
             sum += it->useCount;
             //Replacing minimum use count
             if (it->useCount < minUseCount) {
@@ -601,7 +595,7 @@ bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection
             //minUseCount = it->useCount < minUseCount ? it->useCount : minUseCount;
         }
     }
-    double averagePopularity = sum > 0 ? floor(double(sum/(double)contentLibrary->size())) : 0;
+    double averagePopularity = sum > 0 ? floor(double(sum/(double)contentLibrary.size())) : 0;
     double estimatedResult = connection->remoteHopUseCount > 0 ? double(floor(log2(connection->downstreamCacheDistance) + log2(connection->remoteHopUseCount))/(double)averagePopularity) : 0;
 
     if (estimatedResult >= 1) {
@@ -636,9 +630,9 @@ bool BaconContentProvider::brokenlocalPopularityCacheDecision(Connection_t* conn
 
     if (cachePolicy == CacheReplacementPolicy::FREQ_POPULARITY) {
         int sum = 0;
-        int minUseCount = contentLibrary->size() > 0 ? INT_MAX : -1;
+        int minUseCount = contentLibrary.size() > 0 ? INT_MAX : -1;
         //Looking for Item
-        for (auto it = contentLibrary->begin(); it != contentLibrary->end(); it++) {
+        for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
             sum += it->useCount;
             //Replacing minimum use count
             if (it->useCount < minUseCount) {
@@ -646,7 +640,7 @@ bool BaconContentProvider::brokenlocalPopularityCacheDecision(Connection_t* conn
             }
             //minUseCount = it->useCount < minUseCount ? it->useCount : minUseCount;
         }
-        double averagePopularity = sum > 0 ? floor(double(sum/(double)contentLibrary->size())) : 1;
+        double averagePopularity = sum > 0 ? floor(double(sum/(double)contentLibrary.size())) : 1;
         double estimatedResult = averagePopularity > 0 ? double(floor(log2(connection->remoteHopUseCount))/(double)averagePopularity) : 0;
         //std::cout << "< sum >< cacheSize >< minUseCount >< averagePopularity > < incomingHopCount >< remoteUseCount >\n";
         //std::cout << "  <" << sum << ">\t<" << maxCachedContents << ">\t\t<" << minUseCount << ">\t\t<" << averagePopularity << ">\t\t\t<" << connection->downstreamHopCount << ">\t\t\t<" << connection->remoteHopUseCount << ">\n";

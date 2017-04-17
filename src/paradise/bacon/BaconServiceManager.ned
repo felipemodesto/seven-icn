@@ -41,6 +41,7 @@ simple BaconServiceManager extends BaseWaveApplLayer {
     	
     	int slidingWindowSize = default (1);				//Sliding Window for Data Rate (seconds)
     	int priorityPolicy  = default(0); 					//Defines whether certain content categories will be prioritized (POLICY PENDING)
+    	bool requestFallbackAllowed = default(false);
     	
         @signal[parkingStateChanged](type="BaseMobility");
     gates:       
