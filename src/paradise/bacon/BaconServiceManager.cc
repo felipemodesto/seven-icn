@@ -46,6 +46,8 @@ void BaconServiceManager::initialize(int stage) {
             bitrate = par("bitrate").longValue();
             priorityPolicy = static_cast<AccessRestrictionPolicy>(par("priorityPolicy").longValue());
 
+            requestFallbackAllowed = par("requestFallbackAllowed").boolValue();
+
             //Getting TraCI Manager (SUMO Connection & Annotations Ready)
             traci = TraCIMobilityAccess().get(getParentModule());
             annotations = AnnotationManagerAccess().getIfExists();
@@ -1550,8 +1552,20 @@ void BaconServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Con
         //std::cout << "(SM) <" << myId << "> Notifying Client of Result: <" << connection->connectionStatus << "> Hops: <" << connection->upstreamHopCount << ";" << connection->downstreamHopCount << "> Time: <" << simTime() << ">\n";
         //std::cout.flush();
 
-        //Increasing Use Count for Object (Counts for both local requests and fulfilled remote outsourcings)
-        //cache->increaseUseCount(connection->requestPrefix);
+        //TODO:HERE
+        if (requestFallbackAllowed) {
+            //Updating status of content (assuming we can freely get it from the internet)
+            wsm->setKind(ConnectionStatus::DONE_FALLBACK);
+            stats->increaseFallbackRequests();
+            connection->downstreamCacheDistance = 1;
+            connection->upstreamHopCount = 1;
+            //Running cache policy to see if we should keep the content
+            runCachePolicy(connection);
+
+            //Refactoring Connection Distances so that they are kept separately in terms of hop-count statistics
+            connection->downstreamCacheDistance = -1;
+            connection->upstreamHopCount = -1;
+        }
 
         //Notifying client of content availability
         sendToClient(wsm);
@@ -2388,7 +2402,9 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
     //Checking if we're a client or server
     switch (connection->connectionStatus) {
         //Client Side State
-        case ConnectionStatus::DONE_RECEIVED: {
+        case ConnectionStatus::DONE_RECEIVED:
+        case ConnectionStatus::DONE_FALLBACK:
+            {
                 /*
                 //If our caching policy is the distributed popularity estimation method, we need remote information which we pass here
                 if (cache->getCachePolicy() == CacheReplacementPolicy::FREQ_POPULARITY) {
@@ -2483,6 +2499,7 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
                             break;
                         }
 
+                    //My Work
                     case LOC_PROB:{     //Local Probability Estimation Method
                         if (cache->localPopularityCacheDecision(connection)) {
                             //std::cout << "(SM) <" <<myId  << "> Attempting Caching Policy on Object <" << connection->requestPrefix << "> HopCount <" << connection->downstreamHopCount << "> Remote UseCount <" << connection->remoteHopUseCount << "> Current UseCount is <" << (cache->getUseCount(connection->requestPrefix)) << ">\n";

@@ -18,7 +18,6 @@ void BaconClient::initialize(int stage) {
     switch(stage){
         case 0: {
 
-
             //Setting Gates
             clientExchangeIn  = findGate("clientExchangeIn");
             clientExchangeOut = findGate("clientExchangeOut");
@@ -710,6 +709,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
         SimTime difTime = desiredRequest->fullfillTime - desiredRequest->requestTime;
 
         switch( wsm->getKind() ) {
+            case ConnectionStatus::DONE_FALLBACK:
             case ConnectionStatus::DONE_AVAILABLE:
             case ConnectionStatus::DONE_RECEIVED:
                 {

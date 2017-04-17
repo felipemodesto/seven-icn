@@ -66,6 +66,7 @@ protected:
     long int emergencyUnservedPackets;
     long int emergencyLostPackets;
     long int emergencyLostChunks;
+    long int fallbackOutsourcedRequests;
 
     //Caching statistics
     long int localCacheLateHits; //PIT RELATED LOCAL HITS
@@ -110,6 +111,7 @@ protected:
 
     string simulationDirectoryFolder;
     string requestLocationStatsFile;
+    string hopcountFile;
     string locationStatisticsFile;
     string participationLengthStatsFile;
     string neighborhoodStatisticsFile;
@@ -129,6 +131,7 @@ protected:
     omnetpp::cLongHistogram duplicateRequestHist;
     omnetpp::cLongHistogram requestsPerConnectionHist;
 
+    omnetpp::cOutVector fallbackOutsourcedRequestsVect;
     omnetpp::cOutVector distanceFromTweetVect;
     omnetpp::cOutVector unviableRequestsVect;
     omnetpp::cOutVector participationLengthVect;
@@ -221,6 +224,8 @@ public:
     void increasePacketsLost(int x);            //Increase number of Packets Lost by X
     void increaseChunksLost();                  //Increase number of Chunks Lost by 1
     void increaseChunksLost(int x);             //Increase number of Chunks Lost by X
+
+    void increaseFallbackRequests();
 
     void increaseServerCacheHits();
     void logDistanceFromTweet(double distance);

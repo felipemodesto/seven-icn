@@ -76,6 +76,7 @@ class BaconServiceManager : public BaseWaveApplLayer {
         bool sentMessage;
         bool isParking;
         bool sendWhileParking;
+        bool requestFallbackAllowed;
         int currentlyActiveConnections;
 
         //Load Evaluation
