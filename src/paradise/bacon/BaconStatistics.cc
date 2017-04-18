@@ -67,38 +67,38 @@ void BaconStatistics::finish() {
 
 //
 bool BaconStatistics::allowedToRun() {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     if (statisticsStartTime < omnetpp::simTime().dbl() && omnetpp::simTime().dbl() < statisticsStopTime ) return true;
     return false;
 }
 
 //Getter for Simulation Start Time
 double BaconStatistics::getStartTime() {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     return statisticsStartTime;
 }
 
 //Getter for Simulation Stop Time
 double BaconStatistics::getStopTime() {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     return statisticsStopTime;
 }
 
 //Getter for Simulation Control parameter related to statistics collection
 bool BaconStatistics::recordingStatistics() {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     return collectingStatistics;
 }
 
 //Getter for Simulation Control parameter related to position tracking
 bool BaconStatistics::recordingPosition() {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     return collectingPositions;
 }
 
 //
 void BaconStatistics::keepTime() {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     int newTime = static_cast<int>(simTime().dbl());
     if (lastSecond < newTime) {
         lastSecond = newTime;
@@ -118,7 +118,7 @@ void BaconStatistics::keepTime() {
 
 //
 bool BaconStatistics::shouldRecordData() {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
 
     if (!allowedToRun()) return false;
     if (!collectingStatistics and !collectingPositions) return false;
@@ -128,7 +128,7 @@ bool BaconStatistics::shouldRecordData() {
 
 //
 void BaconStatistics::startStatistics() {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     if (hasStarted || hasStopped || !collectingStatistics) return;
 
     //Getting a reference to the content Library
@@ -301,7 +301,7 @@ void BaconStatistics::startStatistics() {
 
 //
 void BaconStatistics::stopStatistics() {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     if (hasStopped) return;
 
     if (simTime() < statisticsStopTime) {
@@ -447,10 +447,9 @@ void BaconStatistics::stopStatistics() {
     std::cout.flush();
 }
 
-
 //
 void BaconStatistics::logPosition(double x, double y) {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     if (!collectingPositions) return;
     //if (!shouldRecordData()) return;
 
@@ -465,7 +464,7 @@ void BaconStatistics::logPosition(double x, double y) {
 
 //
 void BaconStatistics::logContactDuration(double contactDuration) {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     if (!collectingNeighborhood) return;
 
     neighborCountVect.record(lastContactTime);
@@ -480,7 +479,7 @@ void BaconStatistics::logContactDuration(double contactDuration) {
 }
 
 void BaconStatistics::logParticipationDuration(double participationLength) {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     if (!collectingNeighborhood) return;
 
     participationLengthVect.record(lastParticipationlength);
@@ -496,6 +495,7 @@ void BaconStatistics::logParticipationDuration(double participationLength) {
 
 //
 void BaconStatistics::logContentRequest(std::string contentName, bool shouldLogContent, double x, double y) {
+    //Enter_Method_Silent();
     if (shouldLogContent) {
         requestsStarted++;
         requestsStartedVect.record(requestsStarted);
@@ -519,6 +519,7 @@ void BaconStatistics::logContentRequest(std::string contentName, bool shouldLogC
 }
 
 void BaconStatistics::increaseFallbackRequests() {
+    //Enter_Method_Silent();
     BaconStatistics::fallbackOutsourcedRequests++;
     if (!shouldRecordData()) return;
 
@@ -1008,7 +1009,7 @@ void BaconStatistics::addincompleteTransmissionDelay(double delay) {
 }
 
 void BaconStatistics::increaseHopCountResult(int hopCount) {
-    Enter_Method_Silent();
+    //Enter_Method_Silent();
     if (!shouldRecordData()) return;
 
     std::string vectorName = "HopCount-" + std::to_string(hopCount);
