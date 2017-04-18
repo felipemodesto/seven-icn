@@ -1626,13 +1626,14 @@ void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection
     wsm->setSenderPos(traci->getPositionAt(simTime()));
     wsm->setSenderAddress(myId);
 
+    wsm->setRecipientAddress(-1);
+
     //Replacing/Adding upstream hop count
     cObject* badObj = wsm->removeObject(MessageParameter::HOPS_UP.c_str());   //Removing previous hopcount object
     if (badObj != NULL ) delete(badObj);
     cMsgPar* upwardsDistance = new cMsgPar(MessageParameter::HOPS_UP.c_str());
     upwardsDistance->setLongValue(connection->upstreamHopCount);
     wsm->addPar(upwardsDistance);
-
 
     //Replacing/Adding upstream hop count
     badObj = wsm->removeObject(MessageParameter::HOPS_LAST_CACHE.c_str());   //Removing previous hopcount object
@@ -1673,7 +1674,6 @@ void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection
     //std::cout.flush();
 
     //connection->attempts++;
-
 
     startTimer(connection,interestBroadcastTimeout);
 }
@@ -1716,7 +1716,7 @@ void BaconServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection
     relatedInterest->providingConnection = connection;
 
     //Setting our local sender parameters
-    wsm->setRecipientAddress(wsm->getSenderAddress());
+    wsm->setRecipientAddress(connection->peerID);
     wsm->setSenderAddress(myId);
     wsm->setSenderPos(traci->getCurrentPosition());
 
@@ -1782,7 +1782,7 @@ void BaconServiceManager::rejectNetworkrequest(WaveShortMessage* wsm, Connection
     connection->connectionStatus = ConnectionStatus::DONE_REJECTED;
 
     Coord currentPosition = traci->getCurrentPosition();
-    wsm->setRecipientAddress(wsm->getSenderAddress());
+    wsm->setRecipientAddress(connection->peerID);
     wsm->setSenderAddress(myId);
     wsm->setSenderPos(currentPosition);
 
