@@ -422,7 +422,9 @@ bool BaconClient::startContentRequest(Content_t* preferedRequest) {
 
     //Content Type
     cMsgPar* contentTypeParameter = new cMsgPar(MessageParameter::CLASS.c_str());
-    contentTypeParameter->setLongValue(library->getContentClass(preferedRequest->contentClass));
+    ContentClass tempClass = preferedRequest->contentClass;
+    std::string tempPrefix = preferedRequest->contentPrefix;
+    contentTypeParameter->setLongValue(library->getContentClass(tempClass));
     requestMessage->addPar(contentTypeParameter);
 
     //Named Prefix for specific content
@@ -492,7 +494,7 @@ Content_t*  BaconClient::selectObjectForRequest () {
     double contentInterest = multimediaInterest + networkInterest + trafficInterest + emergencyInterest;
     double contentRequestInterstType = uniform(0, contentInterest);
     ContentClass contentClass = ContentClass::EMERGENCY_SERVICE;
-    Content_t* requestedObjectReference;
+    Content_t* requestedObjectReference = NULL;
     int requestedContentIndex = 0;
 
     double randomIndex = uniform(0,1);
@@ -503,17 +505,17 @@ Content_t*  BaconClient::selectObjectForRequest () {
     std::list<Content_t>* appropriateLibrary;
 
     //TRAFFIC
-    if (contentRequestInterstType < trafficInterest) {
+    if (contentRequestInterstType < trafficInterest && library->getTrafficContentList()->size() > 0) {
         appropriateLibrary = library->getTrafficContentList();
         contentClass = ContentClass::TRAFFIC;
 
     //NETWORK
-    } else if (contentRequestInterstType < trafficInterest + networkInterest ) {
+    } else if (contentRequestInterstType < trafficInterest + networkInterest && library->getNetworkContentList()->size() > 0) {
         appropriateLibrary = library->getNetworkContentList();
         contentClass = ContentClass::NETWORK;
 
     //MULTIMEDIA
-    } else if (contentRequestInterstType < trafficInterest + networkInterest + multimediaInterest ) {
+    } else if (contentRequestInterstType < trafficInterest + networkInterest + multimediaInterest && library->getMultimediaContentList()->size() > 0) {
         appropriateLibrary = library->getMultimediaContentList();
         contentClass = ContentClass::MULTIMEDIA;
 
@@ -534,12 +536,8 @@ Content_t*  BaconClient::selectObjectForRequest () {
         requestMessage->addPar(locationParameter);
         */
 
-        EV_ERROR << "(Cl) Error! Request from undefined category.\n";
-        EV_ERROR.flush();
-
-        std::cerr << "(Cl) Error: Request from undefined category.\n";
+        std::cerr << "(Cl) Error! Request from undefined category, potentially due to unbuilt library status. <" << contentRequestInterstType <<  "> <" << trafficInterest << "> <" << networkInterest << "> <" << multimediaInterest << ">\n";
         std::cerr.flush();
-
     }
 
     //Figuring out the Index of the item we want from the library and distribution function we use
@@ -550,8 +548,14 @@ Content_t*  BaconClient::selectObjectForRequest () {
 
     //Looking for item in content library
     int itemCounter = 0;
+    requestedObjectReference = &*appropriateLibrary->begin();
     for (auto it = appropriateLibrary->begin(); itemCounter < requestedContentIndex; it++, itemCounter++) {
         requestedObjectReference = &*it;
+    }
+
+    if (requestedObjectReference == NULL) {
+        std::cout << "(Cl) Error: Broken Object, run to the hills: <" << requestedObjectReference << "> <" << requestedContentIndex << "> <" << appropriateLibrary->size() << ">\n";
+        std::cout.flush();
     }
 
     return requestedObjectReference;

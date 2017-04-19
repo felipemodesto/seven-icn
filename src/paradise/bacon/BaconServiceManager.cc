@@ -765,7 +765,7 @@ void BaconServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
         /*
         //Checking if this is a data object
         if (strcmp(wsm->getName(), MessageClass::DATA.c_str()) == 0) {
-            string prefixString = static_cast<cMsgPar*>(wsm->getParList().get(MessageParameter::PREFIX.c_str()))->str();
+            std::string prefixString = static_cast<cMsgPar*>(wsm->getParList().get(MessageParameter::PREFIX.c_str()))->str();
             if (prefixString.c_str()[0] == '\"') {
                 prefixString = prefixString.substr(1, prefixString.length() - 2);
             }
@@ -2775,7 +2775,7 @@ void BaconServiceManager::logNetworkmessage(WaveShortMessage *msg) {
     if (strcmp(msg->getName(), MessageClass::BEACON.c_str()) == 0) {
         freshPacket.type = ContentClass::BEACON;
     } else {
-        string prefixString = static_cast<cMsgPar*>(msg->getParList().get(MessageParameter::PREFIX.c_str()))->str();
+        std::string prefixString = static_cast<cMsgPar*>(msg->getParList().get(MessageParameter::PREFIX.c_str()))->str();
         //If the message is not a beacon we figure out the type to save the message type
         switch(getClassFromPrefix(prefixString)) {
             case ContentClass::MULTIMEDIA:

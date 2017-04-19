@@ -29,16 +29,15 @@ void BaconStatistics::initialize(int stage) {
 
         simulationDirectoryFolder= par("simulationDirectoryFolder").stringValue();
 
-        generalStatisticsFile =             string(simulationDirectoryFolder + par("generalStatisticsFile").stringValue()).c_str();
-        requestLocationStatsFile =          string(simulationDirectoryFolder + par("requestLocationStatsFile").stringValue()).c_str();
-        hopcountFile =                      string(simulationDirectoryFolder + par("hopcountFile").stringValue()).c_str();
-        locationStatisticsFile =            string(simulationDirectoryFolder + par("locationStatisticsFile").stringValue()).c_str();
-        neighborhoodStatisticsFile =        string(simulationDirectoryFolder + par("neighborhoodStatisticsFile").stringValue()).c_str();
-        contentPopularityStatisticsFile =   string(simulationDirectoryFolder + par("contentNameStatisticsFile").stringValue()).c_str();
-        networkInstantLoadStatisticsFile =  string(simulationDirectoryFolder + par("networkInstantLoadStatisticsFile").stringValue()).c_str();
-        networkAverageLoadStatisticsFile =  string(simulationDirectoryFolder + par("networkAverageLoadStatisticsFile").stringValue()).c_str();
-        participationLengthStatsFile =      string(simulationDirectoryFolder + par("participationLengthStatsFile").stringValue()).c_str();
-
+        generalStatisticsFile =             std::string(simulationDirectoryFolder + par("generalStatisticsFile").stringValue()).c_str();
+        requestLocationStatsFile =          std::string(simulationDirectoryFolder + par("requestLocationStatsFile").stringValue()).c_str();
+        hopcountFile =                      std::string(simulationDirectoryFolder + par("hopcountFile").stringValue()).c_str();
+        locationStatisticsFile =            std::string(simulationDirectoryFolder + par("locationStatisticsFile").stringValue()).c_str();
+        neighborhoodStatisticsFile =        std::string(simulationDirectoryFolder + par("neighborhoodStatisticsFile").stringValue()).c_str();
+        contentPopularityStatisticsFile =   std::string(simulationDirectoryFolder + par("contentNameStatisticsFile").stringValue()).c_str();
+        networkInstantLoadStatisticsFile =  std::string(simulationDirectoryFolder + par("networkInstantLoadStatisticsFile").stringValue()).c_str();
+        networkAverageLoadStatisticsFile =  std::string(simulationDirectoryFolder + par("networkAverageLoadStatisticsFile").stringValue()).c_str();
+        participationLengthStatsFile =      std::string(simulationDirectoryFolder + par("participationLengthStatsFile").stringValue()).c_str();
 
         startStatistics();
 

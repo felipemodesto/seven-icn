@@ -9,3 +9,5 @@ scenario/line/results
 scenario/ottawa/results
 scenario/unified/results
 scenario/unified/.tkenvlog
+syntax: glob
+scenario/unified/core
