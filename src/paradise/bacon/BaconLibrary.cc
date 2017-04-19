@@ -234,7 +234,7 @@ void BaconLibrary::loadRequestSequence() {
 
     clock_t buildClockTime = clock();
 
-    string fileString = loadFile(requestSequenceFile);
+    std::string fileString = loadFile(requestSequenceFile);
     std::string token;
     std::string lineDelimiter = "\n";
     size_t pos = 0;
@@ -249,7 +249,7 @@ void BaconLibrary::loadRequestSequence() {
         //std::cout << "(Lib) Parsing < " << token << " >\n";
 
         //Getting String Components
-        string arr[4];
+        std::string arr[4];
         int i = 0;
 
         for (int i=0; i< (int)token.length(); i++) {
@@ -257,14 +257,14 @@ void BaconLibrary::loadRequestSequence() {
                 token[i] = ' ';
         }
 
-        stringstream ssin(token);
+        std::stringstream ssin(token);
         while (ssin.good() && i < 4){
             ssin >> arr[i];
             ++i;
         }
 
         //Searching the library to see if we already have this content object
-        string contentPrefix = "m/" + arr[3];
+        std::string contentPrefix = "m/" + arr[3];
         bool foundDuplicate = false;
         if (multimediaLibrary->size() > 0) {
             for (auto it = multimediaLibrary->begin() ; it != multimediaLibrary->end() ; it++) {
@@ -462,17 +462,13 @@ std::vector<double> BaconLibrary::buildCategoryLibrary(int count, int byteSize, 
     std::vector<double> cummulativeProbability = std::vector<double> (count);
 
     //Generating Objects for Class
-    for (int j = 0; j < count ; j++) {
+    for (long j = 0; j < count ; j++) {
         Content_t newContent;
 
         newContent.popularityRanking = j+1;         //Used as shorthand to the ranking of the object in its relative popularity queue
         newContent.contentClass = category;
         newContent.contentSize = byteSize;
-        //newContent.contentStatus = ContentStatus::AVAILABLE;
         newContent.contentPrefix = classPrefix + "/" + std::to_string(j+1);
-        //newContent.useCount = 0;
-        //newContent.lastAccessTime = 0;
-
         newLibrary->push_back(newContent);
 
         //If Zipf == 0 we don't use ZIPF, everything is uniformily randomly distributed
@@ -584,6 +580,7 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass ) {
 }
 
 int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, double xPos, double yPos ) {
+    Enter_Method_Silent();
     //std::cout << "(Lib) Enter getIndexForDensity\n";
     //std::cout.flush();
     int sector = 0;
