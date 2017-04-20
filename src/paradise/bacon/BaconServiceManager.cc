@@ -1,15 +1,15 @@
 //Concent Centric Class - Felipe Modesto
 
-#include <paradise/bacon/BaconServiceManager.hh>
+#include <BaconServiceManager.h>
 
 using Veins::TraCIMobilityAccess;
 using Veins::AnnotationManagerAccess;
 
 using namespace omnetpp;
 
-using namespace osgEarth;
-using namespace osgEarth::Annotation;
-using namespace osgEarth::Features;
+//using namespace osgEarth;
+//using namespace osgEarth::Annotation;
+//using namespace osgEarth::Features;
 
 const simsignalwrap_t BaconServiceManager::parkingStateChangedSignal = simsignalwrap_t(TRACI_SIGNAL_PARKING_CHANGE_NAME);
 
@@ -859,10 +859,7 @@ void BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
     std::string prefixValue = requestPrefix->stringValue();
 
     // :/
-    if (prefixValue.c_str()[0] == '\"') {
-        prefixValue = prefixValue.substr(1, prefixValue.length() - 2);
-    }
-    prefixValue.erase(std::remove(prefixValue.begin(), prefixValue.end(), '\"'), prefixValue.end());
+    prefixValue = library->cleanString(prefixValue);
 
     //Checking if we already have a downstream connection for this interest (we should)
     Connection_t* downstreamConnection = getConnection(idValue,wsm->getSenderAddress());

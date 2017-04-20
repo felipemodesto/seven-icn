@@ -12,22 +12,23 @@
 //  INCLUDES (NOT A CARE IN THE WORLD ABOUT DECOUPLING CODE)
 ////////////////////////////////////////////////////////////////////
 
+#include <veins/modules/application/ieee80211p/BaseWaveApplLayer.h>
+
 #include <veins/modules/mobility/traci/TraCIMobility.h>
 #include <veins/modules/world/annotations/AnnotationManager.h>
 
-#include <veins/modules/application/ieee80211p/BaseWaveApplLayer.h>
-#include <veins/modules/messages/WaveShortMessage_m.h>
+//#include <veins/modules/messages/WaveShortMessage_m.h>
 
 #include <omnetpp.h>
 #include <omnetpp/cmodule.h>
 #include <omnetpp/cconfiguration.h>
 #include <omnetpp/cenvir.h>
 
-#include <osgEarth/MapNode>
-#include <osgEarthAnnotation/CircleNode>
-#include <osgEarthAnnotation/FeatureNode>
-#include <osgEarthUtil/ObjectLocator>
-#include "OsgEarthScene.h"
+//#include <osgEarth/MapNode>
+//#include <osgEarthAnnotation/CircleNode>
+//#include <osgEarthAnnotation/FeatureNode>
+//#include <osgEarthUtil/ObjectLocator>
+///#include "OsgEarthScene.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -36,9 +37,11 @@
 #include <math.h>
 #include <list>
 #include <ctime>
+#include <algorithm>
 
 using Veins::TraCIMobility;
 using Veins::AnnotationManager;
+
 
 ////////////////////////////////////////////////////////////////////
 //  POLICY & OTHER SIMULATION RELATED EVALUATION PARAMETERS

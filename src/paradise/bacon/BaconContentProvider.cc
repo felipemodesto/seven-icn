@@ -1,7 +1,6 @@
 //Concent Centric Class - Felipe Modesto
 
-#include <paradise/bacon/BaconContentProvider.hh>
-
+#include <BaconContentProvider.h>
 #include "veins/modules/application/ieee80211p/BaseWaveApplLayer.h"
 #include "veins/modules/mobility/traci/TraCIMobility.h"
 
@@ -453,10 +452,7 @@ void BaconContentProvider::increaseUseCount(std::string prefix) {
 
 void BaconContentProvider::increaseUseCount(int addedUses, std::string prefix) {
     //Removing that god damn fucking quote
-    prefix.erase(std::remove(prefix.begin(), prefix.end(), '\"'), prefix.end());
-    if (prefix.c_str()[0] == '\"') {
-        prefix = prefix.substr(1,prefix.length()-2);
-    }
+    prefix = library->cleanString(prefix);
 
     //Looking for Item
     for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
@@ -477,10 +473,7 @@ void BaconContentProvider::increaseUseCount(int addedUses, std::string prefix) {
 //Getter
 int BaconContentProvider::getUseCount(std::string prefix) {
     //Removing that god damn fucking quote
-    prefix.erase(std::remove(prefix.begin(), prefix.end(), '\"'), prefix.end());
-    if (prefix.c_str()[0] == '\"') {
-        prefix = prefix.substr(1,prefix.length()-2);
-    }
+    prefix = library->cleanString(prefix);
 
     //Looking for Item
     for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {

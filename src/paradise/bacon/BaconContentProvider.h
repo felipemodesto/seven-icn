@@ -22,10 +22,10 @@
 #define BaconContentProvider_H
 
 
-#include <paradise/bacon/BaconStructures.hh>
+#include <BaconLibrary.h>
+#include <BaconServiceManager.h>
+#include <BaconStructures.h>
 
-#include <paradise/bacon/BaconLibrary.hh>
-#include <paradise/bacon/BaconServiceManager.hh>
 class BaconServiceManager;
 class BaconLibrary;
 class BaconStatistics;
