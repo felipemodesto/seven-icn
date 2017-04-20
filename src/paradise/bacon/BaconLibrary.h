@@ -8,10 +8,10 @@
 #ifndef BACONLIBRARY_H
 #define BACONLIBRARY_H
 
-#include <paradise/bacon/BaconStructures.hh>
+#include <BaconClient.h>
+#include <BaconStatistics.h>
+#include <BaconStructures.h>
 
-#include <paradise/bacon/BaconStatistics.hh>
-#include <paradise/bacon/BaconClient.hh>
 class BaconStatistics;
 class BaconClient;
 
@@ -116,6 +116,8 @@ public:
     int getIndexForDensity(double value, ContentClass contentClass, int sector );
     int getIndexForDensity(double value, ContentClass contentClass, double xPos, double yPos );
     int getContentClass(ContentClass cClass);
+
+    static std::string cleanString(std::string inputString);
 };
 
 #endif /* BACONLIBRARY_H */

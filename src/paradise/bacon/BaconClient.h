@@ -21,18 +21,18 @@
 #ifndef BaconClient_H
 #define BaconClient_H
 
-#include <paradise/bacon/BaconStructures.hh>
+#include <BaconContentProvider.h>
+#include <BaconLibrary.h>
+#include <BaconStructures.h>
 
-#include <paradise/bacon/BaconLibrary.hh>
-#include <paradise/bacon/BaconContentProvider.hh>
 class BaconContentProvider;
 class BaconLibrary;
 class BaconStatistics;
 
 using namespace omnetpp;
-using namespace osgEarth;
-using namespace osgEarth::Annotation;
-using namespace osgEarth::Features;
+//using namespace osgEarth;
+//using namespace osgEarth::Annotation;
+//using namespace osgEarth::Features;
 
 /**
  * Application Layer Service Manager

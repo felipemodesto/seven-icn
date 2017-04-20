@@ -1,5 +1,5 @@
 //#include "BaconStructures.hh"
-#include <paradise/bacon/BaconStructures.hh>
+#include <BaconStructures.h>
 //#include <BaconStructures.hh>
 
 const std::string MessageParameter::CONNECTION_ID       = "connection_id";          //

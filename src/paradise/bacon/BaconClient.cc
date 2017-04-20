@@ -1,6 +1,6 @@
 //Concent Centric Class - Felipe Modesto
 
-#include <paradise/bacon/BaconClient.hh>
+#include <BaconClient.h>
 
 using Veins::TraCIMobilityAccess;
 using Veins::AnnotationManagerAccess;
@@ -631,10 +631,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
     int requestID = idPar->longValue();
 
     //Fixing the god damn string
-    if (prefixString.c_str()[0] == '\"') {
-        prefixString = prefixString.substr(1, prefixString.length() - 2);
-    }
-    prefixString.erase(std::remove(prefixString.begin(), prefixString.end(), '\"'), prefixString.end());
+    prefixString = library->cleanString(prefixString);
 
     //bool foundBacklog = false;
     bool foundRequest = false;

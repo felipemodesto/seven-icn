@@ -31,7 +31,7 @@
 				</toolChain>
 			</folderInfo>
 			<sourceEntries>
-				<entry excluding="/veins/src" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name=""/>
+				<entry excluding="/veins/src|src" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name=""/>
 				<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="src"/>
 			</sourceEntries>
 		</configuration>

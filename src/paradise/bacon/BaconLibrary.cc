@@ -5,7 +5,7 @@
  *      Author: felipe
  */
 
-#include <paradise/bacon/BaconLibrary.hh>
+#include <BaconLibrary.h>
 
 Define_Module(BaconLibrary);
 
@@ -676,3 +676,12 @@ long int BaconLibrary::getRequestIndex() {
     return currentIndex;
 }
 
+
+std::string BaconLibrary::cleanString(std::string inputString) {
+    //Removing that god damn fucking quote
+    if (inputString.c_str()[0] == '\"') {
+        inputString = inputString.substr(1,inputString.length()-2);
+    }
+    return inputString;
+    //return inputString.erase(std::remove(inputString.begin(), inputString.end(), '\"'), inputString.end());
+}
