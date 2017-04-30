@@ -112,6 +112,8 @@ public:
     std::list<Content_t>* getTrafficContentList();
     std::list<Content_t>* getNetworkContentList();
 
+    //float BaconLibrary::getDensityForPrefix(string itemPrefix);
+    float getDensityForIndex(double index,ContentClass contentClass);
     int getIndexForDensity(double value, ContentClass contentClass);
     int getIndexForDensity(double value, ContentClass contentClass, int sector );
     int getIndexForDensity(double value, ContentClass contentClass, double xPos, double yPos );

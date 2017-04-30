@@ -206,6 +206,7 @@ void BaconStatistics::startStatistics() {
     packetsSentVect.setName("SentPackets");
     packetsForwardedVect.setName("ForwardedPackets");
     packetsUnservedVect.setName("UnservedPackets");
+    packetsFallenbackVect.setName("FallbackPackets");
     packetsLostVect.setName("LostPackets");
     chunksLostVect.setName("LostChunks");
     activeVehiclesVect.setName("ActiveVehicles");
@@ -261,6 +262,7 @@ void BaconStatistics::startStatistics() {
     requestsStartedVect.record(0);
     packetsSentVect.record(0);
     packetsUnservedVect.record(0);
+    packetsFallenbackVect.record(0);
     packetsLostVect.record(0);
     chunksLostVect.record(0);
     activeVehiclesVect.record(0);
@@ -401,11 +403,23 @@ void BaconStatistics::stopStatistics() {
         fclose(pFile);
     }
 
+    //Computing average hop-count from statistics
+    long int countedMessages = 0;
+    double countedDistances = 0;
+    for(auto iterator = hopDistanceCountMap.begin(); iterator != hopDistanceCountMap.end(); iterator++) {
+        //Filtering Infrastructure Fallback
+        if (iterator->first >= 0) {
+            countedMessages += iterator->first;
+            countedDistances += iterator->first * iterator->second;
+        }
+    }
+    countedDistances = countedDistances / static_cast<double>(countedMessages);
+
     //Saving Communication statistics previously saved as scalar and vector files
     pFile = fopen ( generalStatisticsFile.c_str(), "w");
-    fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency,packetsSent,packetsForwarded,packetsUnserved,packetsLost,chunksLost,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements,fallbackRequests\n");
+    fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency,packetsSent,packetsForwarded,packetsUnserved,packetsLost,packetsFallback,chunksLost,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements,fallbackRequests,averagedHopcount\n");
 
-    fprintf(pFile,",%F",totalTransmissionDelay);
+    fprintf(pFile,"%F",totalTransmissionDelay);
     fprintf(pFile,",%F",completeTransmissionDelay);
     fprintf(pFile,",%F",incompleteTranmissionDelay);
 
@@ -413,6 +427,7 @@ void BaconStatistics::stopStatistics() {
     fprintf(pFile,",%ld",packetsForwarded);
     fprintf(pFile,",%ld",packetsUnserved);
     fprintf(pFile,",%ld",packetsLost);
+    fprintf(pFile,",%ld",packetsFallenback);
     fprintf(pFile,",%ld",chunksLost);
     fprintf(pFile,",%ld",multimediaSentPackets);
     fprintf(pFile,",%ld",multimediaUnservedPackets);
@@ -436,13 +451,27 @@ void BaconStatistics::stopStatistics() {
     fprintf(pFile,",%ld",remoteCacheMisses);
     fprintf(pFile,",%ld",cacheReplacements);
     fprintf(pFile,",%ld",fallbackOutsourcedRequests);
+    fprintf(pFile,",%F",countedDistances);
 
 
     fclose(pFile);
 
     hasStopped = true;
 
-    std::cout << "\t\\--> (St) STATISTICS COLLECTION IS DONE!\n";
+    /*
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer[80];
+    time (&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(buffer,sizeof(buffer),"%d-%m-%Y %I:%M:%S",timeinfo);
+    std::string timestr(buffer);
+    */
+
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+
+    std::cout << "\t\\--> (St) STATISTICS COLLECTION WAS COMPLETED AT <" << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") << ">\n";
     std::cout.flush();
 }
 
@@ -584,6 +613,17 @@ void BaconStatistics::increasePacketsUnserved(int x) {
 //Increase number of Packets were not served by 1
 void BaconStatistics::increasePacketsUnserved(){
     increasePacketsUnserved(1);
+}
+
+//Increase number of Packets were not served by X
+void BaconStatistics::increasePacketsFallenBack(int x) {
+    BaconStatistics::packetsFallenback+= x;
+    if (!shouldRecordData()) return;
+
+    packetsFallenbackVect.record(packetsFallenback);
+}
+void BaconStatistics::increasePacketsFallenBack() {
+    increasePacketsFallenBack(1);
 }
 
 //Increase number of Packets Lost by X

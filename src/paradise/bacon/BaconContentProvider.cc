@@ -573,37 +573,19 @@ CacheReplacementPolicy BaconContentProvider::getCachePolicy() {
 //Decision algorithm function whether item should be cached
 bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection) {
     int sum = 0;
-    int minUseCount = contentLibrary.size() > 0 ? INT_MAX : -1;
-    //Looking for Item
-    if (minUseCount == -1) {
-        sum = 0;
-        minUseCount = 0;
-    } else {
-        for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
-            sum += it->useCount;
-            //Replacing minimum use count
-            if (it->useCount < minUseCount) {
-                minUseCount = it->useCount;
-            }
-            //minUseCount = it->useCount < minUseCount ? it->useCount : minUseCount;
-        }
+    for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
+        sum += it->useCount;
+
     }
+
+    if (sum == 0) {
+        return true;
+    }
+
     double averagePopularity = sum > 0 ? floor(double(sum/(double)contentLibrary.size())) : 0;
     double estimatedResult = connection->remoteHopUseCount > 0 ? double(floor(log2(connection->downstreamCacheDistance) + log2(connection->remoteHopUseCount))/(double)averagePopularity) : 0;
 
     if (estimatedResult >= 1) {
-        //std::cout << "<  sum  >< cacheSize >< minUseCount >< averagePopularity > < incomingHopCount >< remoteUseCount >\n";
-        //std::cout << "<" << sum << ">\t\t<" << maxCachedContents << ">\t\t<" << minUseCount << ">\t\t<" << averagePopularity << ">\t\t<" << connection->downstreamHopCount << ">\t\t<" << connection->remoteHopUseCount << ">\n";
-        //std::cout << "<" << estimatedResult << ">";
-        //std::cout << "\t< YES >\t\tTime:<" << simTime() << ">\n\n";
-        return true;
-    }
-
-    if (minUseCount < connection->remoteHopUseCount) {
-        //std::cout << "<  sum  >< cacheSize >< minUseCount >< averagePopularity > < incomingHopCount >< remoteUseCount >\n";
-        //std::cout << "<" << sum << ">\t\t<" << maxCachedContents << ">\t\t<" << minUseCount << ">\t\t<" << averagePopularity << ">\t\t<" << connection->downstreamHopCount << ">\t\t<" << connection->remoteHopUseCount << ">\n";
-        //std::cout << "<" << estimatedResult << ">";
-        //std::cout << "\t< MAYBE >\t\tTime:<" << simTime() << ">\n\n";
         return true;
     }
 
@@ -611,6 +593,62 @@ bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection
     return false;
 }
 
+
+//
+bool BaconContentProvider::localMinimumPopularityCacheDecision(Connection_t* connection) {
+    int minUseCount = contentLibrary.size() > 0 ? INT_MAX : -1;
+    //Looking for Item
+    if (minUseCount == -1) {
+        minUseCount = 0;
+    } else {
+        for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
+            //Replacing minimum use count
+            if (it->useCount < minUseCount) {
+                minUseCount = it->useCount;
+            }
+        }
+    }
+
+    if (minUseCount == 0) {
+        return true;
+    }
+
+    double estimatedResult = connection->remoteHopUseCount > 0 ? double(floor(log2(connection->downstreamCacheDistance) + log2(connection->remoteHopUseCount))/(double)minUseCount) : 0;
+
+    //I think these two do the same thing?
+    if (minUseCount < connection->remoteHopUseCount) {
+        return true;
+    }
+
+    if (estimatedResult >= 1) {
+        return true;
+    }
+
+    return false;
+}
+
+
+//Decision algorithm function whether item should be cached
+bool BaconContentProvider::globalPopularityCacheDecision(Connection_t* connection) {
+    float sum = 0;
+    float remoteFrequency = library->getDensityForIndex(connection->requestedContent->popularityRanking,connection->requestedContent->contentClass);
+    for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
+        sum += library->getDensityForIndex(it->referenceObject->popularityRanking,it->referenceObject->contentClass );;
+    }
+
+    if (sum == 0) {
+        return true;
+    }
+
+    double averageFrequency = sum > 0 ? round(double(sum/(double)contentLibrary.size())) : 0;
+    double estimatedResult = remoteFrequency > 0 ? double(floor(log2(connection->downstreamCacheDistance)*remoteFrequency)/(double)averageFrequency) : 0;
+
+    if (estimatedResult >= 1) {
+        return true;
+    }
+
+    return false;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////

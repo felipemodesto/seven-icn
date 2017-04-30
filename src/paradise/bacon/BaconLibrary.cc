@@ -603,6 +603,27 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, do
     }
 }
 
+float BaconLibrary::getDensityForIndex(double index,ContentClass contentClass ) {
+    switch(contentClass) {
+        case ContentClass::MULTIMEDIA:
+            return multimediaCummulativeProbabilityCurve[index+1];
+            break;
+
+        case ContentClass::NETWORK:
+            return networkCummulativeProbabilityCurve[index+1];
+            break;
+
+        case ContentClass::TRAFFIC:
+            return trafficCummulativeProbabilityCurve[index+1];
+            break;
+
+        default:
+            std::cerr << "(Lib) Error: Requesting density for undefined category <" << static_cast<int>(contentClass) << ">\n";
+            return -1;
+    }
+    return 1;
+}
+
 int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, int sector ) {
     //std::cout << "(Lib) Enter getIndexForDensity\n";
     //std::cout.flush();

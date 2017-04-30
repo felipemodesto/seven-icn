@@ -35,19 +35,6 @@ void BaconClient::initialize(int stage) {
 
             maxOpenRequests = par("maxOpenRequests").doubleValue();
 
-            GoodReplyRequests = 0;
-            BadReplyRequests = 0;
-            NoReplyRequests = 0;
-
-            //3D Canvas UI Stuff
-            //trailLength = par("trailLength");
-            //modelURL = par("modelURL").stringValue();
-            //showTxRange = par("showTxRange");
-            //txRange = par("txRange");
-            //labelColor = par("labelColor").stringValue();
-            //rangeColor = par("rangeColor").stringValue();
-            //trailColor = par("trailColor").stringValue();
-
             lastX = 0;
             lastY = 0;
 
@@ -333,7 +320,6 @@ void BaconClient::cleanRequestList() {
 
             backloggedRequests.push_front(currentRequest);
 
-            NoReplyRequests++;
             it = ongoingRequests.erase(it);
         } else {
             it++;
@@ -711,26 +697,30 @@ void BaconClient::onData(WaveShortMessage* wsm) {
 
         switch( wsm->getKind() ) {
             case ConnectionStatus::DONE_FALLBACK:
-            case ConnectionStatus::DONE_AVAILABLE:
-            case ConnectionStatus::DONE_RECEIVED:
                 {
-                    GoodReplyRequests++;
-                    stats->increasePacketsSent();
+                    stats->increasePacketsFallenBack();
 
-                    //std::cout << "+";
+                    /*
                     double difDouble = difTime.dbl();
                     if (difTime <= requestTimeout) {
                         stats->addcompleteTransmissionDelay(difDouble);
                         stats->increaseMessagesSent(desiredRequest->referenceObject->contentClass);
                     }
-                    //else {
-                    //    std::cout << "(Cl) Warning: Stale Response with delay: <" << difDouble << ">\n";
-                    //    std::cout.flush();
-                        //stats->addincompleteTransmissionDelay(difDouble);
-                    //}
+                    */
 
-                    //std::cout << "(Cl) <" << myId << "> Good Request for <" << desiredRequest->referenceObject->contentPrefix << ">.\n";
-                    //std::cout.flush();
+                    //Logging Time it took for communication
+                    completedRequests.push_front(desiredRequest);
+                }
+                break;
+            case ConnectionStatus::DONE_AVAILABLE:
+            case ConnectionStatus::DONE_RECEIVED:
+                {
+                    stats->increasePacketsSent();
+
+                    //std::cout << "+";
+                    double difDouble = difTime.dbl();
+                    stats->addcompleteTransmissionDelay(difDouble);
+                    stats->increaseMessagesSent(desiredRequest->referenceObject->contentClass);
 
                     //Logging Time it took for communication
                     completedRequests.push_front(desiredRequest);
@@ -740,7 +730,6 @@ void BaconClient::onData(WaveShortMessage* wsm) {
             case ConnectionStatus::DONE_UNAVAILABLE:
             case ConnectionStatus::DONE_NO_DATA:
                 {
-                    NoReplyRequests++;
                     stats->increasePacketsUnserved();
 
                     //std::cout << "?";
@@ -748,18 +737,12 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     stats->addincompleteTransmissionDelay(difDouble);
                     stats->increaseMessagesUnserved(desiredRequest->referenceObject->contentClass);
 
-                    //std::cout << "(Cl) <" << myId << "> Unserved Request for <" << desiredRequest->referenceObject->contentPrefix << ">.\n";
-                    //std::cout.flush();
-
-                    //Adding an incomplete transfer to our backlogged list for future tests
-                    //std::cout << "\tBoom\n";
                     backloggedRequests.push_front(desiredRequest);
                 }
                 break;
 
             case ConnectionStatus::DONE_PARTIAL:
                 {
-                    BadReplyRequests++;
                     stats->increasePacketsLost();
 
                     //std::cout << "-";

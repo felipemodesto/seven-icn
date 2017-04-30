@@ -38,6 +38,7 @@
 #include <list>
 #include <ctime>
 #include <algorithm>
+#include <iomanip>
 
 using Veins::TraCIMobility;
 using Veins::AnnotationManager;
@@ -75,6 +76,8 @@ enum CacheInNetworkCoordPolicy {
     PROB30p = 7,                    //30% chance of caching
     PROB70p = 8,                    //70% chance of caching
     LOC_PROB = 10,                  //Local Probability Estimation
+    LOC_PROB_MIN = 11,              //Local Probability Estimation Filtering for Minimum Value
+    GLOB_PROB = 15                  //Same as Loc_Prob but with GLobal Values
 };
 
 enum CacheReplacementPolicy {
