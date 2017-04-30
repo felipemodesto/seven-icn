@@ -47,6 +47,7 @@ protected:
     long int packetsForwarded;
     long int packetsUnserved;
     long int packetsLost;
+    long int packetsFallenback;
     long int chunksLost;
     long int totalVehicles;
     long int activeVehicles;
@@ -141,6 +142,7 @@ protected:
     omnetpp::cOutVector packetsSentVect;
     omnetpp::cOutVector packetsForwardedVect;
     omnetpp::cOutVector packetsUnservedVect;
+    omnetpp::cOutVector packetsFallenbackVect;
     omnetpp::cOutVector packetsLostVect;
     omnetpp::cOutVector chunksLostVect;
     omnetpp::cOutVector activeVehiclesVect;
@@ -225,6 +227,10 @@ public:
     void increaseChunksLost();                  //Increase number of Chunks Lost by 1
     void increaseChunksLost(int x);             //Increase number of Chunks Lost by X
 
+    void increasePacketsFallenBack(int x);
+    void increasePacketsFallenBack();
+
+
     void increaseFallbackRequests();
 
     void increaseServerCacheHits();
@@ -250,6 +256,7 @@ public:
     void increaseMultimediaMessagesUnserved();
     void increaseNetworkMessagesUnserved();
     void increaseEmergencyMessagesUnserved();
+
 
     void increaseChunkLost(ContentClass cClass);
     void increaseTrafficChunksLost();

@@ -171,7 +171,9 @@ void BaconServiceManager::cleanConnections() {
             //Saving Statistics
             if (curCon->peerID == myId) {
                 //Logging Hop Count for packages received correctly
-                if (curCon->connectionStatus == ConnectionStatus::DONE_AVAILABLE || curCon->connectionStatus == ConnectionStatus::DONE_RECEIVED ) {
+                if ( curCon->connectionStatus == ConnectionStatus::DONE_AVAILABLE ||
+                     curCon->connectionStatus == ConnectionStatus::DONE_RECEIVED  ||
+                     curCon->connectionStatus == ConnectionStatus::DONE_FALLBACK ) {
                     stats->setHopsCount(curCon->downstreamHopCount);
                     stats->increaseHopCountResult(curCon->downstreamHopCount);
                 }
@@ -325,11 +327,11 @@ void BaconServiceManager::startTimer(Connection_t* connection, double time) {
     //std::cout.flush();
 
     if (cancelTimer(connection) == true) {
-        EV_WARN << "(SM) Warning: Canceled a timer to start a timer.\n";
-        EV_WARN.flush();
+        //EV_WARN << "(SM) Warning: Canceled a timer to start a timer.\n";
+        //EV_WARN.flush();
     } else {
-        EV_WARN << "(SM) Don't worry about the cancelation message above. We good boys.\n";
-        EV_WARN.flush();
+        //EV_WARN << "(SM) Don't worry about the cancelation message above. We good boys.\n";
+        //EV_WARN.flush();
     }
 
     cMessage* messageTimer = new WaveShortMessage(MessageClass::SELF_TIMER.c_str());
@@ -2499,6 +2501,20 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
                     //My Work
                     case LOC_PROB:{     //Local Probability Estimation Method
                         if (cache->localPopularityCacheDecision(connection)) {
+                            //std::cout << "(SM) <" <<myId  << "> Attempting Caching Policy on Object <" << connection->requestPrefix << "> HopCount <" << connection->downstreamHopCount << "> Remote UseCount <" << connection->remoteHopUseCount << "> Current UseCount is <" << (cache->getUseCount(connection->requestPrefix)) << ">\n";
+                            //std::cout.flush();
+                            addContentToCache(connection);
+
+                            //Logging the remote popularity value of the content object
+                            cache->increaseUseCount(connection->remoteHopUseCount,connection->requestPrefix);
+                            break;
+                        }
+                        break;
+                    }
+
+                    //My Work (Global Comparison)
+                    case GLOB_PROB:{     //Global Popularity Definition
+                        if (cache->localMinimumPopularityCacheDecision(connection)) {
                             //std::cout << "(SM) <" <<myId  << "> Attempting Caching Policy on Object <" << connection->requestPrefix << "> HopCount <" << connection->downstreamHopCount << "> Remote UseCount <" << connection->remoteHopUseCount << "> Current UseCount is <" << (cache->getUseCount(connection->requestPrefix)) << ">\n";
                             //std::cout.flush();
                             addContentToCache(connection);

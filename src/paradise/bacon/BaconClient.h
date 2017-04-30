@@ -115,10 +115,6 @@ class BaconClient : public BaseWaveApplLayer {
         double networkInterest;         //Interest in Network Information Content
         double emergencyInterest;       //Emergency Information "Interest"
 
-        int GoodReplyRequests;
-        int BadReplyRequests;
-        int NoReplyRequests;
-
         //Last Known coordinates
         double lastX;
         double lastY;
