@@ -310,20 +310,6 @@ void BaconContentProvider::addContentToLibrary(Content_t* contentObject) {
 
 //
 void BaconContentProvider::removeContentFromLibrary(Content_t* newContent) {
-    /*
-    //Unwrapping contents of request
-    cArray parArray = msg->getParList();
-    cMsgPar* requestName = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
-    std::string requestString = requestName->stringValue();
-
-    if (requestString.c_str()[0] == '\"') {
-        requestString = requestString.substr(1, requestString.length() - 2); //No fucking idea why but strings added as parameters get extra quotes around them. WTF
-    }
-
-    std::cout << "(CP) <" << myId << "> is Attempting to remove object from Cache.\n";
-    std::cout.flush();
-    */
-
     //Searching for content
     for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
         if (newContent->contentPrefix.compare(it->referenceObject->contentPrefix) == 0) {
@@ -355,7 +341,6 @@ void BaconContentProvider::buildContentLibrary() {
     }
 
     //Building our Content Library from the complete library
-
     if (startingCache == -1) {
         //Adding Items from other categories
         //std::cout << "(CP) Server <" << myId << "> Standing By.\n";
@@ -450,6 +435,7 @@ void BaconContentProvider::increaseUseCount(std::string prefix) {
     increaseUseCount(1,prefix);
 }
 
+//
 void BaconContentProvider::increaseUseCount(int addedUses, std::string prefix) {
     //Removing that god damn fucking quote
     prefix = library->cleanString(prefix);
@@ -572,6 +558,11 @@ CacheReplacementPolicy BaconContentProvider::getCachePolicy() {
 
 //Decision algorithm function whether item should be cached
 bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection) {
+    //Always cache if space is available
+    if ( (int)contentLibrary.size() < maxCachedContents) {
+        return true;
+    }
+
     int sum = 0;
     for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
         sum += it->useCount;
@@ -583,7 +574,7 @@ bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection
     }
 
     double averagePopularity = sum > 0 ? floor(double(sum/(double)contentLibrary.size())) : 0;
-    double estimatedResult = connection->remoteHopUseCount > 0 ? double(floor(log2(connection->downstreamCacheDistance) + log2(connection->remoteHopUseCount))/(double)averagePopularity) : 0;
+    double estimatedResult = connection->remoteHopUseCount > 0 ? double(floor(log2(connection->downstreamCacheDistance+1) + log2(connection->remoteHopUseCount))/(double)averagePopularity) : 0;
 
     if (estimatedResult >= 1) {
         return true;
@@ -593,9 +584,13 @@ bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection
     return false;
 }
 
-
 //
 bool BaconContentProvider::localMinimumPopularityCacheDecision(Connection_t* connection) {
+    //Always cache if space is available
+    if ( (int)contentLibrary.size() < maxCachedContents) {
+        return true;
+    }
+
     int minUseCount = contentLibrary.size() > 0 ? INT_MAX : -1;
     //Looking for Item
     if (minUseCount == -1) {
@@ -613,7 +608,7 @@ bool BaconContentProvider::localMinimumPopularityCacheDecision(Connection_t* con
         return true;
     }
 
-    double estimatedResult = connection->remoteHopUseCount > 0 ? double(floor(log2(connection->downstreamCacheDistance) + log2(connection->remoteHopUseCount))/(double)minUseCount) : 0;
+    double estimatedResult = connection->remoteHopUseCount > 0 ? double(floor(log2(connection->downstreamCacheDistance+1) + log2(connection->remoteHopUseCount))/(double)minUseCount) : 0;
 
     //I think these two do the same thing?
     if (minUseCount < connection->remoteHopUseCount) {
@@ -627,21 +622,63 @@ bool BaconContentProvider::localMinimumPopularityCacheDecision(Connection_t* con
     return false;
 }
 
-
 //Decision algorithm function whether item should be cached
 bool BaconContentProvider::globalPopularityCacheDecision(Connection_t* connection) {
+    //Always cache if space is available
+    if ( (int)contentLibrary.size() < maxCachedContents) {
+        return true;
+    }
+
     float sum = 0;
     float remoteFrequency = library->getDensityForIndex(connection->requestedContent->popularityRanking,connection->requestedContent->contentClass);
+
     for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
-        sum += library->getDensityForIndex(it->referenceObject->popularityRanking,it->referenceObject->contentClass );;
+        float itemDensity = library->getDensityForIndex(it->referenceObject->popularityRanking,it->referenceObject->contentClass );
+        std::cout << "(CP) Frequency for LOCAL Item <" << it->referenceObject->contentPrefix << "> is <" << itemDensity << ">\n";
+        sum += itemDensity;
     }
 
     if (sum == 0) {
         return true;
     }
 
-    double averageFrequency = sum > 0 ? round(double(sum/(double)contentLibrary.size())) : 0;
-    double estimatedResult = remoteFrequency > 0 ? double(floor(log2(connection->downstreamCacheDistance)*remoteFrequency)/(double)averageFrequency) : 0;
+    std::cout << "(CP) Frequency for REMOTE Item <" << connection->requestedContent->contentPrefix << "> at distance <" << connection->downstreamCacheDistance << "> is <" << remoteFrequency << ">\n";
+    std::cout << "(CP) Total Frequency Sum for local items is: <" << sum << "> in library of size <" << contentLibrary.size() << ">\n";
+
+    double averageFrequency = sum > 0 ? double(sum/(double)contentLibrary.size()) : 0;
+    double estimatedResult = remoteFrequency > 0 ? double((log2(connection->downstreamCacheDistance + 1)*remoteFrequency)/(double)averageFrequency) : 0;
+
+    std::cout << "(CP) Average Frequency is <" << averageFrequency << ">\t Estimated Result is <" << estimatedResult << ">\n";
+    std::cout.flush();
+
+    if (estimatedResult >= 1) {
+        return true;
+    }
+
+    return false;
+}
+
+//Decision algorithm function whether item should be cached
+bool BaconContentProvider::globalMinimumPopularityCacheDecision(Connection_t* connection) {
+    //Always cache if space is available
+    if ( (int)contentLibrary.size() < maxCachedContents) {
+        return true;
+    }
+
+    float remoteFrequency = library->getDensityForIndex(connection->requestedContent->popularityRanking,connection->requestedContent->contentClass);
+    float minFrequency = contentLibrary.size() > 0 ? INT_MAX : 0;
+    for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
+        float itemDensity = library->getDensityForIndex(it->referenceObject->popularityRanking,it->referenceObject->contentClass );
+        if (itemDensity < minFrequency) {
+            minFrequency = itemDensity;
+            //std::cout << "(CP) Frequency for LOCAL Item <" << it->referenceObject->contentPrefix << "> is <" << minFrequency << ">\n";
+        }
+    }
+
+    double estimatedResult = remoteFrequency > 0 ? double((log2(connection->downstreamCacheDistance + 1)*remoteFrequency)/(double)minFrequency) : 0;
+
+    //std::cout << "(CP) Minimum Frequency is <" << minFrequency << ">\t Estimated Result is <" << estimatedResult << ">\n";
+    //std::cout.flush();
 
     if (estimatedResult >= 1) {
         return true;

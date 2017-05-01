@@ -28,16 +28,17 @@ void BaconStatistics::initialize(int stage) {
         statisticsStopTime = par("statisticsStopTime").doubleValue();
 
         simulationDirectoryFolder= par("simulationDirectoryFolder").stringValue();
+        simulationPrefix= par("simulationPrefix").stringValue();
 
-        generalStatisticsFile =             std::string(simulationDirectoryFolder + par("generalStatisticsFile").stringValue()).c_str();
-        requestLocationStatsFile =          std::string(simulationDirectoryFolder + par("requestLocationStatsFile").stringValue()).c_str();
-        hopcountFile =                      std::string(simulationDirectoryFolder + par("hopcountFile").stringValue()).c_str();
-        locationStatisticsFile =            std::string(simulationDirectoryFolder + par("locationStatisticsFile").stringValue()).c_str();
-        neighborhoodStatisticsFile =        std::string(simulationDirectoryFolder + par("neighborhoodStatisticsFile").stringValue()).c_str();
-        contentPopularityStatisticsFile =   std::string(simulationDirectoryFolder + par("contentNameStatisticsFile").stringValue()).c_str();
-        networkInstantLoadStatisticsFile =  std::string(simulationDirectoryFolder + par("networkInstantLoadStatisticsFile").stringValue()).c_str();
-        networkAverageLoadStatisticsFile =  std::string(simulationDirectoryFolder + par("networkAverageLoadStatisticsFile").stringValue()).c_str();
-        participationLengthStatsFile =      std::string(simulationDirectoryFolder + par("participationLengthStatsFile").stringValue()).c_str();
+        generalStatisticsFile =             std::string(simulationDirectoryFolder + simulationPrefix + par("generalStatisticsFile").stringValue()).c_str();
+        requestLocationStatsFile =          std::string(simulationDirectoryFolder + simulationPrefix + par("requestLocationStatsFile").stringValue()).c_str();
+        hopcountFile =                      std::string(simulationDirectoryFolder + simulationPrefix + par("hopcountFile").stringValue()).c_str();
+        locationStatisticsFile =            std::string(simulationDirectoryFolder + simulationPrefix + par("locationStatisticsFile").stringValue()).c_str();
+        neighborhoodStatisticsFile =        std::string(simulationDirectoryFolder + simulationPrefix + par("neighborhoodStatisticsFile").stringValue()).c_str();
+        contentPopularityStatisticsFile =   std::string(simulationDirectoryFolder + simulationPrefix + par("contentNameStatisticsFile").stringValue()).c_str();
+        networkInstantLoadStatisticsFile =  std::string(simulationDirectoryFolder + simulationPrefix + par("networkInstantLoadStatisticsFile").stringValue()).c_str();
+        networkAverageLoadStatisticsFile =  std::string(simulationDirectoryFolder + simulationPrefix + par("networkAverageLoadStatisticsFile").stringValue()).c_str();
+        participationLengthStatsFile =      std::string(simulationDirectoryFolder + simulationPrefix + par("participationLengthStatsFile").stringValue()).c_str();
 
         startStatistics();
 
@@ -108,7 +109,7 @@ void BaconStatistics::keepTime() {
 
         int simNumber = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
 
-        std::cout << "[" << simNumber << "]\t(St) Current Time is: " << lastSecond << " \t CPU Time: " << round(elapsed_secs) << " sec(s)\n";
+        std::cout << "[" << simNumber << "]\t(St) Current Time is: " << lastSecond << " \t CPU Time: " << std::setprecision(2) << elapsed_secs << " sec(s)\n";
         std::cout.flush();
 
         if (hasStarted && !hasStopped) statisticsTimekeepingVect.record( (lastSecond - statisticsStartTime) / (double) (statisticsStopTime - statisticsStartTime) );
@@ -304,28 +305,54 @@ void BaconStatistics::startStatistics() {
 void BaconStatistics::stopStatistics() {
     //Enter_Method_Silent();
     if (hasStopped) return;
+    int simNumber = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
 
     if (simTime() < statisticsStopTime) {
-        std::cerr << "\n(St) Warning: Simulation exited prematurely. Statistics will not be logged.\n";
+        std::cout << "\n[" << simNumber << "]\t (St) Warning: Simulation exited prematurely. Statistics will not be logged.\n\n";
         std::cerr.flush();
         return;
     }
 
-    std::cout << "(St) File Folder <" << simulationDirectoryFolder << ">\n";
+    std::cout << "[" << simNumber << "]\t (St) File Folder <" << simulationDirectoryFolder << ">\n";
 
-    std::cout << "(St) Saving File <" << requestLocationStatsFile << ">\n";
-    std::cout << "(St) Saving File <" << locationStatisticsFile << ">\n";
-    std::cout << "(St) Saving File <" << neighborhoodStatisticsFile << ">\n";
-    std::cout << "(St) Saving File <" << contentPopularityStatisticsFile << ">\n";
-    std::cout << "(St) Saving File <" << networkInstantLoadStatisticsFile << ">\n";
-    std::cout << "(St) Saving File <" << networkAverageLoadStatisticsFile << ">\n";
-    std::cout << "(St) Saving File <" << generalStatisticsFile << ">\n";
-    std::cout << "(St) Saving File <" << participationLengthStatsFile << ">\n";
+    std::cout << "[" << simNumber << "]\t (St) Saving File <" << requestLocationStatsFile << ">\n";
+    std::cout << "[" << simNumber << "]\t (St) Saving File <" << locationStatisticsFile << ">\n";
+    std::cout << "[" << simNumber << "]\t (St) Saving File <" << neighborhoodStatisticsFile << ">\n";
+    std::cout << "[" << simNumber << "]\t (St) Saving File <" << contentPopularityStatisticsFile << ">\n";
+    std::cout << "[" << simNumber << "]\t (St) Saving File <" << networkInstantLoadStatisticsFile << ">\n";
+    std::cout << "[" << simNumber << "]\t (St) Saving File <" << networkAverageLoadStatisticsFile << ">\n";
+    std::cout << "[" << simNumber << "]\t (St) Saving File <" << generalStatisticsFile << ">\n";
+    std::cout << "[" << simNumber << "]\t (St) Saving File <" << participationLengthStatsFile << ">\n";
 
-    std::cout << "(St) Statistics Collection has stopped. Saving Statistics.\n";
+    std::cout << "[" << simNumber << "]\t (St) Statistics Collection has stopped. Saving Statistics.\n";
     std::cout.flush();
 
+    //Checking for directory and creating if necessary
     FILE * pFile;
+    /**/
+    struct stat info;
+    if( stat( simulationDirectoryFolder.c_str(), &info ) != 0 ) {
+        std::cout << "[" << simNumber << "]\t (St) Warning: Statistics file path does not exist, creating...\n";
+        std::cout.flush();
+        mkdir(simulationDirectoryFolder.c_str(), 0755);     //TODO: (Rework) code to make it compilable with windows (_mkdir(folder))
+        std::cout << "[" << simNumber << "]\t\t(St) \\--> Done.\n";
+        std::cout.flush();
+
+    } else if( info.st_mode & S_IFDIR ) {
+        //printf( "%s is a directory\n", pathname );
+    } else {
+        std::cerr << "(St) Error: Path does not point to a valid directory. Statistics collection cannot proceed. Exiting simulation.\n";
+        std::cerr.flush();
+        exit(0);
+        //printf( "%s is no directory\n", pathname );
+    }
+    //*/
+    //Preemptively creating directories (should they not exist)
+    /*
+    if ( boost::filesystem::create_directories(simulationDirectoryFolder) == true) {
+        std::cout << "[" << simNumber << "]\t (St) Warning: Statistics file path did not exist and had to be created\n";
+        std::cout.flush();
+    }*/
 
     //Saving Hop Statistics
     pFile = fopen ( hopcountFile.c_str(), "w");
@@ -413,7 +440,7 @@ void BaconStatistics::stopStatistics() {
             countedDistances += iterator->first * iterator->second;
         }
     }
-    countedDistances = countedDistances / static_cast<double>(countedMessages);
+    countedDistances = countedMessages > 0 ? countedDistances / static_cast<double>(countedMessages) : 0;
 
     //Saving Communication statistics previously saved as scalar and vector files
     pFile = fopen ( generalStatisticsFile.c_str(), "w");
@@ -468,10 +495,13 @@ void BaconStatistics::stopStatistics() {
     std::string timestr(buffer);
     */
 
+    std::cout << "[" << simNumber << "]\t (St) Statistics Collection is complete. Files have been saved\n";
+    std::cout.flush();
+
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
 
-    std::cout << "\t\\--> (St) STATISTICS COLLECTION WAS COMPLETED AT <" << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") << ">\n";
+    std::cout << "[" << simNumber << "]\t\t\\--> Completion Time <" << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") << ">\n";
     std::cout.flush();
 }
 

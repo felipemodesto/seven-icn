@@ -39,6 +39,9 @@
 #include <ctime>
 #include <algorithm>
 #include <iomanip>
+#include <sys/types.h>
+#include <sys/stat.h>
+//#include <boost/filesystem/operations.hpp>
 
 using Veins::TraCIMobility;
 using Veins::AnnotationManager;
@@ -77,7 +80,11 @@ enum CacheInNetworkCoordPolicy {
     PROB70p = 8,                    //70% chance of caching
     LOC_PROB = 10,                  //Local Probability Estimation
     LOC_PROB_MIN = 11,              //Local Probability Estimation Filtering for Minimum Value
-    GLOB_PROB = 15                  //Same as Loc_Prob but with GLobal Values
+    LOC_PROB_MAX = 12,              //Local Probability Estimation Filtering for the Maximum Value
+
+    GLOB_PROB = 15,                 //Same as Loc_Prob but with Global Knowledge
+    GLOB_PROB_MIN = 16,             //Same as Loc_Prob_Min but with Global Knowledge
+    GLOB_PROB_MAX = 17              //Same as Loc_Prob_Max but with Global Knowledge
 };
 
 enum CacheReplacementPolicy {

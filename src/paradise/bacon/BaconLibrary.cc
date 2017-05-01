@@ -606,15 +606,15 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, do
 float BaconLibrary::getDensityForIndex(double index,ContentClass contentClass ) {
     switch(contentClass) {
         case ContentClass::MULTIMEDIA:
-            return multimediaCummulativeProbabilityCurve[index+1];
+            return multimediaCummulativeProbabilityCurve[index+1] - multimediaCummulativeProbabilityCurve[index];
             break;
 
         case ContentClass::NETWORK:
-            return networkCummulativeProbabilityCurve[index+1];
+            return networkCummulativeProbabilityCurve[index+1] - networkCummulativeProbabilityCurve[index];
             break;
 
         case ContentClass::TRAFFIC:
-            return trafficCummulativeProbabilityCurve[index+1];
+            return trafficCummulativeProbabilityCurve[index+1] - trafficCummulativeProbabilityCurve[index];
             break;
 
         default:
