@@ -35,6 +35,7 @@ simple BaconStatistics {
 		double statisticsStopTime  = default(100); 		//Final moment until which statistics are collected
 		
 		string simulationDirectoryFolder = default("results/");
+		string simulationPrefix = default("sim_result");
 		string generalStatisticsFile = default("generalStatistics.csv");
 		string hopcountFile = default("hopcount.csv");
 		string requestLocationStatsFile = default("requestLocationMap.csv");

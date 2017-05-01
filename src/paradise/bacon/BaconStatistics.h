@@ -111,6 +111,7 @@ protected:
     std::list<LoadAtTime_t> averageLoadList;
 
     string simulationDirectoryFolder;
+    string simulationPrefix;
     string requestLocationStatsFile;
     string hopcountFile;
     string locationStatisticsFile;
