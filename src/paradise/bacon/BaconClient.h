@@ -21,9 +21,9 @@
 #ifndef BaconClient_H
 #define BaconClient_H
 
-#include <BaconContentProvider.h>
-#include <BaconLibrary.h>
-#include <BaconStructures.h>
+#include <paradise/bacon/BaconContentProvider.h>
+#include <paradise/bacon/BaconLibrary.h>
+#include <paradise/bacon/BaconStructures.h>
 
 class BaconContentProvider;
 class BaconLibrary;

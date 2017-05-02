@@ -1,6 +1,6 @@
 //Concent Centric Class - Felipe Modesto
 
-#include <BaconServiceManager.h>
+#include <paradise/bacon/BaconServiceManager.h>
 
 using Veins::TraCIMobilityAccess;
 using Veins::AnnotationManagerAccess;

@@ -7,7 +7,7 @@
  *      Author: felipe
  */
 
-#include <BaconStatistics.h>
+#include <paradise/bacon/BaconStatistics.h>
 
 Define_Module(BaconStatistics);
 
