@@ -5,7 +5,7 @@
  *      Author: felipe
  */
 
-#include <BaconLibrary.h>
+#include <paradise/bacon/BaconLibrary.h>
 
 Define_Module(BaconLibrary);
 

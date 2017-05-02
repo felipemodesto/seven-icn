@@ -9,9 +9,8 @@
 #define BACONSTATISTICS_H
 
 
-#include <BaconLibrary.h>
-#include <BaconStructures.h>
-//#include <BaconStructures.hh>
+#include <paradise/bacon/BaconLibrary.h>
+#include <paradise/bacon/BaconStructures.h>
 class BaconLibrary;
 
 using namespace omnetpp;

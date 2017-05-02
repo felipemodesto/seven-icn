@@ -8,9 +8,9 @@
 #ifndef BACONLIBRARY_H
 #define BACONLIBRARY_H
 
-#include <BaconClient.h>
-#include <BaconStatistics.h>
-#include <BaconStructures.h>
+#include <paradise/bacon/BaconClient.h>
+#include <paradise/bacon/BaconStatistics.h>
+#include <paradise/bacon/BaconStructures.h>
 
 class BaconStatistics;
 class BaconClient;

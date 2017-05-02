@@ -13,10 +13,8 @@
 ////////////////////////////////////////////////////////////////////
 
 #include <veins/modules/application/ieee80211p/BaseWaveApplLayer.h>
-
 #include <veins/modules/mobility/traci/TraCIMobility.h>
 #include <veins/modules/world/annotations/AnnotationManager.h>
-
 //#include <veins/modules/messages/WaveShortMessage_m.h>
 
 #include <omnetpp.h>

@@ -1,8 +1,6 @@
 //Concent Centric Class - Felipe Modesto
 
-#include <BaconContentProvider.h>
-#include "veins/modules/application/ieee80211p/BaseWaveApplLayer.h"
-#include "veins/modules/mobility/traci/TraCIMobility.h"
+#include <paradise/bacon/BaconContentProvider.h>
 
 using Veins::TraCIMobilityAccess;
 using Veins::AnnotationManagerAccess;

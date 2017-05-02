@@ -21,11 +21,9 @@
 #ifndef BaconServiceManager_H
 #define BaconServiceManager_H
 
-#include <BaconContentProvider.h>
-#include <BaconStatistics.h>
-#include <BaconStructures.h>
-#include "veins/modules/application/ieee80211p/BaseWaveApplLayer.h"
-#include "veins/modules/mobility/traci/TraCIMobility.h"
+#include <paradise/bacon/BaconContentProvider.h>
+#include <paradise/bacon/BaconStatistics.h>
+#include <paradise/bacon/BaconStructures.h>
 
 class BaconContentProvider;
 class BaconLibrary;
