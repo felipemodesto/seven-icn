@@ -634,7 +634,6 @@ bool BaconContentProvider::globalPopularityCacheDecision(Connection_t* connectio
 
     for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
         float itemDensity = library->getDensityForIndex(it->referenceObject->popularityRanking,it->referenceObject->contentClass );
-        std::cout << "(CP) Frequency for LOCAL Item <" << it->referenceObject->contentPrefix << "> is <" << itemDensity << ">\n";
         sum += itemDensity;
     }
 
@@ -642,14 +641,8 @@ bool BaconContentProvider::globalPopularityCacheDecision(Connection_t* connectio
         return true;
     }
 
-    std::cout << "(CP) Frequency for REMOTE Item <" << connection->requestedContent->contentPrefix << "> at distance <" << connection->downstreamCacheDistance << "> is <" << remoteFrequency << ">\n";
-    std::cout << "(CP) Total Frequency Sum for local items is: <" << sum << "> in library of size <" << contentLibrary.size() << ">\n";
-
     double averageFrequency = sum > 0 ? double(sum/(double)contentLibrary.size()) : 0;
     double estimatedResult = remoteFrequency > 0 ? double((log2(connection->downstreamCacheDistance + 1)*remoteFrequency)/(double)averageFrequency) : 0;
-
-    std::cout << "(CP) Average Frequency is <" << averageFrequency << ">\t Estimated Result is <" << estimatedResult << ">\n";
-    std::cout.flush();
 
     if (estimatedResult >= 1) {
         return true;
@@ -671,14 +664,10 @@ bool BaconContentProvider::globalMinimumPopularityCacheDecision(Connection_t* co
         float itemDensity = library->getDensityForIndex(it->referenceObject->popularityRanking,it->referenceObject->contentClass );
         if (itemDensity < minFrequency) {
             minFrequency = itemDensity;
-            //std::cout << "(CP) Frequency for LOCAL Item <" << it->referenceObject->contentPrefix << "> is <" << minFrequency << ">\n";
         }
     }
 
     double estimatedResult = remoteFrequency > 0 ? double((log2(connection->downstreamCacheDistance + 1)*remoteFrequency)/(double)minFrequency) : 0;
-
-    //std::cout << "(CP) Minimum Frequency is <" << minFrequency << ">\t Estimated Result is <" << estimatedResult << ">\n";
-    //std::cout.flush();
 
     if (estimatedResult >= 1) {
         return true;
