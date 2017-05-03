@@ -155,6 +155,7 @@ void BaconStatistics::startStatistics() {
     packetsForwarded = 0;
     packetsUnserved = 0;
     packetsLost = 0;
+    packetsFallenback = 0;
     chunksLost = 0;
     totalVehicles = 0;
     activeVehicles = 0;
@@ -646,7 +647,7 @@ void BaconStatistics::increasePacketsUnserved(){
 }
 
 //Increase number of Packets were not served by X
-void BaconStatistics::increasePacketsFallenBack(int x) {
+void BaconStatistics::increasePacketsFallenBack(long int x) {
     BaconStatistics::packetsFallenback+= x;
     if (!shouldRecordData()) return;
 

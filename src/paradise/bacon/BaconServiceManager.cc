@@ -1551,8 +1551,7 @@ void BaconServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Con
         //std::cout << "(SM) <" << myId << "> Notifying Client of Result: <" << connection->connectionStatus << "> Hops: <" << connection->upstreamHopCount << ";" << connection->downstreamHopCount << "> Time: <" << simTime() << ">\n";
         //std::cout.flush();
 
-        //TODO:HERE
-        if (requestFallbackAllowed) {
+        if (requestFallbackAllowed == true) {
             //Updating status of content (assuming we can freely get it from the internet)
             wsm->setKind(ConnectionStatus::DONE_FALLBACK);
             stats->increaseFallbackRequests();
