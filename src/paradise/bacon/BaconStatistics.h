@@ -227,7 +227,7 @@ public:
     void increaseChunksLost();                  //Increase number of Chunks Lost by 1
     void increaseChunksLost(int x);             //Increase number of Chunks Lost by X
 
-    void increasePacketsFallenBack(int x);
+    void increasePacketsFallenBack(long int x);
     void increasePacketsFallenBack();
 
 
