@@ -14,13 +14,24 @@
 // 
 //package scenarios;
 
-import org.car2x.veins.nodes.Scenario;
+//import org.car2x.veins.nodes.Scenario;
+
+import org.car2x.veins.base.connectionManager.ConnectionManager;
+import org.car2x.veins.base.modules.BaseWorldUtility;
+import org.car2x.veins.modules.mobility.traci.TraCIScenarioManagerLaunchd;
+import org.car2x.veins.modules.obstacle.ObstacleControl;
+import org.car2x.veins.modules.world.annotations.AnnotationManager;
 import paradise.bacon.*;
 
-network BaconScenario extends Scenario
-{
+network BaconScenario {
     parameters:
         //@display("bgb=341,200;bgi=background/terrain,s");
+        
+        double playgroundSizeX @unit(m); // x size of the area the nodes are in (in meters)
+        double playgroundSizeY @unit(m); // y size of the area the nodes are in (in meters)
+        double playgroundSizeZ @unit(m); // z size of the area the nodes are in (in meters)
+        @display("bgb=3000,3000");
+        
         double playgroundLatitude; // geographic position of the playground's north-west corner
         double playgroundLongitude; // geographic position of the playground's north-west corner
         double playgroundWidth @unit("m") = default(10000m);  // the E-W size of playground
@@ -30,6 +41,29 @@ network BaconScenario extends Scenario
 
         //@display("bgb=10000,10000");
     submodules:
+        //obstacles: ObstacleControl {
+        //    @display("p=72,59");
+        //}
+        
+        annotations: AnnotationManager {
+            @display("p=961.28,54.072002");
+        }
+        connectionManager: ConnectionManager {
+            parameters:
+                @display("p=66.088005,889.184;i=abstract/multicast");
+        }
+        world: BaseWorldUtility {
+            parameters:
+                playgroundSizeX = playgroundSizeX;
+                playgroundSizeY = playgroundSizeY;
+                playgroundSizeZ = playgroundSizeZ;
+                @display("p=66.088005,474.63202;i=misc/globe");
+        }
+        manager: TraCIScenarioManagerLaunchd {
+            parameters:
+                @display("p=492.656,54.072002");
+        }
+        
         statistics: BaconStatistics {
             parameters:
                 @display("p=66.088005,1694.2561;i=block/bucket");
@@ -43,4 +77,6 @@ network BaconScenario extends Scenario
         //osgEarthScene: OsgEarthScene {
         //    @display("p=72,59");
         //}
+        
+    	connections allowunconnected:
 }

@@ -41,6 +41,7 @@ using namespace omnetpp;
 class BaconClient : public BaseWaveApplLayer {
 
     public:
+        ~BaconClient();
         virtual void initialize(int stage) override;
         virtual void finish();
         virtual void receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj) override;
@@ -119,7 +120,7 @@ class BaconClient : public BaseWaveApplLayer {
         double lastX;
         double lastY;
 
-        bool isServer = false;
+        NodeRole nodeRole = NodeRole::MULE;
 
         //PendingContent_t* pendingRequest;//Current Pending Request
         std::list<PendingContent_t*> ongoingRequests;       //List of ongoing Requests

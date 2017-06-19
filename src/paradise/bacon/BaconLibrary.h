@@ -65,6 +65,8 @@ protected:
 
     int maxVehicleServers = 0;
     int allocatedVehicleServers = 0;
+    int maxVehicleClients = -1;
+    int allocatedVehicleClients = 0;
 
     double zipfCaracterization = 0;
     int sizeMultimedia = 1024;          //Packet size
@@ -80,6 +82,7 @@ protected:
     ContentPriority priorityMultimedia;         //Priority
 
     std::list<int> serverVehicles;
+    std::list<int> clientVehicles;
 
     cMessage* requestTimer;             //Running Timer
     std::list<LocationRequest_t> preemptiveRequests;
@@ -100,8 +103,8 @@ public:
     void deregisterClient(string clientPath);
     std::list<string> clientList;
 
-    bool requestServerStatus(int vehicleID);
-    void releaseServerStatus(int vehicleID);
+    NodeRole requestStatus(int vehicleID);
+    void releaseStatus(NodeRole status, int vehicleID);
     int getActiveServers();
     int getMaximumServers();
 

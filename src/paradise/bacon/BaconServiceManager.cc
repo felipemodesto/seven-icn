@@ -1275,7 +1275,7 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
                 stats->increaseLocalCacheHits();
             } else {
                 //Having all items implies being a server, which we use to log server based statistics
-                if (cache->getIsServer()) {
+                if (cache->getRole() == NodeRole::SERVER) {
                     stats->increaseServerCacheHits();
                 } else {
                     stats->increaseRemoteCacheHits();
@@ -1551,10 +1551,9 @@ void BaconServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Con
         //std::cout << "(SM) <" << myId << "> Notifying Client of Result: <" << connection->connectionStatus << "> Hops: <" << connection->upstreamHopCount << ";" << connection->downstreamHopCount << "> Time: <" << simTime() << ">\n";
         //std::cout.flush();
 
-        if (requestFallbackAllowed == true) {
+        if (requestFallbackAllowed == true && connection->connectionStatus != ConnectionStatus::DONE_AVAILABLE) {
             //Updating status of content (assuming we can freely get it from the internet)
             wsm->setKind(ConnectionStatus::DONE_FALLBACK);
-            stats->increaseFallbackRequests();
             connection->downstreamCacheDistance = 1;
             connection->upstreamHopCount = 1;
             //Running cache policy to see if we should keep the content

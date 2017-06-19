@@ -66,7 +66,7 @@ protected:
     long int emergencyUnservedPackets;
     long int emergencyLostPackets;
     long int emergencyLostChunks;
-    long int fallbackOutsourcedRequests;
+    //long int fallbackOutsourcedRequests;
 
     //Caching statistics
     long int localCacheLateHits; //PIT RELATED LOCAL HITS
@@ -186,6 +186,7 @@ protected:
     void handleMessage(cMessage *msg);
 
 public:
+    virtual ~BaconStatistics();
     virtual void initialize(int stage);
     virtual void finish();
 
@@ -231,7 +232,6 @@ public:
     void increasePacketsFallenBack();
 
 
-    void increaseFallbackRequests();
 
     void increaseServerCacheHits();
     void logDistanceFromTweet(double distance);

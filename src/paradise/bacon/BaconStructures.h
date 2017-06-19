@@ -26,7 +26,7 @@
 //#include <osgEarthAnnotation/CircleNode>
 //#include <osgEarthAnnotation/FeatureNode>
 //#include <osgEarthUtil/ObjectLocator>
-///#include "OsgEarthScene.h"
+//#include "OsgEarthScene.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -39,7 +39,6 @@
 #include <iomanip>
 #include <sys/types.h>
 #include <sys/stat.h>
-//#include <boost/filesystem/operations.hpp>
 
 using Veins::TraCIMobility;
 using Veins::AnnotationManager;
@@ -48,6 +47,26 @@ using Veins::AnnotationManager;
 ////////////////////////////////////////////////////////////////////
 //  POLICY & OTHER SIMULATION RELATED EVALUATION PARAMETERS
 ////////////////////////////////////////////////////////////////////
+
+enum NodeRole {
+    SERVER = 0,         //Servers do not make requests but have all content
+    CLIENT = 1,         //Clients request packets but do not have full libraries
+    MULE = 2            //Mules only retransmit packets but do not initiate requests nor have libraries from the get-go
+};
+
+enum CacheDistributionModel {
+    ALL_EQUAL = 0,
+    WAVE_THIRDS = 1,
+    HALF_PRIORITY = 2
+};
+
+enum CacheSection {
+    GENERIC = 0,        //Generic All-purpose section of cache, used if no policy is applied
+    PRIORITY = 1,       //Priority only cache, where popular and other "important" items are placed
+    PERSONAL = 2,       //Local Requests only Cache portion
+    FRIEND = 3,         //Friend-cache portion, used for coordination with nodes that have been neighbors for longer periods of time
+    STRANGER = 4        //Cache portion used for requests sent from strangers
+};
 
 enum LocationCorrelationModel {
     NONE = 0,           //No correlation model

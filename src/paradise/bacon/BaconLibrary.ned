@@ -36,8 +36,10 @@ simple BaconLibrary {
 		int priorityTransit = default(1);				//Priority of Items in Transit Object Library
 		int priorityNetwork = default(2);				//Priority of Items in Network Related Library
 		int priorityMultimedia = default(3);			//Priority of Items in Multimedia Library
-		int maxVehicleServers = default(0);				//Maximum number of concurrent vehicle servers in network
 		int locationCorrelationModel = default(0);		//Model for location correlation (default = 0 specifies no location correlation)
+		
+		int maxVehicleServers = default(0);				//Maximum number of concurrent vehicle servers in network
+		int maxVehicleClients = default(-1);			//Number of vehicles not tagged as servers, which are tagged as clients (-1 for all)
 		
         string requestSequenceFile = default("request-sequence.csv");
 }

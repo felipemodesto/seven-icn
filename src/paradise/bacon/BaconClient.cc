@@ -117,8 +117,8 @@ void BaconClient::initialize(int stage) {
 
             contentTimerMessage = NULL;
 
-            isServer = library->requestServerStatus(myId);
-            if (isServer) {
+            nodeRole = library->requestStatus(myId);
+            if (nodeRole != NodeRole::CLIENT) {
                 minimumRequestDelay = -1;
                 maximumRequestDelay = -1;
             }
@@ -167,6 +167,14 @@ void BaconClient::finish() {
     //Log Good, Bad and Unserved Requests
     //std::cout << "(Cl) Stats for <" << myId << "> (" << GoodReplyRequests << "-" << BadReplyRequests << "-" << NoReplyRequests << ")\n";
     //std::cout.flush();
+}
+
+BaconClient::~BaconClient() {
+    if (contentTimerMessage != NULL) cancelAndDelete(contentTimerMessage);
+    if (runtimeTimer != NULL) cancelAndDelete(runtimeTimer);
+
+    contentTimerMessage = NULL;
+    runtimeTimer = NULL;
 }
 
 /*/

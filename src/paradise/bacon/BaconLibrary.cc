@@ -32,6 +32,7 @@ void BaconLibrary::initialize(int stage) {
         locationModel = static_cast<LocationCorrelationModel>(par("locationCorrelationModel").longValue());
 
         maxVehicleServers = par("maxVehicleServers").longValue();
+        maxVehicleClients = par("maxVehicleClients").longValue();
         requestSequenceFile = par("requestSequenceFile").stringValue();
 
         multimediaLibrary = NULL;
@@ -329,39 +330,61 @@ void BaconLibrary::loadRequestSequence() {
 }
 
 //
-bool BaconLibrary::requestServerStatus(int vehicleID) {
-    //std::cout << "(Lib) Enter requestServerStatus\n";
-    //std::cout.flush();
-
+NodeRole BaconLibrary::requestStatus(int vehicleID) {
+    //Checking if we have allocated a node as a server
     if (!serverVehicles.empty()) {
+        //Checking if the vehicle was already inserted... just to make sure
         for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
-            if ((*it) == vehicleID) return true;
+            if ((*it) == vehicleID) return NodeRole::SERVER;
         }
     }
 
+    //Checking if we have already allocated the node as a client
+    if (!clientVehicles.empty()) {
+        for (auto it = clientVehicles.begin() ; it != clientVehicles.end() ; it++) {
+            if ((*it) == vehicleID) return NodeRole::CLIENT;
+        }
+    }
+
+    //Trying to allocate the node as a server
     if (allocatedVehicleServers < maxVehicleServers) {
+        std::cout << "(Lib) \t Vehicle <" << vehicleID << "> is a registered Server.\n";
         allocatedVehicleServers++;
         serverVehicles.push_front(vehicleID);
-
-        //std::cout << "\t(Lib) Add to <" << allocatedVehicleServers << "> servers by vehicle <" << vehicleID << "> \n";
-        //std::cout.flush();
-        return true;
+        return NodeRole::SERVER;
     }
-    return false;
+
+    //Trying to allocate the vehicle as a client
+    if (allocatedVehicleClients < maxVehicleClients || maxVehicleClients <= 0) {
+        std::cout << "(Lib) \t Vehicle <" << vehicleID << "> is a registered Client.\n";
+        allocatedVehicleClients++;
+        clientVehicles.push_front(vehicleID);
+        return NodeRole::CLIENT;
+    }
+
+    //std::cout << "(Lib) Vehicle <" << vehicleID << "> is a registered mule (other positions are busy).\n";
+    return NodeRole::MULE;
 }
 
-//
-void BaconLibrary::releaseServerStatus(int vehicleID){
-    //std::cout << "(Lib) Enter releaseServerStatus\n";
-    //std::cout.flush();
-    for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
-        if ((*it) == vehicleID) {
-            allocatedVehicleServers--;
-            //std::cout << "\t(Lib) Sub to <" << allocatedVehicleServers << "> servers by vehicle <" << vehicleID << "> \n";
-            //std::cout.flush();
+//Function called by clients when they exit the simulation to release their status as a server or client
+void BaconLibrary::releaseStatus(NodeRole status, int vehicleID){
+    if (status == NodeRole::SERVER) {
+        for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
+            if ((*it) == vehicleID) {
+                allocatedVehicleServers--;
+                serverVehicles.erase(it);
+                return;
+            }
+        }
+    }
 
-            serverVehicles.erase(it);
-            return;
+    if (status == NodeRole::CLIENT) {
+        for (auto it = clientVehicles.begin() ; it != clientVehicles.end() ; it++) {
+            if ((*it) == vehicleID) {
+                allocatedVehicleClients--;
+                clientVehicles.erase(it);
+                return;
+            }
         }
     }
 

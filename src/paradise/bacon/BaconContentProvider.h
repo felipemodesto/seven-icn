@@ -54,14 +54,19 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         int contentExchangeOut;         // to Content Manager
 
         bool hasLibrary = false;
-        bool isServer = false;
+        NodeRole nodeRole = NodeRole::MULE;
 
-        std::list<CachedContent_t> contentLibrary;
+        std::list<CachedContent_t> contentCache;
         int librarySize;
 
         CacheReplacementPolicy cachePolicy;
-        int startingCache;
-        int maxCachedContents;
+
+        int startingCache = 0;
+        int maxCachedContents = 0;
+        int priorityCacheSize = 0;
+        int personalCacheSize = 0;
+        int friendCacheSize = 0;
+        int othersCacheSize = 0;
 
         BaconServiceManager* manager;
         BaconStatistics* stats;
@@ -72,7 +77,6 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         void runCacheReplacement();                             //Cache replacement Policy implementation function
         void buildContentLibrary();                             //
         void addToLibrary(cMessage *msg);                       //
-        //void handleMessage(cMessage *msg) override;           //CALLBACK FROM SELF MESSAGE, GENERALLY USED AS RANDOM TIMER CALLBACK
 
 
     public:
@@ -93,7 +97,7 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         bool handleLookup(std::string prefix);                  //Deal with Content Lookup Requests
         void removeContentFromLibrary(Content_t* newContent);   //Remove item from cache
         void addContentToLibrary(Content_t* newContent);        //Add content to Cache
-        bool getIsServer();                                        //Check if we're a SERVER (Have everything)
+        NodeRole getRole();                                     //Check if we're a SERVER or CLIENT or whatever (Have everything)
 };
 
 
