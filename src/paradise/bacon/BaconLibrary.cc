@@ -376,6 +376,7 @@ void BaconLibrary::releaseStatus(NodeRole status, int vehicleID){
                 return;
             }
         }
+        std::cerr << "(Lib) Warning: Vehicle <" << vehicleID << "> is NOT a SERVER but thinks it is.\n";
     }
 
     if (status == NodeRole::CLIENT) {
@@ -386,10 +387,13 @@ void BaconLibrary::releaseStatus(NodeRole status, int vehicleID){
                 return;
             }
         }
+        std::cerr << "(Lib) Warning: Vehicle <" << vehicleID << "> is NOT a CLIENT but thinks it is.\n";
     }
 
-    std::cerr << "(Lib) Warning: Vehicle <" << vehicleID << "> is NOT a server but thinks it is.\n";
-    std::cerr.flush();
+    if (status != NodeRole::MULE) {
+        std::cerr << "(Lib) Warning: Vehicle <" << vehicleID << "> is NOT a MULE but it should be.\n";
+        std::cerr.flush();
+    }
 }
 
 int BaconLibrary::getActiveServers() {

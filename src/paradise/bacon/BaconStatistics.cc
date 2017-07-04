@@ -388,14 +388,14 @@ void BaconStatistics::stopStatistics() {
 
     std::cout << "[" << simNumber << "]\t (St) File Folder <" << simulationDirectoryFolder << ">\n";
 
-    std::cout << "[" << simNumber << "]\t (St) Saving File <" << requestLocationStatsFile << ">\n";
-    std::cout << "[" << simNumber << "]\t (St) Saving File <" << locationStatisticsFile << ">\n";
-    std::cout << "[" << simNumber << "]\t (St) Saving File <" << neighborhoodStatisticsFile << ">\n";
-    std::cout << "[" << simNumber << "]\t (St) Saving File <" << contentPopularityStatisticsFile << ">\n";
-    std::cout << "[" << simNumber << "]\t (St) Saving File <" << networkInstantLoadStatisticsFile << ">\n";
-    std::cout << "[" << simNumber << "]\t (St) Saving File <" << networkAverageLoadStatisticsFile << ">\n";
-    std::cout << "[" << simNumber << "]\t (St) Saving File <" << generalStatisticsFile << ">\n";
-    std::cout << "[" << simNumber << "]\t (St) Saving File <" << participationLengthStatsFile << ">\n";
+    //std::cout << "[" << simNumber << "]\t (St) Saving File <" << requestLocationStatsFile << ">\n";
+    //std::cout << "[" << simNumber << "]\t (St) Saving File <" << locationStatisticsFile << ">\n";
+    //std::cout << "[" << simNumber << "]\t (St) Saving File <" << neighborhoodStatisticsFile << ">\n";
+    //std::cout << "[" << simNumber << "]\t (St) Saving File <" << contentPopularityStatisticsFile << ">\n";
+    //std::cout << "[" << simNumber << "]\t (St) Saving File <" << networkInstantLoadStatisticsFile << ">\n";
+    //std::cout << "[" << simNumber << "]\t (St) Saving File <" << networkAverageLoadStatisticsFile << ">\n";
+    //std::cout << "[" << simNumber << "]\t (St) Saving File <" << generalStatisticsFile << ">\n";
+    //std::cout << "[" << simNumber << "]\t (St) Saving File <" << participationLengthStatsFile << ">\n";
 
     std::cout << "[" << simNumber << "]\t (St) Statistics Collection has stopped. Saving Statistics.\n";
     std::cout.flush();
@@ -511,8 +511,8 @@ void BaconStatistics::stopStatistics() {
         if (iterator->first >= 0) {
             countedMessages += iterator->second;
             countedDistances += iterator->second * iterator->first;
-            std::cout << "<" << iterator->second << "> Messages with distance <" << iterator->first << ">\n";
-            std::cout.flush();
+            //std::cout << "<" << iterator->second << "> Messages with distance <" << iterator->first << ">\n";
+            //std::cout.flush();
         }
     }
     countedDistances = countedMessages > 0 ? countedDistances / static_cast<double>(countedMessages) : 0;
@@ -573,10 +573,14 @@ void BaconStatistics::stopStatistics() {
     std::cout << "[" << simNumber << "]\t (St) Statistics Collection is complete. Files have been saved\n";
     std::cout.flush();
 
-    auto t = std::time(nullptr);
-    auto tm = *std::localtime(&t);
+    time_t t = std::time(nullptr);
+    struct tm * tm = std::localtime(&t);
+    char buffer [80];
+    std::strftime (buffer,80,"%d-%m-%Y %H-%M-%S",tm);
 
-    std::cout << "[" << simNumber << "]\t\t\\--> Completion Time <" << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") << ">\n";
+    //std::cout << "[" << simNumber << "]\t\t\\--> Completion Time <" << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") << ">\n";
+    std::cout << "[" << simNumber << "]\t\t\\--> Completion Time <" << buffer << ">\n";
+
     std::cout.flush();
 }
 
