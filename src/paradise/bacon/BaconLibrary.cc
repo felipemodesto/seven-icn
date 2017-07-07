@@ -348,7 +348,7 @@ NodeRole BaconLibrary::requestStatus(int vehicleID) {
 
     //Trying to allocate the node as a server
     if (allocatedVehicleServers < maxVehicleServers) {
-        std::cout << "(Lib) \t Vehicle <" << vehicleID << "> is a registered Server.\n";
+        //std::cout << "(Lib) \t Vehicle <" << vehicleID << "> is a registered Server.\n";
         allocatedVehicleServers++;
         serverVehicles.push_front(vehicleID);
         return NodeRole::SERVER;
@@ -356,7 +356,7 @@ NodeRole BaconLibrary::requestStatus(int vehicleID) {
 
     //Trying to allocate the vehicle as a client
     if (allocatedVehicleClients < maxVehicleClients || maxVehicleClients <= 0) {
-        std::cout << "(Lib) \t Vehicle <" << vehicleID << "> is a registered Client.\n";
+        //std::cout << "(Lib) \t Vehicle <" << vehicleID << "> is a registered Client.\n";
         allocatedVehicleClients++;
         clientVehicles.push_front(vehicleID);
         return NodeRole::CLIENT;
