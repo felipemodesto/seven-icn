@@ -28,7 +28,7 @@ else
 fi
 
 #RUN_CODE="/home/felipe/Simulation/omnetpp-5.0/bin/opp_run"
-RUN_CODE="/home/shared/omnet/bin/omnetpp/bin/opp_run"
+RUN_CODE="/home/shared/omnet/bin/opp_run"
 LINK_CODE="-u Cmdenv -n ..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false -f baconnet.ini"
 RUN_COMMAND="${THREAD_COUNT}  ${RUN_CODE} -r ${RUN_GROUP} -c ${SCENARIO} ${LINK_CODE}"
 
