@@ -2754,6 +2754,8 @@ void BaconServiceManager::refreshNeighborhood() {
     }
     averageNetworkLoad = averageNetworkLoad/(double)networkLoadWindow.size(); //(Number of slots in window)
 
+    //TODO: Implement Exponential weight for Moving Average
+
     //Logging Statistics
     stats->logAverageLoad(myId,averageNetworkLoad);
     stats->logInstantLoad(myId,instantBitLoad);

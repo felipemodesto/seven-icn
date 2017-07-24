@@ -27,8 +27,12 @@ else
   echo "Note: opp_runall will run with process count set to: ${THREAD_COUNT}"
 fi
 
-#RUN_CODE="/home/felipe/Simulation/omnetpp-5.0/bin/opp_run"
-RUN_CODE="/home/shared/omnet/bin/opp_run"
+RUN_CODE="/home/felipe/Simulation/omnetpp-5.0/bin/opp_run"
+
+if [ "Optiplex" = "${HOSTNAME}" ]; then
+	RUN_CODE="/home/shared/omnet/bin/opp_run"
+fi
+
 LINK_CODE="-u Cmdenv -n ..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false -f baconnet.ini"
 RUN_COMMAND="${THREAD_COUNT}  ${RUN_CODE} -r ${RUN_GROUP} -c ${SCENARIO} ${LINK_CODE}"
 
