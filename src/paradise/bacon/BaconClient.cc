@@ -294,6 +294,8 @@ void BaconClient::startNewMessageTimer(simtime_t timerTime) {
 //=============================================================
 // CONTENT REQUEST MANIPULATION FUNCTIONS
 //=============================================================
+
+//Function called externally if we are passively delegating packet start to the BaconLibrary
 bool BaconClient::suggestContentRequest(Content_t* suggestedContent) {
     //Perform context switching for incoming message
     Enter_Method_Silent();

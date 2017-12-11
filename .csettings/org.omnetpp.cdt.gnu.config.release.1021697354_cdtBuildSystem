@@ -8,14 +8,14 @@
 					<builder autoBuildTarget="all" buildPath="${ProjDirPath}" cleanBuildTarget="clean" enableAutoBuild="false" enableCleanBuild="true" enabledIncrementalBuild="true" id="org.omnetpp.cdt.gnu.builder.debug.341636544" incrementalBuildTarget="all" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="OMNeT++ Make Builder (opp_makemake)" parallelBuildOn="false" superClass="org.omnetpp.cdt.gnu.builder.debug"/>
 					<tool id="cdt.managedbuild.tool.gnu.archiver.base.800035477" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 					<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.33726302" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
-						<option id="gnu.cpp.compiler.option.include.paths.489139712" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+						<option id="gnu.cpp.compiler.option.include.paths.489139712" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 							<listOptionValue builtIn="false" value="${ProjDirPath}/src"/>
 						</option>
-						<option id="gnu.cpp.compiler.option.preprocessor.def.2125267759" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def"/>
+						<option id="gnu.cpp.compiler.option.preprocessor.def.2125267759" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false"/>
 						<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1592583094" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 					</tool>
 					<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.1138865820" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
-						<option id="gnu.c.compiler.option.preprocessor.def.symbols.1801237301" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols"/>
+						<option id="gnu.c.compiler.option.preprocessor.def.symbols.1801237301" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false"/>
 						<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.508178414" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 					</tool>
 					<tool id="cdt.managedbuild.tool.gnu.c.linker.base.2032232574" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base"/>

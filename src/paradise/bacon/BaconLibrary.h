@@ -56,6 +56,9 @@ protected:
     std::vector<double> buildCategoryLibrary(int count, int byteSize, ContentPriority priority, ContentClass category, std::string classPrefix);
     void buildContentList();
 
+    int sectorPopularityIndex[];        //Maps Sector Index to Popularity Index
+    int sectorPopularityRanking[];      //Maps Popularity Index to Sector Index
+
     LocationCorrelationModel locationModel;
     int sectorCount = 1;
     int widthBlocks = 1;
@@ -107,6 +110,9 @@ public:
     void releaseStatus(NodeRole status, int vehicleID);
     int getActiveServers();
     int getMaximumServers();
+
+    int getSector(double xPos, double yPos);                            //Maps a XY point to a sector
+    int getDistanceToSector(int sectorCode, double xPos, double yPos);  //Returns the distance between the XY point to the center of the sector with given sectorCode
 
     long int getCurrentIndex();                      //For Statistics & Maximum Count Use
     long int getRequestIndex();                      //Returns next index (sequence ID) in global request list numbering scheme (to avoid doubles)
