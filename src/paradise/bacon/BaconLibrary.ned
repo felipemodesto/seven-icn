@@ -38,6 +38,8 @@ simple BaconLibrary {
 		int priorityMultimedia = default(3);			//Priority of Items in Multimedia Library
 		int locationCorrelationModel = default(0);		//Model for location correlation (default = 0 specifies no location correlation)
 		
+		int sectorSize = default(100);					//Width/Height of sector (square)
+		
 		int maxVehicleServers = default(0);				//Maximum number of concurrent vehicle servers in network
 		int maxVehicleClients = default(-1);			//Number of vehicles not tagged as servers, which are tagged as clients (-1 for all)
 		

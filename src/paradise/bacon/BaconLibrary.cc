@@ -35,6 +35,10 @@ void BaconLibrary::initialize(int stage) {
         maxVehicleClients = par("maxVehicleClients").longValue();
         requestSequenceFile = par("requestSequenceFile").stringValue();
 
+        sectorWidth = par("sectorSize").longValue();
+        sectorHeight = par("sectorSize").longValue();
+
+
         multimediaLibrary = NULL;
         networkLibrary = NULL;
         trafficLibrary = NULL;
@@ -81,6 +85,21 @@ void BaconLibrary::initialize(int stage) {
             }
         }
     }
+
+    //Creating the popularity distribution for the sectors randomly as well as associated sorted list
+    int allocatedSectors = 0;
+    sectorPopularityIndex = new int[sectorCount];
+    sectorPopularityRanking = new int[sectorCount];
+    for(int i = 0; i < sectorCount ; i++) sectorPopularityIndex[i] = 0;
+    while (allocatedSectors < sectorCount) {
+        int newSector = random() % sectorCount;
+        if (sectorPopularityIndex[newSector] == 0) {
+            allocatedSectors++;
+            sectorPopularityIndex[newSector] = allocatedSectors;
+            sectorPopularityIndex[allocatedSectors] = newSector;
+        }
+    }
+
 }
 
 //Finalization Function (not a destructor!)
@@ -329,6 +348,7 @@ void BaconLibrary::loadRequestSequence() {
     std::cout << "\t Done. Build took : " << elapsed_secs << " second(s)" << std::endl;
 }
 
+
 //
 NodeRole BaconLibrary::requestStatus(int vehicleID) {
     //Checking if we have allocated a node as a server
@@ -396,12 +416,14 @@ void BaconLibrary::releaseStatus(NodeRole status, int vehicleID){
     }
 }
 
+//
 int BaconLibrary::getActiveServers() {
     //std::cout << "(Lib) Enter getActiveServers\n";
     //std::cout.flush();
     return allocatedVehicleServers;
 }
 
+//
 int BaconLibrary::getMaximumServers() {
     //std::cout << "(Lib) Enter getMaximumServers\n";
     //std::cout.flush();
@@ -590,10 +612,13 @@ Content_t* BaconLibrary::getContent(std::string contentPrefix) {
 }
 
 bool BaconLibrary::independentOperationMode() {
-    //std::cout << "(Lib) Enter independentOperationMode\n";
-    //std::cout.flush();
     if (locationModel == LocationCorrelationModel::TWITTER) return false;
     return true;
+}
+
+bool BaconLibrary::locationDependentContentMode() {
+    if (locationModel == LocationCorrelationModel::GPS) return true;
+    return false;
 }
 
 //
@@ -602,17 +627,29 @@ int BaconLibrary::getContentClass(ContentClass cClass) {
 }
 
 //
+int BaconLibrary::getSector(double xPos, double yPos) {
+    Enter_Method_Silent();
+    int sector = floor(xPos/sectorWidth) + ( floor(yPos/sectorHeight) )* widthBlocks;
+    return sector;
+}
+
+//
+int BaconLibrary::getDistanceToSector(int sectorCode, double xPos, double yPos) {
+    int sectorCenterX = static_cast <int> (floor(floor(sectorCode % widthBlocks) + sectorWidth/2));
+    int sectorCenterY = static_cast <int> (floor(floor(sectorCode / widthBlocks) + sectorHeight/2));
+    double eucledianDistance = round(sqrt( pow(sectorCenterX - xPos, 2) + pow(sectorCenterY - yPos, 2) ));
+    return static_cast <int> (eucledianDistance);
+}
+
+//
 int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass ) {
     return getIndexForDensity(value,contentClass,0);
 }
 
+//
 int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, double xPos, double yPos ) {
     Enter_Method_Silent();
-    //std::cout << "(Lib) Enter getIndexForDensity\n";
-    //std::cout.flush();
-    int sector = 0;
-    sector = floor(xPos/sectorWidth) + ( floor(yPos/sectorHeight) )*widthBlocks;
-
+    int sector = getSector(xPos,yPos);
     switch (locationModel) {
         case LocationCorrelationModel::NONE:
             return getIndexForDensity(value,contentClass,0);
@@ -624,12 +661,17 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, do
             return getIndexForDensity(value,contentClass,sector);
             break;
 
+        case LocationCorrelationModel::GPS:
+            std::cout << "(Lib) Generating Sector value from coordinates <" << xPos << ";" << yPos << "> Maps to Sector <" << sector << ">";
+            //return sector;
+            return getIndexForDensity(value,contentClass,sector);
         default:
             std::cerr << "(Lib) ERROR: Not Implemented\n";
             return getIndexForDensity(value,contentClass);
     }
 }
 
+//
 float BaconLibrary::getDensityForIndex(double index,ContentClass contentClass ) {
     switch(contentClass) {
         case ContentClass::MULTIMEDIA:
@@ -651,6 +693,7 @@ float BaconLibrary::getDensityForIndex(double index,ContentClass contentClass ) 
     return 1;
 }
 
+//
 int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, int sector ) {
     //std::cout << "(Lib) Enter getIndexForDensity\n";
     //std::cout.flush();
@@ -699,6 +742,8 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, in
                     shiftedIndex = ( itemIndex + (librarySize % sector)) % librarySize;
                     break;
 
+                case LocationCorrelationModel::GPS: //For GPS, the sectors themselves have probability associated with them
+
                 default:
                     std::cout << "(Lib) Error!!\n";
                     break;
@@ -724,7 +769,7 @@ long int BaconLibrary::getRequestIndex() {
     return currentIndex;
 }
 
-
+//
 std::string BaconLibrary::cleanString(std::string inputString) {
     //Removing that god damn fucking quote
     if (inputString.c_str()[0] == '\"') {

@@ -70,11 +70,12 @@ enum CacheSection {
 
 enum LocationCorrelationModel {
     NONE = 0,           //No correlation model
-    GRID = 1,           //GRID based rank shift
-    SAW = 2,            //Weird Saw-based Rank Shift
-    NORMAL = 3,         //Normal function based shift
-    BUCKET = 4,         //Bucket-based content placing
-    TWITTER = 5         //Data Trace based model
+    GRID = 1,           //GRID based rank shift         (Corrupts the overall popularity distribution)
+    SAW = 2,            //Weird Saw-based Rank Shift    (From the fucked-up paper)
+    NORMAL = 3,         //Normal function based shift   (??)
+    BUCKET = 4,         //Bucket-based content placing  (Distribute content into locations available in the map)
+    TWITTER = 5,        //Data Trace based model        (Data is loaded from twitter)
+    GPS =   6           //GPS
 };
 
 enum class AccessRestrictionPolicy {
