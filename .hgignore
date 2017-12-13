@@ -11,3 +11,4 @@ scenario/unified/results
 scenario/unified/.tkenvlog
 syntax: glob
 scenario/unified/core
+src/libveins_dbg.so

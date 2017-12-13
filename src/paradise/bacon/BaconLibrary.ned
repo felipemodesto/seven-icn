@@ -39,6 +39,7 @@ simple BaconLibrary {
 		int locationCorrelationModel = default(0);		//Model for location correlation (default = 0 specifies no location correlation)
 		
 		int sectorSize = default(100);					//Width/Height of sector (square)
+		int maximumViableDistance = default(200);		//Maximum euclidian distance between node and sector being requested in which node can viably have the content object (for GPS requests)
 		
 		int maxVehicleServers = default(0);				//Maximum number of concurrent vehicle servers in network
 		int maxVehicleClients = default(-1);			//Number of vehicles not tagged as servers, which are tagged as clients (-1 for all)
