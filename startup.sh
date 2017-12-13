@@ -13,8 +13,8 @@ elif [ "OptiPlex" = "${HOSTNAME}" ]; then
 elif [ "Optiplex-7010" = "${HOSTNAME}" ]; then
 	echo "Environment set to [OptiPlex-7010 ]"
 	/home/felipe/Simulation/BaconNet/sumo-launchd.py -vv -c sumo
-elif [ "OptiPlex-7010-hamid" = "${HOSTNAME}" ]; then
-	echo "Environment set to [OptiPlex-hamid]"
+elif [ "Optiplex-70XX" = "${HOSTNAME}" ]; then
+	echo "Environment set to [OptiPlex-7020 - Shared]"
 	/home/felipe/Simulation/BaconNet/sumo-launchd.py -vv -c sumoD
 elif [ "MacBook-Air.local" = "${HOSTNAME}" ]; then
 	echo "Environment set to [   Mac OS X   ]"

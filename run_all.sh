@@ -29,7 +29,7 @@ fi
 
 RUN_CODE="/home/felipe/Simulation/omnetpp-5.0/bin/opp_run"
 
-if [ "Optiplex" = "${HOSTNAME}" ]; then
+if [ "Optiplex-70XX" = "${HOSTNAME}" ]; then
 	RUN_CODE="/home/shared/omnet/bin/opp_run"
 fi
 
