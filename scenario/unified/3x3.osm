@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' upload='true' generator='JOSM'>
+  <node id='-10' action='modify' visible='true' lat='0.02777382131' lon='-0.05523516103'>
+    <tag k='highway' v='stop' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+  </node>
+  <node id='-11' action='modify' visible='true' lat='0.02777504254' lon='-0.0498449961'>
+    <tag k='highway' v='stop' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+  </node>
+  <node id='-16' action='modify' visible='true' lat='0.02238524499' lon='-0.04984377495'>
+    <tag k='highway' v='stop' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+  </node>
+  <node id='-18' action='modify' visible='true' lat='0.02238402376' lon='-0.05523393989'>
+    <tag k='highway' v='stop' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+  </node>
+  <node id='-138' action='modify' visible='true' lat='0.02507953318' lon='-0.05253946799'>
+    <tag k='highway' v='traffic_signals' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+  </node>
+  <node id='-141' action='modify' visible='true' lat='0.02507892256' lon='-0.05523455046'>
+    <tag k='highway' v='traffic_signals' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+  </node>
+  <node id='-144' action='modify' visible='true' lat='0.02508014379' lon='-0.04984438553'>
+    <tag k='highway' v='traffic_signals' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+  </node>
+  <node id='-147' action='modify' visible='true' lat='0.02777443193' lon='-0.05254007857'>
+    <tag k='highway' v='traffic_signals' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+  </node>
+  <node id='-150' action='modify' visible='true' lat='0.02238463437' lon='-0.05253885742'>
+    <tag k='highway' v='traffic_signals' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+  </node>
+  <way id='-12' action='modify' visible='true'>
+    <nd ref='-10' />
+    <nd ref='-147' />
+    <nd ref='-11' />
+    <nd ref='-144' />
+    <nd ref='-16' />
+    <nd ref='-150' />
+    <nd ref='-18' />
+    <nd ref='-141' />
+    <nd ref='-10' />
+    <tag k='highway' v='tertiary' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+    <tag k='restriction' v='no_u_turn' />
+  </way>
+  <way id='-142' action='modify' visible='true'>
+    <nd ref='-144' />
+    <nd ref='-138' />
+    <nd ref='-141' />
+    <tag k='highway' v='tertiary' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+    <tag k='restriction' v='no_u_turn' />
+  </way>
+  <way id='-148' action='modify' visible='true'>
+    <nd ref='-150' />
+    <nd ref='-138' />
+    <nd ref='-147' />
+    <tag k='highway' v='tertiary' />
+    <tag k='lanes' v='4' />
+    <tag k='oneway' v='no' />
+    <tag k='restriction' v='no_u_turn' />
+  </way>
+</osm>
