@@ -163,7 +163,7 @@ void BaconContentProvider::runCacheReplacement(){
 
                 //Looking for least used messages (aware of multiple occurences of same metric value)
                 int sameUseCount = 1;
-                int timesUsed = library->getCurrentIndex()+1;
+                int timesUsed = library->getCurrentRequestIndex()+1;
                 for (auto it = contentCache.begin(); it != contentCache.end() ; it++) {
                     if (it->useCount < timesUsed) {
                         timesUsed = it->useCount;
@@ -422,7 +422,6 @@ void BaconContentProvider::buildContentLibrary() {
     //std::cout.flush();
 }
 
-
 //Pseudosetter
 void BaconContentProvider::increaseUseCount(cMessage *msg) {
     cArray parArray = msg->getParList();
@@ -492,6 +491,7 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
         lookupValue = nameValue.substr(1,nameValue.length()-2);   //No fucking idea why but strings added as parameters get extra quotes around them. WTF
     }
 
+    //This function only runs once, but we call it just in case the vehicle receives a request during its setup
     buildContentLibrary();
 
     //std::cout << "(CP) <" << myId << "> Checking Availability of <" << lookupValue << ">\n";
@@ -501,6 +501,7 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
     for (auto it = contentCache.begin(); it != contentCache.end() ; it++) {
         int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
 
+        //Checking if the strings match (slow! :/)
         if (comparison == 0) {
              if (it->referenceObject->contentClass == ContentClass::GPS_DATA) {
                  //TODO: (IMPLEMENT) If working with TRAFFIC information, we'll require coordinate values to be part of the name... so deal with this in the future :D
@@ -541,6 +542,29 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
              return true;
         }
     }
+
+    //If at this point we don't have the content, we check if we have access to it via our geographical location but only if content operates on a location-based model
+    if (library->locationDependentContentMode()) {
+        //Get Local Position
+        Coord currentLocation = traci->getCurrentPosition();
+
+        //Extrapolating theoretical sector from content prefix
+        int contextFreeIndex = library->getClassFreeIndex(lookupValue);
+        int sectorCode = library->getSectorFromPrefixIndex(contextFreeIndex);
+
+        if (library->viablyCloseToContentLocation(sectorCode, currentLocation.x, currentLocation.y)) {
+            //int calculatedDistance = library->getDistanceToSector(sectorCode, currentLocation.x, currentLocation.y);
+            //std::cout << "(Lib) \tNode is close enough to fulfill request for <" << lookupValue << ">!\n";
+            //std::cout << "\t\\-->We are <" << calculatedDistance << "> linear meters from sector center <" << sectorCode << "> in question.\n";
+            //std::cout << "\t\\--> Our position is: < " << currentLocation.x << " ; " << currentLocation.y << " >\n";
+            //std::cout << "\t\\--> Sector Center-point is located at <" << (library->getSectorColumn(sectorCode) * library->getSectorSize()) << " ; " << std::to_string(library->getSectorRow(sectorCode) * library->getSectorSize()) << " >\n";
+            //std::cout.flush();
+
+            //todo? Apply cache insertion rules to this new object we hypothetically have access to (?)
+            return true;
+        }
+    }
+
     //If the item was not found
     return false;
 }

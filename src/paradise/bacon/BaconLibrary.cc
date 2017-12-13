@@ -25,9 +25,16 @@ void BaconLibrary::initialize(int stage) {
         libraryNetwork = par("libraryNetwork").longValue();
         libraryMultimedia = par("libraryMultimedia").longValue();
 
+
         priorityTransit = static_cast<ContentPriority>(par("priorityTransit").longValue());
         priorityNetwork = static_cast<ContentPriority>(par("priorityNetwork").longValue());
         priorityMultimedia = static_cast<ContentPriority>(par("priorityMultimedia").longValue());
+
+        //If some of our Interest properties are 0 we null the library sizes
+        //TODO: Clean this code by getting general interest statistics from users
+        //if (priorityTransit == 0) libraryTransit = 0;
+        //if (priorityNetwork == 0) libraryNetwork = 0;
+        //if (priorityMultimedia == 0) libraryMultimedia = 0;
 
         locationModel = static_cast<LocationCorrelationModel>(par("locationCorrelationModel").longValue());
 
@@ -37,7 +44,7 @@ void BaconLibrary::initialize(int stage) {
 
         sectorWidth = par("sectorSize").longValue();
         sectorHeight = par("sectorSize").longValue();
-
+        maximumViableDistance = par("maximumViableDistance").longValue();
 
         multimediaLibrary = NULL;
         networkLibrary = NULL;
@@ -56,7 +63,7 @@ void BaconLibrary::initialize(int stage) {
         std::cout.flush();
 
         //Setting Sequential request index
-        currentIndex = 0;
+        currentRequestIndex = 0;
     }
 
     //After we've been built and assume that the statistics object has also, we fill our content list
@@ -84,20 +91,37 @@ void BaconLibrary::initialize(int stage) {
                 stats->logContentRequest(it->contentPrefix, false, 0, 0);
             }
         }
-    }
 
-    //Creating the popularity distribution for the sectors randomly as well as associated sorted list
-    int allocatedSectors = 0;
-    sectorPopularityIndex = new int[sectorCount];
-    sectorPopularityRanking = new int[sectorCount];
-    for(int i = 0; i < sectorCount ; i++) sectorPopularityIndex[i] = 0;
-    while (allocatedSectors < sectorCount) {
-        int newSector = random() % sectorCount;
-        if (sectorPopularityIndex[newSector] == 0) {
-            allocatedSectors++;
-            sectorPopularityIndex[newSector] = allocatedSectors;
-            sectorPopularityIndex[allocatedSectors] = newSector;
+        //Creating the popularity distribution for the sectors randomly as well as associated sorted list
+        sectorPopularityIndex = new int[sectorCount];
+        sectorPopularityRanking = new int[sectorCount];
+        for(int i = 0; i < sectorCount ; i++) sectorPopularityIndex[i] = 0;
+        int allocatedSectors = 0;
+        while (allocatedSectors < sectorCount) {
+            int newSector = random() % sectorCount;
+            if (sectorPopularityIndex[newSector-1] == 0) {
+                allocatedSectors++;
+                sectorPopularityRanking[newSector-1] = allocatedSectors;
+                sectorPopularityIndex[allocatedSectors-1] = newSector;
+                //std::cout << allocatedSectors << " out of " << sectorCount << "\n";
+            }
         }
+        std::cout << "(Lib) Created a sector map with <" << sectorCount << "> sectors.";
+        std::cout.flush();
+
+        //Saving sector statistical distribution to file
+        string filename = std::string(stats->getSimulationDirectory() + stats->getSimulationPrefix() + "_sector_map.csv");
+        FILE * pFile = fopen ( filename.c_str(), "w");
+        for(int i = 0; i < sectorCount ; i++) {
+            //fprintf(pFile, "%i,%i\n",(i+1),sectorPopularityIndex[i]);
+            fprintf(pFile, "%i,%i,%i\n",getSectorRow(i+1),getSectorColumn(i+1),sectorPopularityIndex[i]);
+        }
+        fclose(pFile);
+
+        //If we're using GPS based library information, we override library sizes for non-zero library, and yes, they are shared
+        if (libraryTransit != 0) libraryTransit = sectorCount;
+        if (libraryNetwork != 0) libraryNetwork = sectorCount;
+        if (libraryMultimedia != 0) libraryMultimedia = sectorCount;
     }
 
 }
@@ -109,6 +133,7 @@ void BaconLibrary::finish() {
     if (trafficLibrary) trafficLibrary->clear();
 }
 
+//
 void BaconLibrary::registerClient(string clientPath){
     //std::cout << "(Lib) Enter registerClient\n";
     //std::cout.flush();
@@ -117,6 +142,7 @@ void BaconLibrary::registerClient(string clientPath){
     clientList.push_front(clientPath);
 }
 
+//
 void BaconLibrary::deregisterClient(string clientPath) {
     //std::cout << "(Lib) Enter deregisterClient\n";
     //std::cout.flush();
@@ -130,6 +156,7 @@ void BaconLibrary::deregisterClient(string clientPath) {
     }
 }
 
+//
 void BaconLibrary::handleMessage(cMessage *msg) {
     //std::cout << "(Lib) Enter handleMessage\n";
     //std::cout.flush();
@@ -140,6 +167,7 @@ void BaconLibrary::handleMessage(cMessage *msg) {
     }
 }
 
+//
 void BaconLibrary::setupPendingRequests() {
     //std::cout << "(Lib) Enter setupPendingRequests\n";
     //std::cout.flush();
@@ -347,7 +375,6 @@ void BaconLibrary::loadRequestSequence() {
 
     std::cout << "\t Done. Build took : " << elapsed_secs << " second(s)" << std::endl;
 }
-
 
 //
 NodeRole BaconLibrary::requestStatus(int vehicleID) {
@@ -611,11 +638,13 @@ Content_t* BaconLibrary::getContent(std::string contentPrefix) {
     return NULL;
 }
 
+//
 bool BaconLibrary::independentOperationMode() {
     if (locationModel == LocationCorrelationModel::TWITTER) return false;
     return true;
 }
 
+//
 bool BaconLibrary::locationDependentContentMode() {
     if (locationModel == LocationCorrelationModel::GPS) return true;
     return false;
@@ -624,6 +653,24 @@ bool BaconLibrary::locationDependentContentMode() {
 //
 int BaconLibrary::getContentClass(ContentClass cClass) {
     return static_cast<int>(cClass);
+}
+
+
+int BaconLibrary::getSectorSize() {
+    if (sectorWidth == sectorHeight) return sectorWidth;
+    return -1;  //If the sizes are different then we're fucked and who cares, I didn't have time to implement logic with non-regular sectors
+}
+
+//
+int BaconLibrary::getSectorRow(int sectorCode) {
+    Enter_Method_Silent();
+    return static_cast<int> (floor((sectorCode-1) / widthBlocks)) + 1;
+}
+
+//
+int BaconLibrary::getSectorColumn(int sectorCode) {
+    Enter_Method_Silent();
+    return static_cast<int> ((sectorCode-1) % widthBlocks) + 1;
 }
 
 //
@@ -635,10 +682,22 @@ int BaconLibrary::getSector(double xPos, double yPos) {
 
 //
 int BaconLibrary::getDistanceToSector(int sectorCode, double xPos, double yPos) {
-    int sectorCenterX = static_cast <int> (floor(floor(sectorCode % widthBlocks) + sectorWidth/2));
-    int sectorCenterY = static_cast <int> (floor(floor(sectorCode / widthBlocks) + sectorHeight/2));
+    Enter_Method_Silent();
+    int sectorCenterX = static_cast <int> (floor((floor((sectorCode-1) % widthBlocks) * sectorWidth) + sectorWidth/2));
+    int sectorCenterY = static_cast <int> (floor((floor((sectorCode-1) / widthBlocks) * sectorHeight) + sectorHeight/2));
     double eucledianDistance = round(sqrt( pow(sectorCenterX - xPos, 2) + pow(sectorCenterY - yPos, 2) ));
+    //std::cout << " \n Sector Analysis <" << sectorCode << "> with <" << floor(xPos) << " ; " << floor(yPos)  << "> Against <" << sectorCenterX << " ; " << sectorCenterY << ">\t Distance: " << eucledianDistance << "\n";
     return static_cast <int> (eucledianDistance);
+}
+
+//
+bool BaconLibrary::viablyCloseToContentLocation(int sectorCode, double xPos, double yPos) {
+    Enter_Method_Silent();
+    int calculatedDistance = getDistanceToSector(sectorCode, xPos, yPos);
+    //std::cout << "(Lib) Node is <" << calculatedDistance << "> linear meters to sector in question";
+    //std::cout.flush();
+    if (calculatedDistance <= maximumViableDistance) return true;
+    return false;
 }
 
 //
@@ -662,7 +721,7 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, do
             break;
 
         case LocationCorrelationModel::GPS:
-            std::cout << "(Lib) Generating Sector value from coordinates <" << xPos << ";" << yPos << "> Maps to Sector <" << sector << ">";
+            //std::cout << "(Lib) Generating Sector value from coordinates <" << xPos << ";" << yPos << "> Maps to Sector <" << sector << ">";
             //return sector;
             return getIndexForDensity(value,contentClass,sector);
         default:
@@ -734,6 +793,9 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, in
 
             switch (locationModel) {
                 case LocationCorrelationModel::NONE:
+                    shiftedIndex = itemIndex;
+                    break;
+
                 case LocationCorrelationModel::GRID:
                     shiftedIndex = ( (sector * (int)ceil(librarySize/sectorCount)) + itemIndex) % librarySize;
                     break;
@@ -742,7 +804,9 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, in
                     shiftedIndex = ( itemIndex + (librarySize % sector)) % librarySize;
                     break;
 
-                case LocationCorrelationModel::GPS: //For GPS, the sectors themselves have probability associated with them
+                case LocationCorrelationModel::GPS: //For GPS, the sectors themselves have probability associated with them, we can treat them like the regular one
+                    shiftedIndex = itemIndex;
+                    break;
 
                 default:
                     std::cout << "(Lib) Error!!\n";
@@ -759,14 +823,33 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, in
 }
 
 //
-long int BaconLibrary::getCurrentIndex() {
-    return currentIndex;
+int BaconLibrary::getClassFreeIndex(string contentPrefix) {
+
+    std::stringstream ss(contentPrefix);
+    std::string item;
+    while (std::getline(ss, item, '/')) {
+        //std::cout << "item: <" << item << ">\n";
+    }
+
+    //std::cout << "In theory, our element is <" << item << ">\n";
+    //std::cout.flush();
+
+    return std::stoi(item);
+}
+
+int BaconLibrary::getSectorFromPrefixIndex(int index) {
+    return sectorPopularityIndex[index-1];
+}
+
+//
+long int BaconLibrary::getCurrentRequestIndex() {
+    return currentRequestIndex;
 }
 
 //
 long int BaconLibrary::getRequestIndex() {
-    currentIndex++;
-    return currentIndex;
+    currentRequestIndex++;
+    return currentRequestIndex;
 }
 
 //

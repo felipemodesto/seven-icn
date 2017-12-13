@@ -73,11 +73,9 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         BaconLibrary* library;
 
     protected:
-
         void runCacheReplacement();                             //Cache replacement Policy implementation function
         void buildContentLibrary();                             //
         void addToLibrary(cMessage *msg);                       //
-
 
     public:
         void increaseUseCount(std::string prefix);              //Increase the request (use) count for a specific content object

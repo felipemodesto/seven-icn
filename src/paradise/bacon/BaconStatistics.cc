@@ -585,6 +585,16 @@ void BaconStatistics::stopStatistics() {
 }
 
 //
+string BaconStatistics::getSimulationDirectory() {
+    return simulationDirectoryFolder;
+}
+
+//
+string BaconStatistics::getSimulationPrefix() {
+    return simulationPrefix;
+}
+
+//
 void BaconStatistics::logPosition(double x, double y) {
     Enter_Method_Silent();
     if (!collectingPositions) return;

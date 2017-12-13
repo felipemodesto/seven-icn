@@ -383,7 +383,7 @@ bool BaconClient::startContentRequest(Content_t* preferedRequest) {
     //For the sake of us being able to make new requests, we attempt to clean the request list
     cleanRequestList();
 
-    //TODO: (DECIDE) Decide if we should limit concurrent requests at the client level
+    //Deciding whether we are accepting the request or rejecting it (Useful for passive request starting processes like twitter
     if ((int)ongoingRequests.size() >= (int)maxOpenRequests) {
         //std::cout << "\t\t(Cl) <" << myId << "> MAXED OUT\n";
         //std::cout.flush();
@@ -480,7 +480,6 @@ bool BaconClient::startContentRequest(Content_t* preferedRequest) {
     return true;
 }
 
-
 //Returns a candidate for a request given the internal properties of the client (class frequency, etc)
 Content_t*  BaconClient::selectObjectForRequest () {
     //std::cout << "(Cl) Enter selectObjectForRequest\n";
@@ -516,7 +515,7 @@ Content_t*  BaconClient::selectObjectForRequest () {
         contentClass = ContentClass::MULTIMEDIA;
 
     } else {
-        //TODO (IMPLEMENT) Emergency and GPS related request Events
+        //TODO (IMPLEMENT) Emergency and other request Events
         /*
         //Setting request parameters
         requestedContent = 1;
@@ -585,7 +584,6 @@ void BaconClient::handleMessage(cMessage *msg) {
 // CONTENT TRANSMISSION FUNCTIONS
 //=============================================================
 
-
 //Function that Sends Message directly to the Content Provider
 void BaconClient::sendToServiceManager(cMessage *msg) {
     send(msg, "clientExchangeOut");
@@ -602,13 +600,13 @@ void BaconClient::sendMessage(std::string messageContent) {
     std::cerr.flush();
 }
 
-//Generic funciton called upon receiving a beacon message - AKA : IGNORE Clients do not implement this feature
+//Generic function called upon receiving a beacon message - AKA : IGNORE Clients do not implement this feature
 void BaconClient::onBeacon(WaveShortMessage* wsm) {
     std::cerr << "(Cl) Error: onBeacon method should not be called in the Client Class!\n";
     std::cerr.flush();
 }
 
-//
+//Generic Function called upon receiving data message
 void BaconClient::onData(WaveShortMessage* wsm) {
     //std::cout << "(Cl) Enter onData\n";
     //std::cout.flush();
@@ -727,6 +725,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                 {
                     stats->increasePacketsSent();
 
+                    std::cout << "(Cl) \tTransfer complete!\n";
                     //std::cout << "+";
                     double difDouble = difTime.dbl();
                     stats->addcompleteTransmissionDelay(difDouble);
@@ -787,25 +786,25 @@ void BaconClient::onData(WaveShortMessage* wsm) {
     }
 }
 
-//IGNORE
+//IGNORE (VEINS Code)
 void BaconClient::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj) {
     //std::cout << "(Cl) Enter receiveSignal\n";
     //std::cout.flush();
 }
 
-//IGNORE
+//IGNORE (VEINS Code)
 void BaconClient::handleParkingUpdate(cObject* obj) {
     std::cout << "(Cl) Enter handleParkingUpdate\n";
     std::cout.flush();
 }
 
-//IGNORE
+//IGNORE (VEINS Code)
 void BaconClient::handlePositionUpdate(cObject* obj) {
     //std::cout << "(Cl) Enter handleParkingUpdate\n";
     //std::cout.flush();
 }
 
-//IGNORE
+//IGNORE (VEINS Code)
 void BaconClient::sendWSM(WaveShortMessage* wsm) {
     //std::cout << "(Cl) Enter sendWSM\n";
     //std::cout.flush();

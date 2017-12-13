@@ -208,6 +208,9 @@ public:
     void startStatistics();                  //Soft Class Initializer
     void stopStatistics();                   //Soft Class Destructor
 
+    string getSimulationDirectory();
+    string getSimulationPrefix();
+
     void logInstantLoad(int node, double load);
     void logAverageLoad(int node, double load);
 
@@ -230,8 +233,6 @@ public:
 
     void increasePacketsFallenBack(long int x);
     void increasePacketsFallenBack();
-
-
 
     void increaseServerCacheHits();
     void logDistanceFromTweet(double distance);

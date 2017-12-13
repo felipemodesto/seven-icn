@@ -43,7 +43,7 @@ protected:
     ContentCategoryDistribution_t trafficContent;
     ContentCategoryDistribution_t networkContent;
     ContentCategoryDistribution_t emergencyContent;
-    long int currentIndex;
+    long int currentRequestIndex;
 
     std::list<Content_t>* multimediaLibrary;
     std::list<Content_t>* networkLibrary;
@@ -56,8 +56,8 @@ protected:
     std::vector<double> buildCategoryLibrary(int count, int byteSize, ContentPriority priority, ContentClass category, std::string classPrefix);
     void buildContentList();
 
-    int sectorPopularityIndex[];        //Maps Sector Index to Popularity Index
-    int sectorPopularityRanking[];      //Maps Popularity Index to Sector Index
+    int* sectorPopularityIndex;        //Maps Sector Index to Popularity Index
+    int* sectorPopularityRanking;      //Maps Popularity Index to Sector Index
 
     LocationCorrelationModel locationModel;
     int sectorCount = 1;
@@ -65,6 +65,7 @@ protected:
     int heightBlocks = 1;
     double sectorWidth = 250;       //Unit = Meters
     double sectorHeight = 200;      //Unit = Meters
+    int maximumViableDistance = 200;//in Meters
 
     int maxVehicleServers = 0;
     int allocatedVehicleServers = 0;
@@ -99,7 +100,9 @@ public:
     std::string networkPrefix = "n";
     std::string multimediaPrefix = "m";
 
+    bool locationDependentContentMode();
     bool independentOperationMode();
+
     void setupPendingRequests();
     void loadRequestSequence();
     void registerClient(string clientPath);
@@ -111,10 +114,14 @@ public:
     int getActiveServers();
     int getMaximumServers();
 
-    int getSector(double xPos, double yPos);                            //Maps a XY point to a sector
-    int getDistanceToSector(int sectorCode, double xPos, double yPos);  //Returns the distance between the XY point to the center of the sector with given sectorCode
+    int getSectorSize();
+    int getSectorRow(int sectorCode);
+    int getSectorColumn(int sectorCode);
+    int getSector(double xPos, double yPos);                                        //Maps a XY point to a sector
+    int getDistanceToSector(int sectorCode, double xPos, double yPos);              //Returns the distance between the XY point to the center of the sector with given sectorCode
+    bool viablyCloseToContentLocation(int sectorCode, double xPos, double yPos);    //Returns true if node is close enough to sector for it to be considered as being able to produce that content object out of thin air
 
-    long int getCurrentIndex();                      //For Statistics & Maximum Count Use
+    long int getCurrentRequestIndex();                      //For Statistics & Maximum Count Use
     long int getRequestIndex();                      //Returns next index (sequence ID) in global request list numbering scheme (to avoid doubles)
     Content_t* getContent(std::string prefix);
     std::list<Content_t>* getMultimediaContentList();
@@ -127,6 +134,8 @@ public:
     int getIndexForDensity(double value, ContentClass contentClass, int sector );
     int getIndexForDensity(double value, ContentClass contentClass, double xPos, double yPos );
     int getContentClass(ContentClass cClass);
+    int getClassFreeIndex(string contentPrefix);    //Returns the last portion of the prefix, without any class property as an integer (cause that is what we use for simplicity)
+    int getSectorFromPrefixIndex(int index);
 
     static std::string cleanString(std::string inputString);
 };
