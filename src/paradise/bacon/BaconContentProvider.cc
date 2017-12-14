@@ -341,10 +341,10 @@ void BaconContentProvider::buildContentLibrary() {
     }
 
     //Building our Content Library from the complete library
-    if (startingCache == -1) {
+    if (startingCache == -1 and !library->locationDependentContentMode()) {
         //Adding Items from other categories
-        //std::cout << "(CP) Server <" << myId << "> Standing By.\n";
-        //std::cout.flush();
+        std::cout << "(CP) Server <" << myId << "> Standing By.\n";
+        std::cout.flush();
 
         std::list<Content_t>* multimediaLibrary = library->getMultimediaContentList();
         std::list<Content_t>* networkLibrary = library->getNetworkContentList();
