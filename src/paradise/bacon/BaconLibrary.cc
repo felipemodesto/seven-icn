@@ -92,36 +92,40 @@ void BaconLibrary::initialize(int stage) {
             }
         }
 
-        //Creating the popularity distribution for the sectors randomly as well as associated sorted list
-        sectorPopularityIndex = new int[sectorCount];
-        sectorPopularityRanking = new int[sectorCount];
-        for(int i = 0; i < sectorCount ; i++) sectorPopularityIndex[i] = 0;
-        int allocatedSectors = 0;
-        while (allocatedSectors < sectorCount) {
-            int newSector = random() % sectorCount;
-            if (sectorPopularityIndex[newSector-1] == 0) {
-                allocatedSectors++;
-                sectorPopularityRanking[newSector-1] = allocatedSectors;
-                sectorPopularityIndex[allocatedSectors-1] = newSector;
-                //std::cout << allocatedSectors << " out of " << sectorCount << "\n";
+        if (locationModel == LocationCorrelationModel::GPS) {
+            //Creating the popularity distribution for the sectors randomly as well as associated sorted list
+            sectorPopularityIndex = new int[sectorCount];
+            sectorPopularityRanking = new int[sectorCount];
+            for(int i = 0; i < sectorCount ; i++) sectorPopularityIndex[i] = 0;
+            int allocatedSectors = 0;
+            while (allocatedSectors < sectorCount) {
+                int newSector = random() % sectorCount;
+                if (sectorPopularityIndex[newSector-1] == 0) {
+                    allocatedSectors++;
+                    sectorPopularityRanking[newSector-1] = allocatedSectors;
+                    sectorPopularityIndex[allocatedSectors-1] = newSector;
+                    //std::cout << allocatedSectors << " out of " << sectorCount << "\n";
+                }
             }
-        }
-        std::cout << "(Lib) Created a sector map with <" << sectorCount << "> sectors.";
-        std::cout.flush();
+            std::cout << "(Lib) Created a sector map with <" << sectorCount << "> sectors.";
+            std::cout.flush();
 
-        //Saving sector statistical distribution to file
-        string filename = std::string(stats->getSimulationDirectory() + stats->getSimulationPrefix() + "_sector_map.csv");
-        FILE * pFile = fopen ( filename.c_str(), "w");
-        for(int i = 0; i < sectorCount ; i++) {
-            //fprintf(pFile, "%i,%i\n",(i+1),sectorPopularityIndex[i]);
-            fprintf(pFile, "%i,%i,%i\n",getSectorRow(i+1),getSectorColumn(i+1),sectorPopularityIndex[i]);
-        }
-        fclose(pFile);
+            //Saving sector statistical distribution to file
+            string filename = std::string(stats->getSimulationDirectory() + stats->getSimulationPrefix() + "_sector_map.csv");
+            FILE * pFile = fopen ( filename.c_str(), "w");
+            for(int i = 0; i < sectorCount ; i++) {
+                //fprintf(pFile, "%i,%i\n",(i+1),sectorPopularityIndex[i]);
+                fprintf(pFile, "%i,%i,%i\n",getSectorRow(i+1),getSectorColumn(i+1),sectorPopularityIndex[i]);
+            }
+            fclose(pFile);
 
-        //If we're using GPS based library information, we override library sizes for non-zero library, and yes, they are shared
-        if (libraryTransit != 0) libraryTransit = sectorCount;
-        if (libraryNetwork != 0) libraryNetwork = sectorCount;
-        if (libraryMultimedia != 0) libraryMultimedia = sectorCount;
+            //If we're using GPS based library information, we override library sizes for non-zero library, and yes, they are shared
+            if (libraryTransit != 0) libraryTransit = sectorCount;
+            if (libraryNetwork != 0) libraryNetwork = sectorCount;
+            if (libraryMultimedia != 0) libraryMultimedia = sectorCount;
+            maxVehicleServers = 0;
+        }
+
     }
 
 }

@@ -12,3 +12,4 @@ scenario/unified/.tkenvlog
 syntax: glob
 scenario/unified/core
 src/libveins_dbg.so
+src/libveins.so
