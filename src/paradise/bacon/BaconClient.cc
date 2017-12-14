@@ -725,7 +725,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                 {
                     stats->increasePacketsSent();
 
-                    std::cout << "(Cl) \tTransfer complete!\n";
+                    //std::cout << "(Cl) \tTransfer complete!\n";
                     //std::cout << "+";
                     double difDouble = difTime.dbl();
                     stats->addcompleteTransmissionDelay(difDouble);
