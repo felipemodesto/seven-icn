@@ -1,11 +1,27 @@
 //
-// Generated file, do not edit! Created by nedtool 5.0 from veins/modules/messages/WaveShortMessage.msg.
+// Generated file, do not edit! Created by nedtool 5.2 from veins/modules/messages/WaveShortMessage.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
 #ifdef _MSC_VER
 #  pragma warning(disable:4101)
 #  pragma warning(disable:4065)
+#endif
+
+#if defined(__clang__)
+#  pragma clang diagnostic ignored "-Wshadow"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wunused-parameter"
+#  pragma clang diagnostic ignored "-Wc++98-compat"
+#  pragma clang diagnostic ignored "-Wunreachable-code-break"
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic ignored "-Wshadow"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wunused-parameter"
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wsuggest-attribute=noreturn"
+#  pragma GCC diagnostic ignored "-Wfloat-conversion"
 #endif
 
 #include <iostream>
@@ -121,13 +137,13 @@ void doParsimArrayUnpacking(omnetpp::cCommBuffer *b, T *t, int n)
 template<typename T>
 void doParsimPacking(omnetpp::cCommBuffer *, const T& t)
 {
-    throw omnetpp::cRuntimeError("Parsim error: no doParsimPacking() function for type %s", omnetpp::opp_typename(typeid(t)));
+    throw omnetpp::cRuntimeError("Parsim error: No doParsimPacking() function for type %s", omnetpp::opp_typename(typeid(t)));
 }
 
 template<typename T>
 void doParsimUnpacking(omnetpp::cCommBuffer *, T& t)
 {
-    throw omnetpp::cRuntimeError("Parsim error: no doParsimUnpacking() function for type %s", omnetpp::opp_typename(typeid(t)));
+    throw omnetpp::cRuntimeError("Parsim error: No doParsimUnpacking() function for type %s", omnetpp::opp_typename(typeid(t)));
 }
 
 }  // namespace omnetpp
@@ -161,9 +177,9 @@ inline std::ostream& operator<<(std::ostream& out, const std::vector<T,A>& vec)
     return out;
 }
 
-Register_Class(WaveShortMessage);
+Register_Class(WaveShortMessage)
 
-WaveShortMessage::WaveShortMessage(const char *name, int kind) : ::omnetpp::cPacket(name,kind)
+WaveShortMessage::WaveShortMessage(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
 {
     this->wsmVersion = 0;
     this->securityType = 0;
@@ -413,6 +429,7 @@ class WaveShortMessageDescriptor : public omnetpp::cClassDescriptor
     virtual const char *getFieldProperty(int field, const char *propertyname) const override;
     virtual int getFieldArraySize(void *object, int field) const override;
 
+    virtual const char *getFieldDynamicTypeString(void *object, int field, int i) const override;
     virtual std::string getFieldValueAsString(void *object, int field, int i) const override;
     virtual bool setFieldValueAsString(void *object, int field, int i, const char *value) const override;
 
@@ -420,7 +437,7 @@ class WaveShortMessageDescriptor : public omnetpp::cClassDescriptor
     virtual void *getFieldStructValuePointer(void *object, int field, int i) const override;
 };
 
-Register_ClassDescriptor(WaveShortMessageDescriptor);
+Register_ClassDescriptor(WaveShortMessageDescriptor)
 
 WaveShortMessageDescriptor::WaveShortMessageDescriptor() : omnetpp::cClassDescriptor("WaveShortMessage", "omnetpp::cPacket")
 {
@@ -599,6 +616,20 @@ int WaveShortMessageDescriptor::getFieldArraySize(void *object, int field) const
     WaveShortMessage *pp = (WaveShortMessage *)object; (void)pp;
     switch (field) {
         default: return 0;
+    }
+}
+
+const char *WaveShortMessageDescriptor::getFieldDynamicTypeString(void *object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
+    if (basedesc) {
+        if (field < basedesc->getFieldCount())
+            return basedesc->getFieldDynamicTypeString(object,field,i);
+        field -= basedesc->getFieldCount();
+    }
+    WaveShortMessage *pp = (WaveShortMessage *)object; (void)pp;
+    switch (field) {
+        default: return nullptr;
     }
 }
 
