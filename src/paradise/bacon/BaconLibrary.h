@@ -53,6 +53,7 @@ protected:
     std::vector<double> networkCummulativeProbabilityCurve;
     std::vector<double> trafficCummulativeProbabilityCurve;
 
+    std::vector<double> getProbabilityCurve(int count);
     std::vector<double> buildCategoryLibrary(int count, int byteSize, ContentPriority priority, ContentClass category, std::string classPrefix);
     void buildContentList();
 

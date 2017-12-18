@@ -99,25 +99,30 @@ void BaconLibrary::initialize(int stage) {
             for(int i = 0; i < sectorCount ; i++) sectorPopularityIndex[i] = 0;
             int allocatedSectors = 0;
             while (allocatedSectors < sectorCount) {
-                int newSector = random() % sectorCount;
-                if (sectorPopularityIndex[newSector-1] == 0) {
+                int newSector = (random() % sectorCount) + 1;
+                if (sectorPopularityRanking[newSector-1] == 0) {
                     allocatedSectors++;
                     sectorPopularityRanking[newSector-1] = allocatedSectors;
                     sectorPopularityIndex[allocatedSectors-1] = newSector;
                     //std::cout << allocatedSectors << " out of " << sectorCount << "\n";
                 }
             }
+
+
             std::cout << "(Lib) Created a sector map with <" << sectorCount << "> sectors.";
             std::cout.flush();
+
+            std::vector<double> probCurve = getProbabilityCurve(sectorCount);
 
             //Saving sector statistical distribution to file
             string filename = std::string(stats->getSimulationDirectory() + stats->getSimulationPrefix() + "_sector_map.csv");
             FILE * pFile = fopen ( filename.c_str(), "w");
             for(int i = 0; i < sectorCount ; i++) {
                 //fprintf(pFile, "%i,%i\n",(i+1),sectorPopularityIndex[i]);
-                fprintf(pFile, "%i,%i,%i\n",getSectorRow(i+1),getSectorColumn(i+1),sectorPopularityIndex[i]);
+                fprintf(pFile, "%i,%i,%i,%f\n",getSectorRow(i+1),getSectorColumn(i+1),sectorPopularityRanking[i],probCurve[sectorPopularityRanking[i]-1]);
             }
             fclose(pFile);
+            probCurve.clear();
 
             //If we're using GPS based library information, we override library sizes for non-zero library, and yes, they are shared
             if (libraryTransit != 0) libraryTransit = sectorCount;
@@ -591,6 +596,51 @@ std::vector<double> BaconLibrary::buildCategoryLibrary(int count, int byteSize, 
     //Returning the probability list
     return cummulativeProbability;
 }
+
+
+//Returns vector with individual probability of each item
+std::vector<double> BaconLibrary::getProbabilityCurve(int count) {
+    //Setting Up for Library Popularity Calculations
+    float CDF = 0;
+    float Hk = 0;
+    float HN = 0;
+
+    //Generating Harmonic Series
+    for (int i = 1 ; i <= count ; i++) {
+        HN += 1 / static_cast<double>(pow(i, zipfCaracterization));
+    }
+    std::vector<double> cummulativeProbability = std::vector<double> (count);
+
+    //Generating Objects for Class
+    for (long j = 0; j < count ; j++) {
+
+        //If Zipf == 0 we don't use ZIPF, everything is uniformily randomly distributed
+        if (zipfCaracterization != 0) {
+            Hk += 1 / static_cast<double>(pow(j+1,zipfCaracterization));
+            CDF = Hk/HN;
+
+            //std::cout << std::to_string(j+1) << ", " << std::to_string(CDF) << "\n";
+            //std::cout.flush();
+
+            //multimediaCummulativeProbability[j] = CDF;
+        } else {
+            CDF = static_cast<double>(1/(double)count) * (j+1);
+            //std::cout << "Boo, " << std::to_string(j+1) << ", " << std::to_string(Hk) << ", " << std::to_string(CDF) << "\n";
+            //std::cout.flush();
+        }
+        cummulativeProbability[j] = CDF;
+    }
+
+    std::vector<double> individualProbability = std::vector<double> (count);
+    individualProbability[0] = cummulativeProbability[0];
+    for (long j = 1; j < count ; j++) {
+        individualProbability[j] = cummulativeProbability[j] - cummulativeProbability[j-1];
+    }
+
+    //Returning the probability list
+    return individualProbability;
+}
+
 
 //
 std::list<Content_t>* BaconLibrary::getMultimediaContentList() {
