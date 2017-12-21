@@ -42,11 +42,12 @@ protected:
     long int unviableRequests;      //Requests that were not initiated because the client was busy or something similar
 
     //Data Packet Related Statistics
-    long int packetsSent;
-    long int packetsForwarded;
-    long int packetsUnserved;
-    long int packetsLost;
-    long int packetsFallenback;
+    long int packetsSent;           //Requests fulfilled by remote node
+    long int packetsSelfServed;     //Requests fulfilled locally
+    long int packetsForwarded;      //Requests forwarded (is not restrict to complete return path)
+    long int packetsUnserved;       //Requests that did not get a response
+    long int packetsLost;           //Requests whose response failed after a content server was found
+    long int packetsFallenback;     //Requests fulfilled by resorting to infrastructure
     long int chunksLost;
     long int totalVehicles;
     long int activeVehicles;
@@ -109,6 +110,8 @@ protected:
     std::list<LoadAtTime_t> instantLoadList;
     std::list<LoadAtTime_t> averageLoadList;
 
+    std::list<RequestReplyAttempt_t*> openRequestList;
+
     string simulationDirectoryFolder;
     string simulationPrefix;
     string requestLocationStatsFile;
@@ -140,6 +143,7 @@ protected:
     omnetpp::cOutVector serverHitVect;
     omnetpp::cOutVector requestsStartedVect;
     omnetpp::cOutVector packetsSentVect;
+    omnetpp::cOutVector packetsSelfServVect;
     omnetpp::cOutVector packetsForwardedVect;
     omnetpp::cOutVector packetsUnservedVect;
     omnetpp::cOutVector packetsFallenbackVect;
@@ -220,19 +224,20 @@ public:
     void logParticipationDuration(double participationLength);
     void logContactDuration(double contactDuration);
 
-    void increasePacketsSent();                 //Increase number of Packets Sent by 1
-    void increasePacketsSent(int x);            //Increase number of Packets Sent by X
-    void increasePacketsForwarded();            //Increase number of Packets Forwarded by 1
-    void increasePacketsForwarded(int x);       //Increase number of Packets Forwarded by X
-    void increasePacketsUnserved();             //Increase number of Packets that were not served by 1
-    void increasePacketsUnserved(int x);        //Increase number of Packets that were not served by X
-    void increasePacketsLost();                 //Increase number of Packets Lost by 1
-    void increasePacketsLost(int x);            //Increase number of Packets Lost by X
-    void increaseChunksLost();                  //Increase number of Chunks Lost by 1
-    void increaseChunksLost(int x);             //Increase number of Chunks Lost by X
+    void logProvisionAttempt(int providerID, int requestID);
 
-    void increasePacketsFallenBack(long int x);
-    void increasePacketsFallenBack();
+    void increasePacketsSent(int myId, int requestID);                  //Increase number of Packets Sent by 1
+    void increasePacketsSent(int x,int myId, int requestID);            //Increase number of Packets Sent by X
+    void increasePacketsForwarded(int myId, int requestID);             //Increase number of Packets Forwarded by 1
+    void increasePacketsForwarded(int x,int myId, int requestID);       //Increase number of Packets Forwarded by X
+    void increasePacketsUnserved(int myId, int requestID);              //Increase number of Packets that were not served by 1
+    void increasePacketsUnserved(int x,int myId, int requestID);        //Increase number of Packets that were not served by X
+    void increasePacketsLost(int myId, int requestID);                  //Increase number of Packets Lost by 1
+    void increasePacketsLost(int x,int myId, int requestID);            //Increase number of Packets Lost by X
+    void increaseChunksLost(int myId, int requestID);                   //Increase number of Chunks Lost by 1
+    void increaseChunksLost(int x,int myId, int requestID);             //Increase number of Chunks Lost by X
+    void increasePacketsFallenBack(long int x,int myId, int requestID);
+    void increasePacketsFallenBack(int myId, int requestID);
 
     void increaseServerCacheHits();
     void logDistanceFromTweet(double distance);

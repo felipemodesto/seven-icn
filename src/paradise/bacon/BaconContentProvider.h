@@ -92,7 +92,7 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         bool globalPopularityCacheDecision(Connection_t* connection);           //Decision algorithm function whether item should be cached
         bool globalMinimumPopularityCacheDecision(Connection_t* connection);    //Decision algorithm function whether item should be cached
 
-        bool handleLookup(std::string prefix);                  //Deal with Content Lookup Requests
+        bool handleLookup(std::string prefix, int requestID);    //Deal with Content Lookup Requests
         void removeContentFromLibrary(Content_t* newContent);   //Remove item from cache
         void addContentToLibrary(Content_t* newContent);        //Add content to Cache
         NodeRole getRole();                                     //Check if we're a SERVER or CLIENT or whatever (Have everything)

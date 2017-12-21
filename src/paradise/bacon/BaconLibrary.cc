@@ -25,7 +25,6 @@ void BaconLibrary::initialize(int stage) {
         libraryNetwork = par("libraryNetwork").longValue();
         libraryMultimedia = par("libraryMultimedia").longValue();
 
-
         priorityTransit = static_cast<ContentPriority>(par("priorityTransit").longValue());
         priorityNetwork = static_cast<ContentPriority>(par("priorityNetwork").longValue());
         priorityMultimedia = static_cast<ContentPriority>(par("priorityMultimedia").longValue());
