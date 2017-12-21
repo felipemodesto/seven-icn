@@ -868,7 +868,7 @@ void BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
     if (downstreamConnection == NULL){
 
        //Checking if we have this piece of content. o.õ
-       if (cache->handleLookup(prefixValue) == true) {
+       if (cache->handleLookup(prefixValue,idValue) == true) {
            //Nodes should not be accepting connections that have not been created. This sounds bad.
            delete(wsm);
            return;
@@ -1267,7 +1267,7 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
     }
 
     //Checking if item is in our database
-    if (cache->handleLookup(prefixValue) == true) {
+    if (cache->handleLookup(prefixValue,idValue) == true) {
 
         //Checking to log statistics for a new connection
         if (!downstreamMessageAlreadyExisted) {

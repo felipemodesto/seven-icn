@@ -697,16 +697,14 @@ void BaconClient::onData(WaveShortMessage* wsm) {
         }
     }
 
-
     if (strcmp(wsm->getName(),MessageClass::DATA.c_str()) == 0 ) {
-
         desiredRequest->fullfillTime = simTime();
         SimTime difTime = desiredRequest->fullfillTime - desiredRequest->requestTime;
 
         switch( wsm->getKind() ) {
             case ConnectionStatus::DONE_FALLBACK:
                 {
-                    stats->increasePacketsFallenBack();
+                    stats->increasePacketsFallenBack(myId,requestID);
 
                     /*
                     double difDouble = difTime.dbl();
@@ -723,7 +721,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
             case ConnectionStatus::DONE_AVAILABLE:
             case ConnectionStatus::DONE_RECEIVED:
                 {
-                    stats->increasePacketsSent();
+                    stats->increasePacketsSent(myId,requestID);
 
                     //std::cout << "(Cl) \tTransfer complete!\n";
                     //std::cout << "+";
@@ -739,7 +737,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
             case ConnectionStatus::DONE_UNAVAILABLE:
             case ConnectionStatus::DONE_NO_DATA:
                 {
-                    stats->increasePacketsUnserved();
+                    stats->increasePacketsUnserved(myId,requestID);
 
                     //std::cout << "?";
                     double difDouble = difTime.dbl();
@@ -752,7 +750,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
 
             case ConnectionStatus::DONE_PARTIAL:
                 {
-                    stats->increasePacketsLost();
+                    stats->increasePacketsLost(myId,requestID);
 
                     //std::cout << "-";
                     //Adding an incomplete transfer to our backlogged list for future tests

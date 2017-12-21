@@ -181,6 +181,13 @@ struct PendingContent_t : CachedContent_t {
 //  CONNECTION & NETWORK RELATED DEFINITIONS
 ////////////////////////////////////////////////////////////////////
 
+struct RequestReplyAttempt_t {
+    int requestID;
+    int providerID;
+    int clientID;
+    simtime_t responseTime;
+};
+
 enum ConnectionStatus {
     ERROR = 0,                  //SOME WEIRD ERROR HAPPENED
     IDLE = 10,                  //NOT DOING ANYTHING
@@ -272,13 +279,14 @@ struct Neighbor_t {
     NetworkLoadStatus load;
 };
 
+//
 struct NetworkPacket_t {
     simtime_t arrival;
     long bitSize;
     ContentClass type;
 };
 
-
+//
 struct Connection_t {
     long requestID;                                         //Unique ID assigned to 1st Node in Connection
     long peerID;                                            //ID of peer this connection
@@ -307,6 +315,7 @@ struct Connection_t {
     ConnectionStatus connectionStatus;                      //Connection Status
 };
 
+//
 class MessageParameter {
 public:
     static const std::string CONNECTION_ID;     //"Unique" message ID

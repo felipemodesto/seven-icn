@@ -484,7 +484,7 @@ void BaconContentProvider::addToLibrary(cMessage *msg) {
 }
 
 //Function meant to handle Content Lookup Requests
-bool  BaconContentProvider::handleLookup(std::string nameValue) {
+bool  BaconContentProvider::handleLookup(std::string nameValue, int requestID) {
     //Removing '"'s from text
     std::string lookupValue = nameValue;
     if (nameValue.c_str()[0] == '\"') {
@@ -539,6 +539,7 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
              //std::cout.flush();
 
              //In general, if we found our item, we have it. (See implementation for GPS location data
+             stats->logProvisionAttempt(myId, requestID);
              return true;
         }
     }
@@ -561,6 +562,7 @@ bool  BaconContentProvider::handleLookup(std::string nameValue) {
             //std::cout.flush();
 
             //todo? Apply cache insertion rules to this new object we hypothetically have access to (?)
+            stats->logProvisionAttempt(myId, requestID);
             return true;
         }
     }
