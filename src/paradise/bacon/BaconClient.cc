@@ -700,6 +700,7 @@ void BaconClient::onData(WaveShortMessage* wsm) {
     if (strcmp(wsm->getName(),MessageClass::DATA.c_str()) == 0 ) {
         desiredRequest->fullfillTime = simTime();
         SimTime difTime = desiredRequest->fullfillTime - desiredRequest->requestTime;
+        //std::cout << "<" << myId << ">\t\\--> Request finalized (don't care about state) after time <" << difTime.dbl() << "> with status <" << wsm->getKind() << "> from <" << wsm->getSenderAddress() << ">\n";
 
         switch( wsm->getKind() ) {
             case ConnectionStatus::DONE_FALLBACK:
