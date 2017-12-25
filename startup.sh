@@ -18,7 +18,7 @@ elif [ "Optiplex-70XX" = "${HOSTNAME}" ]; then
 	/home/felipe/Simulation/BaconNet/sumo-launchd.py -vv -c sumo
 elif [ "bulbasaur" = "${HOSTNAME}" ]; then
 	echo "Environment set to [ Ubuntu 17.10 ]"
-	/Users/felipe/Simulation/BaconNet/sumo-launchd.py -vv -c sumoD
+	/home/felipe/Simulation/BaconNet/sumo-launchd.py -vv -c sumoD
 else
 	echo "Envorinment set to [   Unknown    ] --> (${HOSTNAME})"
 	~/Simulation/BaconNet/sumo-launchd.py -vv -c sumo &
