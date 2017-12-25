@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- debug config -->
+<launch>
+  <copy file="highway.300.randomTrips.xml"/>
+	<copy file="highway.net.xml"/>
+	<copy file="highway.300.routes.xml"/>
+	<copy file="highway.poly.xml"/>
+  	<copy file="highway.reroute.xml"/>
+  	<copy file="highway.reroute.xml"/>
+	<copy file="highway.weight.xml"/>
+	<copy file="highway.300.sumo.cfg" type="config"/>
+</launch>
