@@ -535,7 +535,7 @@ bool  BaconContentProvider::handleLookup(std::string nameValue, int requestID) {
                  std::cerr.flush();
                  return false;
              }
-             //std::cout << "\t \\--> Found it.\n";
+             //std::cout << "<" << myId << ">\t \\--> Found Requested object, my role is <" << nodeRole << ">.\n";
              //std::cout.flush();
 
              //In general, if we found our item, we have it. (See implementation for GPS location data
