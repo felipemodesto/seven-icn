@@ -13,5 +13,4 @@ syntax: glob
 scenario/unified/core
 src/libveins_dbg.so
 src/libveins.so
-scenario/unified/Makefile.1s308d1s
-scenario/unified/Makefile.c4qy88f2
+scenario/unified/Makefile.*
