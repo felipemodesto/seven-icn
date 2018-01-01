@@ -1,7 +1,12 @@
 #!/bin/bash
 #
 #
+
+#Making sure everything is clean
+./configure
+make clean
 make MODE=release
+
 
 cd /home/felipe/Simulation/BaconNet/scenario/unified
 
