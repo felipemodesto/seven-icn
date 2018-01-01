@@ -154,8 +154,8 @@ void BaconStatistics::startStatistics() {
     //Checking if we already have simulation results for this file
     FILE *  pFile = fopen ( generalStatisticsFile.c_str(), "r");
     if (pFile != NULL) {
-        std::cerr << "(St) Error: Simulation file already present in folder. Skipping simulation to accelerate simulation.\n";
-        std::cerr.flush();
+        std::cout << "(St) Warning: Simulation file already present in folder. Skipping simulation to accelerate simulation.\n";
+        std::cout.flush();
         exit(0);
     }
 
