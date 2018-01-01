@@ -1,0 +1,16 @@
+.csettings
+tmp
+out
+run
+out/gcc-debug
+out/gcc-release
+scenario/grid/results
+scenario/line/results
+scenario/ottawa/results
+scenario/unified/results
+scenario/unified/.tkenvlog
+syntax: glob
+scenario/unified/core
+src/libveins_dbg.so
+src/libveins.so
+scenario/unified/Makefile.1s308d1s
