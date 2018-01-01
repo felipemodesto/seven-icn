@@ -16,7 +16,7 @@ fi
 if [[ -n "${2}" ]]; then
   RUN_GROUP="${2}"
 else
-  RUN_GROUP="0..39"
+  RUN_GROUP="0..29"
 fi
 #
 # Run CPU Count
@@ -42,7 +42,7 @@ if [ "bulbasaur" = "${HOSTNAME}" ]; then
 fi
 
 LINK_CODE="-u Cmdenv -n ..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false -f baconnet.ini"
-RUN_COMMAND="${THREAD_COUNT}  ${RUN_CODE} -r ${RUN_GROUP} -c ${SCENARIO} ${LINK_CODE}"
+RUN_COMMAND="${THREAD_COUNT} -b1 ${RUN_CODE} -r ${RUN_GROUP} -c ${SCENARIO} ${LINK_CODE}"
 
 #RUN RELEASE = LINE_EDGE
 #opp_run_release -r 0 -u Cmdenv -c Line_Edge -n ../../examples/veins:..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false baconnet.ini
