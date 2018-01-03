@@ -125,10 +125,10 @@ void BaconContentProvider::runCacheReplacement(){
                     std::cout.flush();
                 }
 
-                if (sameTimeCount > 1) {
-                    std::cout << "(CP) Warning: Multiple items with same caching time detected! Earliest Cache Time is <" << earliestTime.str() << ">\n";
-                    std::cout.flush();
-                }
+                //if (sameTimeCount > 1) {
+                //    std::cout << "(CP) Warning: Multiple items with same caching time detected! Earliest Cache Time is <" << earliestTime.str() << ">\n";
+                //    std::cout.flush();
+                //}
 
                 bool foundRemoval = false;
                 //Searching for last item with desired time value to be removed
