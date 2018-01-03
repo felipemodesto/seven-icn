@@ -30,7 +30,7 @@ simple BaconServiceManager extends BaseWaveApplLayer {
     	bool sendWhileParking  = default(true); 			//send messages when the car is parked
     	double maxSimultaneousConnections = default(-1);	//Number of simultaneous connected allowed for a node (-1 == Infinite)
 		double transferTimeoutTime = default(10);			//Time before transfer timer is timed out
-    	int inNetworkCaching  = default(0);		 			//in-network caching policy
+    	int cacheCoordinationPolicy  = default(0);		 			//in-network caching policy
     	double cacheCopyProbability  = default(0.5);		//in-network probabilistic cache replacement probability
     	double interestBroadcastTimeout = default(2);		//Time before an interest broadcast is timed out
     	int maxAttempts = default(3);						//Maximum number of attempts with failure before we give up on a connection

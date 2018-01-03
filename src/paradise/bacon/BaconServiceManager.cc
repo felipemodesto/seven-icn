@@ -35,7 +35,7 @@ void BaconServiceManager::initialize(int stage) {
             maxSimultaneousConnections = par("maxSimultaneousConnections").doubleValue();
 
             cacheCopyProbability = par("cacheCopyProbability").doubleValue();
-            inNetworkCaching = static_cast<CacheInNetworkCoordPolicy>(par("inNetworkCaching").longValue());
+            cacheCoordinationPolicy = static_cast<CacheInNetworkCoordPolicy>(par("cacheCoordinationPolicy").longValue());
 
             slidingWindowSize = par("slidingWindowSize").longValue();
             minimumForwardDelay = par("minimumForwardDelay").doubleValue();
@@ -126,13 +126,13 @@ void BaconServiceManager::initialize(int stage) {
 
 //End of Execution Function (NOT A DESTRUCTOR, JUST CLEANUP AND STATISTICS RELATED)
 void BaconServiceManager::finish() {
-    //Storing final object statistics upon object destruction
+    //Logging HISTOGRAM statistics (separate from live-info collected by clients)
     stats->setPacketsSent(totalPacketsSent);
     stats->setPacketsLost(totalPacketsLost);
     stats->setPacketsUnserved(totalPacketsUnserved);
+    stats->setContentUnavailable(totalContentUnavailableResponses);
     stats->setChunksLost(totalChunksLost);
     stats->setServerBusy(totalServerBusyResponses);
-    stats->setContentUnavailable(totalContentUnavailableResponses);
 
     simtime_t duration = simTime() - enterSimulation;
     stats->logParticipationDuration(duration.dbl());
@@ -2413,7 +2413,7 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
                     }
                 }
                 */
-                switch (inNetworkCaching) {
+                switch (cacheCoordinationPolicy) {
                     case NEVER:     //Never leave a copy
                         break;
 
@@ -2547,7 +2547,7 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
                     }
 
                     default:
-                        std::cerr << "(SM) Cache Coordination Policy <" << inNetworkCaching << "> Not Known!\n";
+                        std::cerr << "(SM) Cache Coordination Policy <" << cacheCoordinationPolicy << "> Not Known!\n";
                         std::cerr.flush();
                         break;
 
@@ -2562,7 +2562,7 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
         //Checking for potential cache operation requirements from a server standpoint
         case ConnectionStatus::DONE_PROVIDED:
             //Checking if we need to delete our local copy after forwarding content (Cache coordination policy dependent)
-            if (inNetworkCaching == CacheInNetworkCoordPolicy::MCD && connection->downstreamHopCount != 0) {
+            if (cacheCoordinationPolicy == CacheInNetworkCoordPolicy::MCD && connection->downstreamHopCount != 0) {
                 removeContentFromCache(connection);
             }
             break;

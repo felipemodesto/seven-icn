@@ -428,9 +428,9 @@ void BaconStatistics::stopStatistics() {
 
 
     //Calculating Average Delays
-    totalTransmissionDelay = totalTransmissionDelay/(double)totalTransmissionCount;
-    completeTransmissionDelay = completeTransmissionDelay/(double)completeTransmissionCount;
-    incompleteTranmissionDelay = incompleteTranmissionDelay/(double)incompleteTransmissionCount;
+    totalTransmissionDelay = (double)totalTransmissionDelay/((double)totalTransmissionCount);
+    completeTransmissionDelay = (double)completeTransmissionDelay/((double)completeTransmissionCount);
+    incompleteTranmissionDelay = (double)incompleteTranmissionDelay/((double)incompleteTransmissionCount);
 
     //Saving Network Load Statistics
     if (collectingLoad) {
@@ -662,6 +662,21 @@ void BaconStatistics::increasedBackloggedResponses(){
     backloggedClientResponseVect.record(backloggedResponses);
 }
 
+
+//Increase number of Packets Sent to self by 1
+void BaconStatistics::increasePacketsSelfServed(int myId, int requestID) {
+    Enter_Method_Silent();
+    increasePacketsSelfServed(1,myId,requestID);
+}
+
+//Increase number of Packets Sent to self by X
+void BaconStatistics::increasePacketsSelfServed(int x, int myId, int requestID) {
+    Enter_Method_Silent();
+    //Logging self-message
+    BaconStatistics::packetsSelfServed+= x;
+    if (shouldRecordData()) packetsSelfServVect.record(packetsSelfServed);
+}
+
 //Increase number of Packets Sent by X
 void BaconStatistics::increasePacketsSent(int x, int myId, int requestID) {
     Enter_Method_Silent();
@@ -672,9 +687,7 @@ void BaconStatistics::increasePacketsSent(int x, int myId, int requestID) {
         if ( (*iterator)->requestID == requestID) {
             //Checking if it' s a self message
             if ( (*iterator)->requestID == myId ) {
-                //Logging self-message
-                BaconStatistics::packetsSelfServed+= x;
-                if (shouldRecordData()) packetsSelfServVect.record(packetsSelfServed);
+                increasePacketsSelfServed(x,myId,requestID);
             } else {
                 BaconStatistics::packetsSent+= x;
                 if (shouldRecordData()) packetsSentVect.record(packetsSent);
@@ -691,7 +704,7 @@ void BaconStatistics::increasePacketsSent(int x, int myId, int requestID) {
         }
     }
 
-    //If we don't find any attempts, something is wrong? but yeah, whatever, lets log a a successful transfer
+    //If we don't find any attempts, something might be wrong? but yeah, whatever, lets log a a successful transfer
     BaconStatistics::packetsSent+= x;
     if (shouldRecordData()) packetsSentVect.record(packetsSent);
 }

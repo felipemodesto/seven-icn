@@ -226,6 +226,8 @@ public:
 
     void logProvisionAttempt(int providerID, int requestID);
 
+    void increasePacketsSelfServed(int myId, int requestID);            //Increase number of Packets Sent to self by 1
+    void increasePacketsSelfServed(int x,int myId, int requestID);      //Increase number of Packets Sent to self by X
     void increasePacketsSent(int myId, int requestID);                  //Increase number of Packets Sent by 1
     void increasePacketsSent(int x,int myId, int requestID);            //Increase number of Packets Sent by X
     void increasePacketsForwarded(int myId, int requestID);             //Increase number of Packets Forwarded by 1
