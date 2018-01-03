@@ -621,8 +621,10 @@ void BaconClient::onData(WaveShortMessage* wsm) {
     cArray parArray = wsm->getParList();
     cMsgPar* prefixPar = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
     cMsgPar* idPar = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
+    cMsgPar* downPar = static_cast<cMsgPar*>(parArray.get(MessageParameter::HOPS_DOWN.c_str()));
     std::string prefixString = prefixPar->str();
     int requestID = idPar->longValue();
+    int downValue = downPar->longValue();
 
     //Fixing the god damn string
     prefixString = library->cleanString(prefixString);
@@ -700,7 +702,8 @@ void BaconClient::onData(WaveShortMessage* wsm) {
     if (strcmp(wsm->getName(),MessageClass::DATA.c_str()) == 0 ) {
         desiredRequest->fullfillTime = simTime();
         SimTime difTime = desiredRequest->fullfillTime - desiredRequest->requestTime;
-        //std::cout << "<" << myId << ">\t\\--> Request finalized (don't care about state) after time <" << difTime.dbl() << "> with status <" << wsm->getKind() << "> from <" << wsm->getSenderAddress() << ">\n";
+        double difDouble = difTime.dbl();
+        //std::cout << "\t(Cli) <" << myId << ">\t\\--> Request finalized after <" << difTime.dbl() << ">\tstatus <" << wsm->getKind() << ">\tdistance <" << downValue << ">\n";
 
         switch( wsm->getKind() ) {
             case ConnectionStatus::DONE_FALLBACK:
@@ -714,7 +717,6 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                         stats->increaseMessagesSent(desiredRequest->referenceObject->contentClass);
                     }
                     */
-
                     //Logging Time it took for communication
                     completedRequests.push_front(desiredRequest);
                 }
@@ -722,12 +724,18 @@ void BaconClient::onData(WaveShortMessage* wsm) {
             case ConnectionStatus::DONE_AVAILABLE:
             case ConnectionStatus::DONE_RECEIVED:
                 {
-                    stats->increasePacketsSent(myId,requestID);
-
-                    //std::cout << "(Cl) \tTransfer complete!\n";
-                    //std::cout << "+";
-                    double difDouble = difTime.dbl();
-                    stats->addcompleteTransmissionDelay(difDouble);
+                    //std::cout << "<" << myId << "> Request <" << requestID << "> is GOOD\n";
+                    //Checking if request was received from remote node
+                    if (downValue > 0) {
+                        stats->increasePacketsSent(myId,requestID);
+                        stats->addcompleteTransmissionDelay(difDouble);
+                    } else {
+                        //Storing info from local reply
+                        stats->increasePacketsSelfServed(myId,requestID);
+                        //TODO: Maybe split the completion time from these two? :/
+                        stats->addcompleteTransmissionDelay(difDouble);
+                    }
+                    //Adding statistics for class-based data
                     stats->increaseMessagesSent(desiredRequest->referenceObject->contentClass);
 
                     //Logging Time it took for communication
@@ -738,10 +746,8 @@ void BaconClient::onData(WaveShortMessage* wsm) {
             case ConnectionStatus::DONE_UNAVAILABLE:
             case ConnectionStatus::DONE_NO_DATA:
                 {
+                    //std::cout << "<" << myId << "> Request <" << requestID << "> was not served in time\n";
                     stats->increasePacketsUnserved(myId,requestID);
-
-                    //std::cout << "?";
-                    double difDouble = difTime.dbl();
                     stats->addincompleteTransmissionDelay(difDouble);
                     stats->increaseMessagesUnserved(desiredRequest->referenceObject->contentClass);
 
@@ -756,13 +762,11 @@ void BaconClient::onData(WaveShortMessage* wsm) {
                     //std::cout << "-";
                     //Adding an incomplete transfer to our backlogged list for future tests
                     backloggedRequests.push_front(desiredRequest);
-                    std::cout << "\tBam\n";
                     stats->increaseMessagesLost(desiredRequest->referenceObject->contentClass);
 
                     //std::cout << "(Cl) <" << myId << "> Partial Request for <" << desiredRequest->referenceObject->contentPrefix << ">.\n";
                     //std::cout.flush();
 
-                    double difDouble = difTime.dbl();
                     stats->addincompleteTransmissionDelay(difDouble);
                 }
                 break;
