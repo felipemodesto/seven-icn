@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+	<copy file="line.roads.xml"/>
+	<copy file="line.routes.xml"/>
+	<copy file="line.poly.xml"/>
+	<copy file="line.sumo.cfg" type="config"/>
+</launch>

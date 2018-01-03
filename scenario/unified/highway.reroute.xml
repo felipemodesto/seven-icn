@@ -1,0 +1,12 @@
+<additionals>
+	<rerouter id="Edge_A" edges="--75566#0">
+		<interval begin="0" end="5000">
+			<destProbReroute id="-75566#26" 	probability="1"	ref="Edge_B"/>
+		</interval>
+	</rerouter>
+	<rerouter id="Edge_B" edges="-75566#26">
+		<interval begin="0" end="5000">
+			<destProbReroute id="--75566#0" 	probability="1"	ref="Edge_A"/>
+		</interval>
+	</rerouter>
+</additionals>
