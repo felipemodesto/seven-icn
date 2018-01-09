@@ -494,8 +494,28 @@ bool  BaconContentProvider::handleLookup(std::string nameValue, int requestID) {
     //This function only runs once, but we call it just in case the vehicle receives a request during its setup
     buildContentLibrary();
 
-    //std::cout << "(CP) <" << myId << "> Checking Availability of <" << lookupValue << ">\n";
-    //std::cout.flush();
+    //Initially, we check if we are using provider-based location for content availability, and if we are close, yes, we can provide the content (skips cache searches)
+    if (library->locationDependentContentMode()) {
+        //Get Local Position
+        Coord currentLocation = traci->getCurrentPosition();
+
+        //Extrapolating theoretical sector from content prefix
+        int contextFreeIndex = library->getClassFreeIndex(lookupValue);
+        int sectorCode = library->getSectorFromPrefixIndex(contextFreeIndex);
+
+        if (library->viablyCloseToContentLocation(sectorCode, currentLocation.x, currentLocation.y)) {
+            //int calculatedDistance = library->getDistanceToSector(sectorCode, currentLocation.x, currentLocation.y);
+            //std::cout << "(Lib) \tNode is close enough to fulfill request for <" << lookupValue << ">!\n";
+            //std::cout << "\t\\-->We are <" << calculatedDistance << "> linear meters from sector center <" << sectorCode << "> in question.\n";
+            //std::cout << "\t\\--> Our position is: < " << currentLocation.x << " ; " << currentLocation.y << " >\n";
+            //std::cout << "\t\\--> Sector Center-point is located at <" << (library->getSectorColumn(sectorCode) * library->getSectorSize()) << " ; " << std::to_string(library->getSectorRow(sectorCode) * library->getSectorSize()) << " >\n";
+            //std::cout.flush();
+
+            //todo? Apply cache insertion rules to this new object we hypothetically have access to (?)
+            stats->logProvisionAttempt(myId, requestID);
+            return true;
+        }
+    }
 
     //Looking for item in content library
     for (auto it = contentCache.begin(); it != contentCache.end() ; it++) {
@@ -541,29 +561,6 @@ bool  BaconContentProvider::handleLookup(std::string nameValue, int requestID) {
              //In general, if we found our item, we have it. (See implementation for GPS location data
              stats->logProvisionAttempt(myId, requestID);
              return true;
-        }
-    }
-
-    //If at this point we don't have the content, we check if we have access to it via our geographical location but only if content operates on a location-based model
-    if (library->locationDependentContentMode()) {
-        //Get Local Position
-        Coord currentLocation = traci->getCurrentPosition();
-
-        //Extrapolating theoretical sector from content prefix
-        int contextFreeIndex = library->getClassFreeIndex(lookupValue);
-        int sectorCode = library->getSectorFromPrefixIndex(contextFreeIndex);
-
-        if (library->viablyCloseToContentLocation(sectorCode, currentLocation.x, currentLocation.y)) {
-            //int calculatedDistance = library->getDistanceToSector(sectorCode, currentLocation.x, currentLocation.y);
-            //std::cout << "(Lib) \tNode is close enough to fulfill request for <" << lookupValue << ">!\n";
-            //std::cout << "\t\\-->We are <" << calculatedDistance << "> linear meters from sector center <" << sectorCode << "> in question.\n";
-            //std::cout << "\t\\--> Our position is: < " << currentLocation.x << " ; " << currentLocation.y << " >\n";
-            //std::cout << "\t\\--> Sector Center-point is located at <" << (library->getSectorColumn(sectorCode) * library->getSectorSize()) << " ; " << std::to_string(library->getSectorRow(sectorCode) * library->getSectorSize()) << " >\n";
-            //std::cout.flush();
-
-            //todo? Apply cache insertion rules to this new object we hypothetically have access to (?)
-            stats->logProvisionAttempt(myId, requestID);
-            return true;
         }
     }
 

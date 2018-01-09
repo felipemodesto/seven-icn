@@ -39,11 +39,11 @@ if [ "OptiPlex-70XX" = "${HOSTNAME}" ]; then
 fi
 
 if [ "ubuntu" = "${HOSTNAME}" ]; then
-	RUN_CODE="/home/felipe/Simulation/omnetpp-5.2/bin/opp_run -b1"
+	RUN_CODE="-b1 /home/felipe/Simulation/omnetpp-5.2/bin/opp_run"
 fi
 
 if [ "bulbasaur" = "${HOSTNAME}" ]; then
-	RUN_CODE="/home/felipe/Simulation/omnetpp-5.2/bin/opp_run -b1"
+	RUN_CODE="-b1 /home/felipe/Simulation/omnetpp-5.2/bin/opp_run"
 fi
 
 LINK_CODE="-u Cmdenv -n ..:../../src/paradise:../../src/veins --image-path=../../images -l ../../src/veins --record-eventlog=false --debug-on-errors=false -f baconnet.ini"

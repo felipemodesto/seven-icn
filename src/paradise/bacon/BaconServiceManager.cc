@@ -2801,6 +2801,9 @@ void BaconServiceManager::logNetworkmessage(WaveShortMessage *msg) {
     //std::cout << "(SM) Enter logNetworkmessage\n";
     //std::cout.flush();
 
+    //Logging sent chunks
+    if (strcmp(msg->getName(), MessageClass::DATA.c_str()) == 0) stats->increaseChunksSent(myId, 0);    //Request ID doesnt matter for chunk logging
+
     //Creating new Packet
     NetworkPacket_t freshPacket;
     freshPacket.arrival = simTime();
@@ -2908,7 +2911,10 @@ void BaconServiceManager::sendWSM(WaveShortMessage* wsm, double forwardDelay) {
     //std::cout.flush();
 
     if (isParking && !sendWhileParking) return;
+
+    //Logging Message Sent Statistics
     logNetworkmessage(wsm);
+
 
     //This function call logs all outgoing network interface messages sent by this node (including beacon messages)
     sendDelayedDown(wsm,forwardDelay);

@@ -48,6 +48,7 @@ protected:
     long int packetsUnserved;       //Requests that did not get a response
     long int packetsLost;           //Requests whose response failed after a content server was found
     long int packetsFallenback;     //Requests fulfilled by resorting to infrastructure
+    long int chunksSent;
     long int chunksLost;
     long int totalVehicles;
     long int activeVehicles;
@@ -149,6 +150,7 @@ protected:
     omnetpp::cOutVector packetsFallenbackVect;
     omnetpp::cOutVector packetsLostVect;
     omnetpp::cOutVector chunksLostVect;
+    omnetpp::cOutVector chunksSentVect;
     omnetpp::cOutVector activeVehiclesVect;
     omnetpp::cOutVector multimediaSentPacketVect;
     omnetpp::cOutVector multimediaUnservedPacketVect;
@@ -238,6 +240,8 @@ public:
     void increasePacketsLost(int x,int myId, int requestID);            //Increase number of Packets Lost by X
     void increaseChunksLost(int myId, int requestID);                   //Increase number of Chunks Lost by 1
     void increaseChunksLost(int x,int myId, int requestID);             //Increase number of Chunks Lost by X
+    void increaseChunksSent(int myId, int requestID);                   //Increase number of Chunks Sent by 1
+    void increaseChunksSent(int x,int myId, int requestID);             //Increase number of Chunks Sent by X
     void increasePacketsFallenBack(long int x,int myId, int requestID);
     void increasePacketsFallenBack(int myId, int requestID);
 
