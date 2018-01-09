@@ -172,6 +172,7 @@ void BaconStatistics::startStatistics() {
     packetsUnserved = 0;
     packetsLost = 0;
     packetsFallenback = 0;
+    chunksSent = 0;
     chunksLost = 0;
     totalVehicles = 0;
     activeVehicles = 0;
@@ -227,6 +228,7 @@ void BaconStatistics::startStatistics() {
     packetsFallenbackVect.setName("FallbackPackets");
     packetsLostVect.setName("LostPackets");
     chunksLostVect.setName("LostChunks");
+    chunksSentVect.setName("SentChunks");
     activeVehiclesVect.setName("ActiveVehicles");
     multimediaSentPacketVect.setName("MultimediaSentPackets");
     multimediaUnservedPacketVect.setName("MultimediaUnservedPackets");
@@ -284,6 +286,7 @@ void BaconStatistics::startStatistics() {
     packetsFallenbackVect.record(0);
     packetsLostVect.record(0);
     chunksLostVect.record(0);
+    chunksSentVect.record(0);
     activeVehiclesVect.record(0);
     multimediaSentPacketVect.record(0);
     multimediaUnservedPacketVect.record(0);
@@ -464,7 +467,7 @@ void BaconStatistics::stopStatistics() {
 
     //Saving Communication statistics previously saved as scalar and vector files
     pFile = fopen ( generalStatisticsFile.c_str(), "w");
-    fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency,packetsSent,packetsSelfServed,packetsForwarded,packetsUnserved,packetsLost,packetsFallback,chunksLost,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,serverCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements,averagedHopcount\n");
+    fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency,packetsSent,packetsSelfServed,packetsForwarded,packetsUnserved,packetsLost,packetsFallback,chunksLost,chunksSent,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,serverCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements,averagedHopcount\n");
 
     fprintf(pFile,"%F",totalTransmissionDelay);
     fprintf(pFile,",%F",completeTransmissionDelay);
@@ -477,6 +480,7 @@ void BaconStatistics::stopStatistics() {
     fprintf(pFile,",%ld",packetsLost);
     fprintf(pFile,",%ld",packetsFallenback);
     fprintf(pFile,",%ld",chunksLost);
+    fprintf(pFile,",%ld",chunksSent);
     fprintf(pFile,",%ld",multimediaSentPackets);
     fprintf(pFile,",%ld",multimediaUnservedPackets);
     fprintf(pFile,",%ld",multimediaLostPackets);
@@ -801,6 +805,20 @@ void BaconStatistics::increaseChunksLost(int x, int myId, int requestID) {
 void BaconStatistics::increaseChunksLost(int myId, int requestID) {
     Enter_Method_Silent();
     increaseChunksLost(1,myId,requestID);
+}
+
+
+//Increase number of Chunks Lost by X
+void BaconStatistics::increaseChunksSent(int x, int myId, int requestID) {
+    Enter_Method_Silent();
+    BaconStatistics::chunksSent += x;
+    if (shouldRecordData()) chunksSentVect.record(chunksSent);
+}
+
+//Increase number of Chunks Lost by 1
+void BaconStatistics::increaseChunksSent(int myId, int requestID) {
+    Enter_Method_Silent();
+    increaseChunksSent(1,myId,requestID);
 }
 
 void BaconStatistics::setHopsCount(int hops) {
