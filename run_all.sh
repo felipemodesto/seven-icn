@@ -5,7 +5,7 @@
 #Making sure everything is clean
 ./configure
 make clean
-make MODE=release
+make MODE=release -j4
 
 
 cd /home/felipe/Simulation/BaconNet/scenario/unified
