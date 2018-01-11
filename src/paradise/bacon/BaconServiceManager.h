@@ -60,11 +60,11 @@ class BaconServiceManager : public BaseWaveApplLayer {
         double maximumForwardDelay;
 
         int slidingWindowSize;
-        double interestBroadcastTimeout;                //Time before an interest broadcast is timed out
-        double transferTimeoutTime;                     //Time before transfer timer is timed out (Timer Stuff)
-        double maxSimultaneousConnections;              //Number of simultaneous connected allowed for a node (-1 == Infinite)
-        double cacheCopyProbability;                    //Cache copy probability for probabilistic cache in-network caching policy
-        CacheInNetworkCoordPolicy cacheCoordinationPolicy;       //Configuration which enables/disables in-network caching
+        double interestBroadcastTimeout;                    //Time before an interest broadcast is timed out
+        double transferTimeoutTime;                         //Time before transfer timer is timed out (Timer Stuff)
+        double maxSimultaneousConnections;                  //Number of simultaneous connected allowed for a node (-1 == Infinite)
+        double cacheCopyProbability;                        //Cache copy probability for probabilistic cache in-network caching policy
+        CacheInNetworkCoordPolicy cacheCoordinationPolicy;  //Configuration which enables/disables in-network caching
         AccessRestrictionPolicy priorityPolicy;
 
         //Networking Parameters
