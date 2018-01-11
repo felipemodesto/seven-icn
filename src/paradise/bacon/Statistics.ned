@@ -23,9 +23,9 @@ package paradise.bacon;
 import org.car2x.veins.base.modules.IBaseApplLayer;
 import org.car2x.veins.modules.application.ieee80211p.BaseWaveApplLayer;
 
-simple BaconStatistics {
+simple Statistics {
 	parameters:
-    	@class(BaconStatistics);
+    	@class(Statistics);
         bool collectingStatistics = default(true);
         bool collectingPositions = default(false);
         bool collectingRequestNames = default(false);

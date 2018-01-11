@@ -23,9 +23,9 @@ package paradise.bacon;
 import org.car2x.veins.base.modules.IBaseApplLayer;
 import org.car2x.veins.modules.application.ieee80211p.BaseWaveApplLayer;
 
-simple BaconLibrary {
+simple GlobalLibrary {
 	parameters:
-    	@class(BaconLibrary);
+    	@class(GlobalLibrary);
 		double zipfCaracterization = default(0);	   	//P Value Characterization for Zipf Function
 		int sizeTransit = default(10240);				//Size of Items in Transit Object Library
 		int sizeNetwork = default(10240);				//Size of Items in Network Related Library

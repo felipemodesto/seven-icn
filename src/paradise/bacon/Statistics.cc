@@ -7,11 +7,11 @@
  *      Author: felipe
  */
 
-#include <paradise/bacon/BaconStatistics.h>
+#include <paradise/bacon/Statistics.h>
 
-Define_Module(BaconStatistics);
+Define_Module(Statistics);
 
-BaconStatistics::~BaconStatistics() {
+Statistics::~Statistics() {
     if (clockTimerMessage != NULL) cancelAndDelete(clockTimerMessage);
     vehicleLocationMap.clear();
     contentRequestLocationMap.clear();
@@ -26,7 +26,7 @@ BaconStatistics::~BaconStatistics() {
 }
 
 //Initialization Function
-void BaconStatistics::initialize(int stage) {
+void Statistics::initialize(int stage) {
     //Initializing
     if (stage == 0) {
         hasStarted = false;
@@ -62,7 +62,7 @@ void BaconStatistics::initialize(int stage) {
 }
 
 //
-void BaconStatistics::handleMessage(cMessage *msg) {
+void Statistics::handleMessage(cMessage *msg) {
     if ( msg == clockTimerMessage ) {
         if (clockTimerMessage == NULL) return;
         scheduleAt(simTime() + 1, clockTimerMessage);
@@ -71,7 +71,7 @@ void BaconStatistics::handleMessage(cMessage *msg) {
 }
 
 //Finalization Function (not a destructor!)
-void BaconStatistics::finish() {
+void Statistics::finish() {
     stopStatistics();
 
     if (clockTimerMessage != NULL) {
@@ -81,38 +81,38 @@ void BaconStatistics::finish() {
 }
 
 //
-bool BaconStatistics::allowedToRun() {
+bool Statistics::allowedToRun() {
     Enter_Method_Silent();
     if (statisticsStartTime < omnetpp::simTime().dbl() && omnetpp::simTime().dbl() < statisticsStopTime ) return true;
     return false;
 }
 
 //Getter for Simulation Start Time
-double BaconStatistics::getStartTime() {
+double Statistics::getStartTime() {
     Enter_Method_Silent();
     return statisticsStartTime;
 }
 
 //Getter for Simulation Stop Time
-double BaconStatistics::getStopTime() {
+double Statistics::getStopTime() {
     Enter_Method_Silent();
     return statisticsStopTime;
 }
 
 //Getter for Simulation Control parameter related to statistics collection
-bool BaconStatistics::recordingStatistics() {
+bool Statistics::recordingStatistics() {
     Enter_Method_Silent();
     return collectingStatistics;
 }
 
 //Getter for Simulation Control parameter related to position tracking
-bool BaconStatistics::recordingPosition() {
+bool Statistics::recordingPosition() {
     Enter_Method_Silent();
     return collectingPositions;
 }
 
 //
-void BaconStatistics::keepTime() {
+void Statistics::keepTime() {
     Enter_Method_Silent();
     int newTime = static_cast<int>(simTime().dbl());
     if (lastSecond < newTime) {
@@ -132,7 +132,7 @@ void BaconStatistics::keepTime() {
 }
 
 //
-bool BaconStatistics::shouldRecordData() {
+bool Statistics::shouldRecordData() {
     Enter_Method_Silent();
 
     if (!allowedToRun()) return false;
@@ -142,14 +142,14 @@ bool BaconStatistics::shouldRecordData() {
 }
 
 //
-void BaconStatistics::startStatistics() {
+void Statistics::startStatistics() {
     Enter_Method_Silent();
     if (hasStarted || hasStopped || !collectingStatistics) return;
 
     //Getting a reference to the content Library
     cSimulation *sim = getSimulation();
     cModule *modlib = sim->getModuleByPath("BaconScenario.library");
-    library = check_and_cast<BaconLibrary *>(modlib);
+    library = check_and_cast<GlobalLibrary *>(modlib);
 
     //Checking if we already have simulation results for this file
     FILE *  pFile = fopen ( generalStatisticsFile.c_str(), "r");
@@ -323,7 +323,7 @@ void BaconStatistics::startStatistics() {
 }
 
 //
-void BaconStatistics::stopStatistics() {
+void Statistics::stopStatistics() {
     Enter_Method_Silent();
     if (hasStopped) return;
     int simNumber = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
@@ -535,20 +535,20 @@ void BaconStatistics::stopStatistics() {
 }
 
 //
-string BaconStatistics::getSimulationDirectory() {
+string Statistics::getSimulationDirectory() {
     Enter_Method_Silent();
     return simulationDirectoryFolder;
 }
 
 //
-string BaconStatistics::getSimulationPrefix() {
+string Statistics::getSimulationPrefix() {
     Enter_Method_Silent();
     return simulationPrefix;
 }
 
 //Function called by content servers to denote that they have received a request for an item and are trying to serve the content/
 //This is used to monitor if contents have not had any replies or if the return path failed at some point.
-void BaconStatistics::logProvisionAttempt(int providerID, int requestID) {
+void Statistics::logProvisionAttempt(int providerID, int requestID) {
     Enter_Method_Silent();
 
     RequestReplyAttempt_t* newAttempt = new RequestReplyAttempt_t();
@@ -559,7 +559,7 @@ void BaconStatistics::logProvisionAttempt(int providerID, int requestID) {
 }
 
 //
-void BaconStatistics::logPosition(double x, double y) {
+void Statistics::logPosition(double x, double y) {
     Enter_Method_Silent();
     if (!collectingPositions) return;
     //if (!shouldRecordData()) return;
@@ -574,7 +574,7 @@ void BaconStatistics::logPosition(double x, double y) {
 }
 
 //
-void BaconStatistics::logContactDuration(double contactDuration) {
+void Statistics::logContactDuration(double contactDuration) {
     Enter_Method_Silent();
     if (!collectingNeighborhood) return;
 
@@ -590,7 +590,7 @@ void BaconStatistics::logContactDuration(double contactDuration) {
 }
 
 //
-void BaconStatistics::logParticipationDuration(double participationLength) {
+void Statistics::logParticipationDuration(double participationLength) {
     Enter_Method_Silent();
     if (!collectingNeighborhood) return;
 
@@ -606,7 +606,7 @@ void BaconStatistics::logParticipationDuration(double participationLength) {
 }
 
 //
-void BaconStatistics::logContentRequest(std::string contentName, bool shouldLogContent, double x, double y) {
+void Statistics::logContentRequest(std::string contentName, bool shouldLogContent, double x, double y) {
     Enter_Method_Silent();
     if (shouldLogContent) {
         requestsStarted++;
@@ -642,25 +642,25 @@ void BaconStatistics::increaseFallbackRequests() {
 */
 
 //
-void BaconStatistics::logDistanceFromTweet(double distance) {
+void Statistics::logDistanceFromTweet(double distance) {
     Enter_Method_Silent();
     if (!shouldRecordData()) return;
     distanceFromTweetVect.record(distance);
 }
 
 //
-void BaconStatistics::increasedUnviableRequests(){
+void Statistics::increasedUnviableRequests(){
     Enter_Method_Silent();
-    BaconStatistics::unviableRequests++;
+    Statistics::unviableRequests++;
     if (!shouldRecordData()) return;
 
     unviableRequestsVect.record(unviableRequests);
 }
 
 //
-void BaconStatistics::increasedBackloggedResponses(){
+void Statistics::increasedBackloggedResponses(){
     Enter_Method_Silent();
-    BaconStatistics::backloggedResponses++;
+    Statistics::backloggedResponses++;
     if (!shouldRecordData()) return;
 
     backloggedClientResponseVect.record(backloggedResponses);
@@ -668,21 +668,21 @@ void BaconStatistics::increasedBackloggedResponses(){
 
 
 //Increase number of Packets Sent to self by 1
-void BaconStatistics::increasePacketsSelfServed(int myId, int requestID) {
+void Statistics::increasePacketsSelfServed(int myId, int requestID) {
     Enter_Method_Silent();
     increasePacketsSelfServed(1,myId,requestID);
 }
 
 //Increase number of Packets Sent to self by X
-void BaconStatistics::increasePacketsSelfServed(int x, int myId, int requestID) {
+void Statistics::increasePacketsSelfServed(int x, int myId, int requestID) {
     Enter_Method_Silent();
     //Logging self-message
-    BaconStatistics::packetsSelfServed+= x;
+    Statistics::packetsSelfServed+= x;
     if (shouldRecordData()) packetsSelfServVect.record(packetsSelfServed);
 }
 
 //Increase number of Packets Sent by X
-void BaconStatistics::increasePacketsSent(int x, int myId, int requestID) {
+void Statistics::increasePacketsSent(int x, int myId, int requestID) {
     Enter_Method_Silent();
 
     //Checking if we are the node that sent the request originally, logging separately in that case
@@ -693,7 +693,7 @@ void BaconStatistics::increasePacketsSent(int x, int myId, int requestID) {
             if ( (*iterator)->requestID == myId ) {
                 increasePacketsSelfServed(x,myId,requestID);
             } else {
-                BaconStatistics::packetsSent+= x;
+                Statistics::packetsSent+= x;
                 if (shouldRecordData()) packetsSentVect.record(packetsSent);
             }
 
@@ -709,33 +709,33 @@ void BaconStatistics::increasePacketsSent(int x, int myId, int requestID) {
     }
 
     //If we don't find any attempts, something might be wrong? but yeah, whatever, lets log a a successful transfer
-    BaconStatistics::packetsSent+= x;
+    Statistics::packetsSent+= x;
     if (shouldRecordData()) packetsSentVect.record(packetsSent);
 }
 
 //Increase number of Packets Sent by 1
-void BaconStatistics::increasePacketsSent(int myId, int requestID){
+void Statistics::increasePacketsSent(int myId, int requestID){
     Enter_Method_Silent();
     increasePacketsSent(1,myId,requestID);
 }
 
 //Increase number of Packets Forwarded by X
-void BaconStatistics::increasePacketsForwarded(int x, int myId, int requestID) {
+void Statistics::increasePacketsForwarded(int x, int myId, int requestID) {
     Enter_Method_Silent();
-    BaconStatistics::packetsForwarded+= x;
+    Statistics::packetsForwarded+= x;
     if (!shouldRecordData()) return;
 
     packetsForwardedVect.record(packetsForwarded);
 }
 
 //Increase number of Packets Forwarded by 1
-void BaconStatistics::increasePacketsForwarded(int myId, int requestID){
+void Statistics::increasePacketsForwarded(int myId, int requestID){
     Enter_Method_Silent();
     increasePacketsForwarded(1,myId,requestID);
 }
 
 //Increase number of Packets were not served by X
-void BaconStatistics::increasePacketsUnserved(int x, int myId, int requestID) {
+void Statistics::increasePacketsUnserved(int x, int myId, int requestID) {
     Enter_Method_Silent();
 
     //Checking if anyone at any point attempted
@@ -757,129 +757,129 @@ void BaconStatistics::increasePacketsUnserved(int x, int myId, int requestID) {
     }
 
     //If we didn't find ANY instances of nodes trying to provide for this connection, we'll list it as unserved
-    BaconStatistics::packetsUnserved+= x;
+    Statistics::packetsUnserved+= x;
     if (shouldRecordData()) packetsUnservedVect.record(packetsUnserved);
 }
 
 //Increase number of Packets were not served by 1
-void BaconStatistics::increasePacketsUnserved(int myId, int requestID){
+void Statistics::increasePacketsUnserved(int myId, int requestID){
     Enter_Method_Silent();
     increasePacketsUnserved(1,myId,requestID);
 }
 
 //Increase number of Packets were not served by X
-void BaconStatistics::increasePacketsFallenBack(long int x, int myId, int requestID) {
+void Statistics::increasePacketsFallenBack(long int x, int myId, int requestID) {
     Enter_Method_Silent();
-    BaconStatistics::packetsFallenback+= x;
+    Statistics::packetsFallenback+= x;
     if (shouldRecordData()) packetsFallenbackVect.record(packetsFallenback);
 }
 
 //Increase number of Packets obtained externally from outside-simulation infrastructure
-void BaconStatistics::increasePacketsFallenBack(int myId, int requestID) {
+void Statistics::increasePacketsFallenBack(int myId, int requestID) {
     Enter_Method_Silent();
     increasePacketsFallenBack(1,myId,requestID);
 }
 
 //Increase number of Packets Lost by X
-void BaconStatistics::increasePacketsLost(int x, int myId, int requestID) {
+void Statistics::increasePacketsLost(int x, int myId, int requestID) {
     Enter_Method_Silent();
 
-    BaconStatistics::packetsLost += x;
+    Statistics::packetsLost += x;
     if (shouldRecordData()) packetsLostVect.record(packetsLost);
 }
 
 //Increase number of Packets Lost by 1
-void BaconStatistics::increasePacketsLost(int myId, int requestID) {
+void Statistics::increasePacketsLost(int myId, int requestID) {
     Enter_Method_Silent();
     increasePacketsLost(1,myId,requestID);
 }
 
 //Increase number of Chunks Lost by X
-void BaconStatistics::increaseChunksLost(int x, int myId, int requestID) {
+void Statistics::increaseChunksLost(int x, int myId, int requestID) {
     Enter_Method_Silent();
-    BaconStatistics::chunksLost += x;
+    Statistics::chunksLost += x;
     if (shouldRecordData()) chunksLostVect.record(chunksLost);
 }
 
 //Increase number of Chunks Lost by 1
-void BaconStatistics::increaseChunksLost(int myId, int requestID) {
+void Statistics::increaseChunksLost(int myId, int requestID) {
     Enter_Method_Silent();
     increaseChunksLost(1,myId,requestID);
 }
 
 
 //Increase number of Chunks Lost by X
-void BaconStatistics::increaseChunksSent(int x, int myId, int requestID) {
+void Statistics::increaseChunksSent(int x, int myId, int requestID) {
     Enter_Method_Silent();
-    BaconStatistics::chunksSent += x;
+    Statistics::chunksSent += x;
     if (shouldRecordData()) chunksSentVect.record(chunksSent);
 }
 
 //Increase number of Chunks Lost by 1
-void BaconStatistics::increaseChunksSent(int myId, int requestID) {
+void Statistics::increaseChunksSent(int myId, int requestID) {
     Enter_Method_Silent();
     increaseChunksSent(1,myId,requestID);
 }
 
-void BaconStatistics::setHopsCount(int hops) {
+void Statistics::setHopsCount(int hops) {
     Enter_Method_Silent();
     hopCountHist.collect(hops);
 
 }
 
-void BaconStatistics::setHopsCount(int hops, int count) {
+void Statistics::setHopsCount(int hops, int count) {
     Enter_Method_Silent();
     for (int i = 0; i < count ; i++) {
         hopCountHist.collect(hops);
     }
 }
 
-void BaconStatistics::setPacketsSent(int x) {
+void Statistics::setPacketsSent(int x) {
     Enter_Method_Silent();
     packetsSentHist.collect(x);
 }
 
-void BaconStatistics::setPacketsUnserved(int x) {
+void Statistics::setPacketsUnserved(int x) {
     Enter_Method_Silent();
     packetsUnservedHist.collect(x);
 }
 
-void BaconStatistics::setPacketsLost(int x) {
+void Statistics::setPacketsLost(int x) {
     Enter_Method_Silent();
     packetsLostHist.collect(x);
 }
 
-void BaconStatistics::setChunksLost(int x) {
+void Statistics::setChunksLost(int x) {
     Enter_Method_Silent();
     chunksLostHist.collect(x);
 }
 
-void BaconStatistics::setServerBusy(int x) {
+void Statistics::setServerBusy(int x) {
     Enter_Method_Silent();
     serverBusyHist.collect(x);
 }
 
-void BaconStatistics::setContentUnavailable(int x) {
+void Statistics::setContentUnavailable(int x) {
     Enter_Method_Silent();
     contentUnavailableHist.collect(x);
 }
 
-void BaconStatistics::logInterestForConnection(int connectionID) {
+void Statistics::logInterestForConnection(int connectionID) {
     Enter_Method_Silent();
     requestsPerConnectionHist.collect(connectionID);
 }
 
-void BaconStatistics::logDuplicateMessagesForConnection(int duplicates,int connection) {
+void Statistics::logDuplicateMessagesForConnection(int duplicates,int connection) {
     Enter_Method_Silent();
     duplicateRequestHist.collect(duplicates);
     //We're ignoring the connection ID for duplicates, but this has been setup with that in mind. Not adding a to-do as it's not something i'm thinking of doing soon.
 }
 
 //Increase the number of active Vehicles by 1 (new vehicle spawned)
-bool BaconStatistics::increaseActiveVehicles(int vehicleId) {
+bool Statistics::increaseActiveVehicles(int vehicleId) {
     Enter_Method_Silent();
-    BaconStatistics::activeVehicles++;
-    BaconStatistics::totalVehicles++;
+    Statistics::activeVehicles++;
+    Statistics::totalVehicles++;
 
     //NOTE: This does not care about general statistics collection
     activeVehiclesVect.record(activeVehicles);
@@ -891,12 +891,12 @@ bool BaconStatistics::increaseActiveVehicles(int vehicleId) {
 }
 
 //Decrease the number of active Vehicles by 1 (vehicle "deleted" / journey complete)
-bool BaconStatistics::decreaseActiveVehicles(int vehicleId) {
+bool Statistics::decreaseActiveVehicles(int vehicleId) {
     Enter_Method_Silent();
     //Logging previous status so we have the ladder graph
     if (hasStarted && !hasStopped) activeVehiclesVect.record(activeVehicles);
 
-    BaconStatistics::activeVehicles--;
+    Statistics::activeVehicles--;
 
     activeVehiclesVect.record(activeVehicles);
 
@@ -912,16 +912,16 @@ bool BaconStatistics::decreaseActiveVehicles(int vehicleId) {
 }
 
 //
-void BaconStatistics::increaseServerCacheHits() {
+void Statistics::increaseServerCacheHits() {
     Enter_Method_Silent();
-    BaconStatistics::serverCacheHits++;
+    Statistics::serverCacheHits++;
 
     if (!shouldRecordData()) return;
     serverHitVect.record(serverCacheHits);
 }
 
 //
-void BaconStatistics::increaseMessagesSent(ContentClass contentClass) {
+void Statistics::increaseMessagesSent(ContentClass contentClass) {
     Enter_Method_Silent();
 
     //Checking which method to fulfill
@@ -946,7 +946,7 @@ void BaconStatistics::increaseMessagesSent(ContentClass contentClass) {
 }
 
 //
-void BaconStatistics::increaseMessagesLost(ContentClass contentClass) {
+void Statistics::increaseMessagesLost(ContentClass contentClass) {
     Enter_Method_Silent();
     switch(contentClass) {
         case ContentClass::MULTIMEDIA:
@@ -969,7 +969,7 @@ void BaconStatistics::increaseMessagesLost(ContentClass contentClass) {
 }
 
 //
-void BaconStatistics::increaseMessagesUnserved(ContentClass contentClass) {
+void Statistics::increaseMessagesUnserved(ContentClass contentClass) {
     Enter_Method_Silent();
     switch(contentClass) {
         case ContentClass::MULTIMEDIA:
@@ -992,7 +992,7 @@ void BaconStatistics::increaseMessagesUnserved(ContentClass contentClass) {
 }
 
 //
-void BaconStatistics::increaseChunkLost(ContentClass contentClass) {
+void Statistics::increaseChunkLost(ContentClass contentClass) {
     Enter_Method_Silent();
     switch(contentClass) {
         case ContentClass::MULTIMEDIA:
@@ -1015,130 +1015,130 @@ void BaconStatistics::increaseChunkLost(ContentClass contentClass) {
 }
 
 //
-void BaconStatistics::increaseMultimediaMessagesSent() {
+void Statistics::increaseMultimediaMessagesSent() {
     Enter_Method_Silent();
-    BaconStatistics::multimediaSentPackets++;
+    Statistics::multimediaSentPackets++;
 
     if (!shouldRecordData()) return;
     multimediaSentPacketVect.record(multimediaSentPackets);
 }
 
 //
-void BaconStatistics::increaseMultimediaMessagesUnserved() {
+void Statistics::increaseMultimediaMessagesUnserved() {
     Enter_Method_Silent();
-    BaconStatistics::multimediaUnservedPackets++;
+    Statistics::multimediaUnservedPackets++;
 
     if (!shouldRecordData()) return;
     multimediaUnservedPacketVect.record(multimediaUnservedPackets);
 }
 
 //
-void BaconStatistics::increaseMultimediaMessagesLost() {
+void Statistics::increaseMultimediaMessagesLost() {
     Enter_Method_Silent();
-    BaconStatistics::multimediaLostPackets++;
+    Statistics::multimediaLostPackets++;
 
     if (!shouldRecordData()) return;
     multimediaLostPacketVect.record(multimediaLostPackets);
 }
 
-void BaconStatistics::increaseMultimediaChunksLost() {
+void Statistics::increaseMultimediaChunksLost() {
     Enter_Method_Silent();
-    BaconStatistics::multimediaLostChunks++;
+    Statistics::multimediaLostChunks++;
 
     if (!shouldRecordData()) return;
     multimediaLostChunkVect.record(multimediaLostChunks);
 }
 
-void BaconStatistics::increaseTrafficMessagesSent() {
+void Statistics::increaseTrafficMessagesSent() {
     Enter_Method_Silent();
-    BaconStatistics::trafficSentPackets++;
+    Statistics::trafficSentPackets++;
 
     if (!shouldRecordData()) return;
     trafficSentPacketVect.record(trafficSentPackets);
 }
 
-void BaconStatistics::increaseTrafficMessagesUnserved() {
+void Statistics::increaseTrafficMessagesUnserved() {
     Enter_Method_Silent();
     if (!shouldRecordData()) return;
-    BaconStatistics::trafficUnservedPackets++;
+    Statistics::trafficUnservedPackets++;
     trafficUnservedPacketVect.record(trafficUnservedPackets);
 }
 
-void BaconStatistics::increaseTrafficMessagesLost() {
+void Statistics::increaseTrafficMessagesLost() {
     Enter_Method_Silent();
-    BaconStatistics::trafficLostPackets++;
+    Statistics::trafficLostPackets++;
 
     if (!shouldRecordData()) return;
     trafficLostPacketVect.record(trafficLostPackets);
 }
 
-void BaconStatistics::increaseTrafficChunksLost() {
+void Statistics::increaseTrafficChunksLost() {
     Enter_Method_Silent();
-    BaconStatistics::trafficLostChunks++;
+    Statistics::trafficLostChunks++;
 
     if (!shouldRecordData()) return;
     trafficLostChunkVect.record(trafficLostChunks);
 }
 
-void BaconStatistics::increaseNetworkMessagesSent() {
+void Statistics::increaseNetworkMessagesSent() {
     Enter_Method_Silent();
-    BaconStatistics::networkSentPackets++;
+    Statistics::networkSentPackets++;
 
     if (!shouldRecordData()) return;
     networkSentPacketVect.record(networkSentPackets);
 }
 
-void BaconStatistics::increaseNetworkMessagesUnserved() {
+void Statistics::increaseNetworkMessagesUnserved() {
     Enter_Method_Silent();
-    BaconStatistics::networkUnservedPackets++;
+    Statistics::networkUnservedPackets++;
 
     if (!shouldRecordData()) return;
     networkUnservedPacketVect.record(networkUnservedPackets);
 }
 
-void BaconStatistics::increaseNetworkMessagesLost() {
+void Statistics::increaseNetworkMessagesLost() {
     Enter_Method_Silent();
-    BaconStatistics::networkLostPackets++;
+    Statistics::networkLostPackets++;
 
     if (!shouldRecordData()) return;
     networkLostPacketVect.record(networkLostPackets);
 }
 
-void BaconStatistics::increaseNetworkChunksLost() {
+void Statistics::increaseNetworkChunksLost() {
     Enter_Method_Silent();
-    BaconStatistics::networkLostChunks++;
+    Statistics::networkLostChunks++;
 
     if (!shouldRecordData()) return;
     networkLostChunkVect.record(networkLostChunks);
 }
 
-void BaconStatistics::increaseEmergencyMessagesSent() {
+void Statistics::increaseEmergencyMessagesSent() {
     Enter_Method_Silent();
-    BaconStatistics::emergencySentPackets++;
+    Statistics::emergencySentPackets++;
 
     if (!shouldRecordData()) return;
     emergencySentPacketVect.record(emergencySentPackets);
 }
 
-void BaconStatistics::increaseEmergencyMessagesUnserved() {
+void Statistics::increaseEmergencyMessagesUnserved() {
     Enter_Method_Silent();
-    BaconStatistics::emergencySentPackets++;
+    Statistics::emergencySentPackets++;
 
     if (!shouldRecordData()) return;
     emergencySentPacketVect.record(emergencySentPackets);
 }
 
-void BaconStatistics::increaseEmergencyMessagesLost() {
+void Statistics::increaseEmergencyMessagesLost() {
     Enter_Method_Silent();
-    BaconStatistics::emergencyUnservedPackets++;
+    Statistics::emergencyUnservedPackets++;
 
     if (!shouldRecordData()) return;
     emergencyUnservedPacketVect.record(emergencyUnservedPackets);
 }
 
-void BaconStatistics::increaseEmergencyChunksLost() {
+void Statistics::increaseEmergencyChunksLost() {
     Enter_Method_Silent();
-    BaconStatistics::emergencyLostChunks++;
+    Statistics::emergencyLostChunks++;
 
     if (!shouldRecordData()) return;
     emergencyLostChunkVect.record(emergencyLostChunks);
@@ -1147,79 +1147,79 @@ void BaconStatistics::increaseEmergencyChunksLost() {
 
 
 
-void BaconStatistics::increaseLocalLateCacheHits() {
+void Statistics::increaseLocalLateCacheHits() {
     Enter_Method_Silent();
-    BaconStatistics::localCacheLateHits++;
+    Statistics::localCacheLateHits++;
 
     if (!shouldRecordData()) return;
     localLateCacheHitVect.record(localCacheLateHits);
 }
 
-void BaconStatistics::increaseLocalCacheHits() {
+void Statistics::increaseLocalCacheHits() {
     Enter_Method_Silent();
-    BaconStatistics::localCacheHits++;
+    Statistics::localCacheHits++;
 
     if (!shouldRecordData()) return;
     localCacheHitVect.record(localCacheHits);
 }
 
-void BaconStatistics::increaseRemoteCacheHits() {
+void Statistics::increaseRemoteCacheHits() {
     Enter_Method_Silent();
-    BaconStatistics::remoteCacheHits++;
+    Statistics::remoteCacheHits++;
 
     if (!shouldRecordData()) return;
     remoteCacheHitVect.record(remoteCacheHits);
 }
 
-void BaconStatistics::increaseLocalCacheMisses() {
+void Statistics::increaseLocalCacheMisses() {
     Enter_Method_Silent();
-    BaconStatistics::localCacheMisses++;
+    Statistics::localCacheMisses++;
 
     if (!shouldRecordData()) return;
     localCacheMissVect.record(localCacheMisses);
 }
 
-void BaconStatistics::increaseRemoteCacheMisses() {
+void Statistics::increaseRemoteCacheMisses() {
     Enter_Method_Silent();
-    BaconStatistics::remoteCacheMisses++;
+    Statistics::remoteCacheMisses++;
 
     if (!shouldRecordData()) return;
     remoteCacheMissVect.record(remoteCacheMisses);
 }
 
-void BaconStatistics::increaseCacheReplacements() {
+void Statistics::increaseCacheReplacements() {
     Enter_Method_Silent();
-    BaconStatistics::cacheReplacements++;
+    Statistics::cacheReplacements++;
 
     if (!shouldRecordData()) return;
     cacheReplacementVect.record(cacheReplacements);
 }
 
-void BaconStatistics::increaseCreatedInterests() {
+void Statistics::increaseCreatedInterests() {
     Enter_Method_Silent();
-    BaconStatistics::createdInterests++;
+    Statistics::createdInterests++;
 
     if (!shouldRecordData()) return;
     createdInterestVect.record(createdInterests);
 }
 
-void BaconStatistics::increaseRegisteredInterests() {
+void Statistics::increaseRegisteredInterests() {
     Enter_Method_Silent();
-    BaconStatistics::registeredInterests++;
+    Statistics::registeredInterests++;
 
     if (!shouldRecordData()) return;
     registeredInterestVect.record(registeredInterests);
 }
 
-void BaconStatistics::increaseFulfilledInterests() {
+void Statistics::increaseFulfilledInterests() {
     Enter_Method_Silent();
-    BaconStatistics::fulfilledInterests++;
+    Statistics::fulfilledInterests++;
 
     if (!shouldRecordData()) return;
     fulfilledInterestVect.record(fulfilledInterests);
 }
 
-void BaconStatistics::logInstantLoad(int node, double load) {
+void Statistics::logInstantLoad(int node, double load) {
     Enter_Method_Silent();
     if (!shouldRecordData()) return;
     LoadAtTime_t newLoad;
@@ -1229,7 +1229,7 @@ void BaconStatistics::logInstantLoad(int node, double load) {
     instantLoadList.push_front(newLoad);
 }
 
-void BaconStatistics::logAverageLoad(int node, double load) {
+void Statistics::logAverageLoad(int node, double load) {
     Enter_Method_Silent();
     if (!shouldRecordData()) return;
     LoadAtTime_t newLoad;
@@ -1240,7 +1240,7 @@ void BaconStatistics::logAverageLoad(int node, double load) {
     averageLoadList.push_front(newLoad);
 }
 
-void BaconStatistics::addcompleteTransmissionDelay(double delay) {
+void Statistics::addcompleteTransmissionDelay(double delay) {
     Enter_Method_Silent();
     if (!shouldRecordData()) return;
 
@@ -1252,7 +1252,7 @@ void BaconStatistics::addcompleteTransmissionDelay(double delay) {
     completeTranmissionDelayVect.record(delay);
 }
 
-void BaconStatistics::addincompleteTransmissionDelay(double delay) {
+void Statistics::addincompleteTransmissionDelay(double delay) {
     Enter_Method_Silent();
     if (!shouldRecordData()) return;
 
@@ -1264,7 +1264,7 @@ void BaconStatistics::addincompleteTransmissionDelay(double delay) {
     incompleteTranmissionDelayVect.record(delay);
 }
 
-void BaconStatistics::increaseHopCountResult(int hopCount) {
+void Statistics::increaseHopCountResult(int hopCount) {
     Enter_Method_Silent();
     if (!shouldRecordData()) return;
 

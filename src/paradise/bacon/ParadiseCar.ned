@@ -36,17 +36,17 @@ module BaconCar
 
     submodules:
 
-        client: BaconClient {
+        client: Client {
             parameters:
                 @display("i=device/wifilaptop;p=60,79");
         }
 
-        appl: BaconServiceManager {
+        appl: ServiceManager {
             parameters:
                 @display("i=device/device;p=60,167");
         }
 
-        content: BaconContentProvider {
+        content: ContentStore {
             parameters:
                 @display("i=device/disk;p=216,167");
         }

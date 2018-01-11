@@ -1,6 +1,6 @@
 //Concent Centric Class - Felipe Modesto
 
-#include <paradise/bacon/BaconServiceManager.h>
+#include <paradise/bacon/ServiceManager.h>
 
 using Veins::TraCIMobilityAccess;
 using Veins::AnnotationManagerAccess;
@@ -11,9 +11,9 @@ using namespace omnetpp;
 //using namespace osgEarth::Annotation;
 //using namespace osgEarth::Features;
 
-const simsignalwrap_t BaconServiceManager::parkingStateChangedSignal = simsignalwrap_t(TRACI_SIGNAL_PARKING_CHANGE_NAME);
+const simsignalwrap_t ServiceManager::parkingStateChangedSignal = simsignalwrap_t(TRACI_SIGNAL_PARKING_CHANGE_NAME);
 
-Define_Module(BaconServiceManager);
+Define_Module(ServiceManager);
 
 //TODO: (IMPROVE) CHANGE ALL GETNAME/SETNAME to GETKIND/SETKIND to reduce the ridiculous overload with string evaluations
 //USE INTEREST, DATA AND BEACON AS ONLY MESSAGE NAME TYPES AVAILABLE!!!
@@ -23,7 +23,7 @@ Define_Module(BaconServiceManager);
 //=============================================================
 
 //Initialization Function
-void BaconServiceManager::initialize(int stage) {
+void ServiceManager::initialize(int stage) {
     //Initializing
     BaseWaveApplLayer::initialize(stage);
 
@@ -100,9 +100,9 @@ void BaconServiceManager::initialize(int stage) {
         case 1: {
 
             cSimulation *sim = getSimulation();
-            stats = check_and_cast<BaconStatistics *>(sim->getModuleByPath("BaconScenario.statistics"));
-            library = check_and_cast<BaconLibrary *>(sim->getModuleByPath("BaconScenario.library"));
-            cache = check_and_cast<BaconContentProvider *>(getParentModule()->getSubmodule("content"));
+            stats = check_and_cast<Statistics *>(sim->getModuleByPath("BaconScenario.statistics"));
+            library = check_and_cast<GlobalLibrary *>(sim->getModuleByPath("BaconScenario.library"));
+            cache = check_and_cast<ContentStore *>(getParentModule()->getSubmodule("content"));
 
             //Adding vehicle to statistics
             stats->increaseActiveVehicles(myId);
@@ -125,7 +125,7 @@ void BaconServiceManager::initialize(int stage) {
 }
 
 //End of Execution Function (NOT A DESTRUCTOR, JUST CLEANUP AND STATISTICS RELATED)
-void BaconServiceManager::finish() {
+void ServiceManager::finish() {
     //Logging HISTOGRAM statistics (separate from live-info collected by clients)
     stats->setPacketsSent(totalPacketsSent);
     stats->setPacketsLost(totalPacketsLost);
@@ -155,7 +155,7 @@ void BaconServiceManager::finish() {
 }
 
 //Maintenance function to reduce ConnectionList Sizes
-void BaconServiceManager::cleanConnections() {
+void ServiceManager::cleanConnections() {
     //std::cout << "(SM) Enter cleanConnections\n";
     //std::cout.flush();
 
@@ -239,7 +239,7 @@ void BaconServiceManager::cleanConnections() {
 //=============================================================
 
 //Function called to update the Debug Circle UI of objects
-void BaconServiceManager::updateNodeColor() {
+void ServiceManager::updateNodeColor() {
     //std::cout << "(SM) Enter updateNodeColor\n";
     //std::cout.flush();
 
@@ -317,12 +317,12 @@ void BaconServiceManager::updateNodeColor() {
 }
 
 //Starts a new timer for the given message ID (assumed to be in connection list) with 1 second default delay
-void BaconServiceManager::startTimer(Connection_t* connection) {
+void ServiceManager::startTimer(Connection_t* connection) {
     startTimer(connection, interestBroadcastTimeout); //Start a timer with a 1 second delay
 }
 
 //Starts a new timer for the given message ID (assumed to be in connection list) and specific delay
-void BaconServiceManager::startTimer(Connection_t* connection, double time) {
+void ServiceManager::startTimer(Connection_t* connection, double time) {
     //std::cout << "(SM) Enter startTimer\n";
     //std::cout.flush();
 
@@ -355,7 +355,7 @@ void BaconServiceManager::startTimer(Connection_t* connection, double time) {
 }
 
 //Cancel/Update timer for connection timeouts
-bool BaconServiceManager::cancelTimer(Connection_t* connection) {
+bool ServiceManager::cancelTimer(Connection_t* connection) {
     //std::cout << "(SM) Enter cancelTimer\n";
     //std::cout.flush();
 
@@ -428,7 +428,7 @@ bool BaconServiceManager::cancelTimer(Connection_t* connection) {
 }
 
 //Called after timer timeouts, manages
-void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
+void ServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
     //std::cout << "(SM) Enter handleSelfTimer\n";
     //std::cout.flush();
 
@@ -695,7 +695,7 @@ void BaconServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
 }
 
 //Function used to generate a basic outgoing message from a connection
-WaveShortMessage* BaconServiceManager::getGenericMessage(Connection_t* connection) {
+WaveShortMessage* ServiceManager::getGenericMessage(Connection_t* connection) {
     //std::cout << "(SM) Enter getGenericMessage\n";
     //std::cout.flush();
 
@@ -757,7 +757,7 @@ WaveShortMessage* BaconServiceManager::getGenericMessage(Connection_t* connectio
 //=============================================================
 
 //Function called whenever we get a message coming from the network interfaces
-void BaconServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
+void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
     //std::cout << "(SM) Enter onNetworkMessage\n";
     //std::cout.flush();
 
@@ -813,7 +813,7 @@ void BaconServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
 }
 
 //
-void BaconServiceManager::handleInterestRejectMessage(WaveShortMessage* wsm) {
+void ServiceManager::handleInterestRejectMessage(WaveShortMessage* wsm) {
     //std::cout << "(SM) Enter handleInterestRejectMessage\n";
     //std::cout.flush();
 
@@ -839,7 +839,7 @@ void BaconServiceManager::handleInterestRejectMessage(WaveShortMessage* wsm) {
 }
 
 //
-void BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
+void ServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
     //std::cout << "(SM) Enter handleInterestAcceptMessage\n";
     //std::cout.flush();
 
@@ -981,7 +981,7 @@ void BaconServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
 }
 
 //
-void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
+void ServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
     //std::cout << "(SM) Enter handleInterestReplyMessage\n";
     //std::cout.flush();
 
@@ -1137,7 +1137,7 @@ void BaconServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
 }
 
 //
-void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
+void ServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
     //std::cout << "(SM) Enter handleInterestMessage\n";
     //std::cout.flush();
 
@@ -1363,7 +1363,7 @@ void BaconServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
 }
 
 //Function called upon data delivery
-void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
+void ServiceManager::handleContentMessage(WaveShortMessage* wsm) {
     //std::cout << "(SM) Enter handleContentMessage\n";
     //std::cout.flush();
 
@@ -1495,7 +1495,7 @@ void BaconServiceManager::handleContentMessage(WaveShortMessage* wsm) {
 }
 
 //Function called to reply an interest message of content availability
-void BaconServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Connection_t* connection) {
+void ServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Connection_t* connection) {
     //std::cout << "(SM) Enter notifyOfContentAvailability\n";
     //std::cout.flush();
 
@@ -1583,7 +1583,7 @@ void BaconServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Con
 }
 
 //Function called to outsource content discovery, broadcasting an interest
-void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection_t* connection) {
+void ServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection_t* connection) {
     //std::cout << "(SM) Enter forwardContentSearch\n";
     //std::cout.flush();
 
@@ -1676,7 +1676,7 @@ void BaconServiceManager::forwardContentSearch(WaveShortMessage* wsm, Connection
 }
 
 //Function called to accept a proposal for content offered by a remote server
-void BaconServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection_t* connection) {
+void ServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection_t* connection) {
     //std::cout << "(SM) Enter acceptNetworkrequest\n";
     //std::cout.flush();
 
@@ -1765,7 +1765,7 @@ void BaconServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection
 }
 
 //Function called to reject a proposal for content offered by a remote server
-void BaconServiceManager::rejectNetworkrequest(WaveShortMessage* wsm, Connection_t* connection) {
+void ServiceManager::rejectNetworkrequest(WaveShortMessage* wsm, Connection_t* connection) {
     //std::cout << "(SM) Enter rejectNetworkrequest\n";
     //std::cout.flush();
 
@@ -1801,7 +1801,7 @@ void BaconServiceManager::rejectNetworkrequest(WaveShortMessage* wsm, Connection
 }
 
 //Function called by transmitting node whenever it gets a data_missing message (notification of missing chunks)
-void BaconServiceManager::transmitDataChunks(Connection_t* connection, std::vector<int>* chunkVector) {
+void ServiceManager::transmitDataChunks(Connection_t* connection, std::vector<int>* chunkVector) {
     //std::cout << "(SM) Enter transmitDataChunks\n";
     //std::cout.flush();
 
@@ -1904,7 +1904,7 @@ void BaconServiceManager::transmitDataChunks(Connection_t* connection, std::vect
 }
 
 //
-void BaconServiceManager::requestChunkRetransmission(Connection_t* connection) {
+void ServiceManager::requestChunkRetransmission(Connection_t* connection) {
     //std::cout << "(SM) Enter requestChunkRetransmission\n";
     //std::cout.flush();
 
@@ -1986,7 +1986,7 @@ void BaconServiceManager::requestChunkRetransmission(Connection_t* connection) {
 }
 
 //
-void BaconServiceManager::completeRemoteDataTransfer(Connection_t* connection) {
+void ServiceManager::completeRemoteDataTransfer(Connection_t* connection) {
     //std::cout << "(SM) Enter completeRemoteDataTransfer\n";
     //std::cout.flush();
 
@@ -2035,7 +2035,7 @@ void BaconServiceManager::completeRemoteDataTransfer(Connection_t* connection) {
 }
 
 //
-void BaconServiceManager::fulfillPendingInterest(Connection_t* connection) {
+void ServiceManager::fulfillPendingInterest(Connection_t* connection) {
     //std::cout << "(SM) Enter fulfillPendingInterest\n";
     //std::cout.flush();
 
@@ -2107,7 +2107,7 @@ void BaconServiceManager::fulfillPendingInterest(Connection_t* connection) {
 }
 
 //Reply to node that we have content after some delay, possibly after getting it from another request and checking our PIT
-void BaconServiceManager::replyAfterContentInclusion(Connection_t* connection) {
+void ServiceManager::replyAfterContentInclusion(Connection_t* connection) {
     //std::cout << "(SM) Enter replyAfterContentInclusion\n";
     //std::cout.flush();
 
@@ -2190,7 +2190,7 @@ void BaconServiceManager::replyAfterContentInclusion(Connection_t* connection) {
 //=============================================================
 
 //Returns connection from list of connections. Will return NULL if ID is not listed
-Connection_t* BaconServiceManager::getConnection(long requestID, int peerID) {
+Connection_t* ServiceManager::getConnection(long requestID, int peerID) {
     //std::cout << "(SM) Enter getConnection\n";
     //std::cout.flush();
 
@@ -2212,7 +2212,7 @@ Connection_t* BaconServiceManager::getConnection(long requestID, int peerID) {
 }
 
 //creates a generic connection (but does not add it to the connection list as the connection object has generic parameters set)
-Connection_t* BaconServiceManager::createGenericConnection(Content_t* content) {
+Connection_t* ServiceManager::createGenericConnection(Content_t* content) {
     //std::cout << "(SM) Enter createGenericConnection\n";
     //std::cout.flush();
 
@@ -2250,7 +2250,7 @@ Connection_t* BaconServiceManager::createGenericConnection(Content_t* content) {
 }
 
 //
-Connection_t* BaconServiceManager::createServerSidedConnection(WaveShortMessage *wsm) {
+Connection_t* ServiceManager::createServerSidedConnection(WaveShortMessage *wsm) {
     //std::cout << "(SM) Enter createServerSidedConnection\n";
     //std::cout.flush();
 
@@ -2311,7 +2311,7 @@ Connection_t* BaconServiceManager::createServerSidedConnection(WaveShortMessage 
 }
 
 //
-Connection_t* BaconServiceManager::createClientSidedConnection(WaveShortMessage *wsm) {
+Connection_t* ServiceManager::createClientSidedConnection(WaveShortMessage *wsm) {
     //std::cout << "(SM) Enter createClientSidedConnection\n";
     //std::cout.flush();
 
@@ -2383,7 +2383,7 @@ Connection_t* BaconServiceManager::createClientSidedConnection(WaveShortMessage 
 //=============================================================
 
 //In-network Cache Policy
-void BaconServiceManager::runCachePolicy(Connection_t* connection) {
+void ServiceManager::runCachePolicy(Connection_t* connection) {
     //std::cout << "(SM) Enter runCachePolicy\n";
     //std::cout.flush();
 
@@ -2575,7 +2575,7 @@ void BaconServiceManager::runCachePolicy(Connection_t* connection) {
 }
 
 //Function called to request content be added to cache
-void BaconServiceManager::addContentToCache(Connection_t* connection) {
+void ServiceManager::addContentToCache(Connection_t* connection) {
     //std::cout << "(SM) Enter addContentToCache\n";
     //std::cout.flush();
 
@@ -2584,7 +2584,7 @@ void BaconServiceManager::addContentToCache(Connection_t* connection) {
 }
 
 //Function called to request content be removed from cache (only called by move copy down)
-void BaconServiceManager::removeContentFromCache(Connection_t* connection) {
+void ServiceManager::removeContentFromCache(Connection_t* connection) {
     //std::cout << "(SM) Enter removeContentFromCache\n";
     //std::cout.flush();
 
@@ -2596,7 +2596,7 @@ void BaconServiceManager::removeContentFromCache(Connection_t* connection) {
 //=============================================================
 
 //Function called to obtain connection from list of connections. Will return NULL if ID is not listed
-Interest_t* BaconServiceManager::getInterest(std::string interest) {
+Interest_t* ServiceManager::getInterest(std::string interest) {
     //std::cout << "(SM) Enter getInterest\n";
     //std::cout.flush();
 
@@ -2610,7 +2610,7 @@ Interest_t* BaconServiceManager::getInterest(std::string interest) {
 }
 
 //
-bool BaconServiceManager::createInterest(std::string interestPrefix, int senderAddress) {
+bool ServiceManager::createInterest(std::string interestPrefix, int senderAddress) {
     //std::cout << "(SM) Enter createInterest\n";
     //std::cout.flush();
 
@@ -2638,7 +2638,7 @@ bool BaconServiceManager::createInterest(std::string interestPrefix, int senderA
 }
 
 //Function used add another node to the interest list
-bool BaconServiceManager::addToInterest(std::string interestPrefix, int senderAddress) {
+bool ServiceManager::addToInterest(std::string interestPrefix, int senderAddress) {
     //std::cout << "(SM) Enter addToInterest\n";
     //std::cout.flush();
 
@@ -2672,7 +2672,7 @@ bool BaconServiceManager::addToInterest(std::string interestPrefix, int senderAd
 }
 
 //Function used remove a node to the interest list
-bool BaconServiceManager::removeFromInterest(std::string interestPrefix, int senderAddress) {
+bool ServiceManager::removeFromInterest(std::string interestPrefix, int senderAddress) {
     //std::cout << "(SM) Enter removeFromInterest\n";
     //std::cout.flush();
 
@@ -2701,7 +2701,7 @@ bool BaconServiceManager::removeFromInterest(std::string interestPrefix, int sen
 }
 
 //
-bool BaconServiceManager::deleteInterest(std::string interest) {
+bool ServiceManager::deleteInterest(std::string interest) {
     //std::cout << "(SM) Enter deleteInterest\n";
     //std::cout.flush();
 
@@ -2723,7 +2723,7 @@ bool BaconServiceManager::deleteInterest(std::string interest) {
 }
 
 //
-void BaconServiceManager::refreshNeighborhood() {
+void ServiceManager::refreshNeighborhood() {
     //std::cout << "(SM) Enter refreshNeighborhood\n";
     //std::cout.flush();
 
@@ -2769,7 +2769,7 @@ void BaconServiceManager::refreshNeighborhood() {
 }
 
 //
-bool BaconServiceManager::addNeighbor(WaveShortMessage *msg) {
+bool ServiceManager::addNeighbor(WaveShortMessage *msg) {
     //std::cout << "(SM) Enter addNeighbor\n";
     //std::cout.flush();
 
@@ -2797,7 +2797,7 @@ bool BaconServiceManager::addNeighbor(WaveShortMessage *msg) {
 }
 
 //
-void BaconServiceManager::logNetworkmessage(WaveShortMessage *msg) {
+void ServiceManager::logNetworkmessage(WaveShortMessage *msg) {
     //std::cout << "(SM) Enter logNetworkmessage\n";
     //std::cout.flush();
 
@@ -2891,7 +2891,7 @@ void BaconServiceManager::logNetworkmessage(WaveShortMessage *msg) {
 //=============================================================
 
 //Function that Sends Message directly to the Client
-void BaconServiceManager::sendToClient(WaveShortMessage *msg) {
+void ServiceManager::sendToClient(WaveShortMessage *msg) {
     //std::cout << "(SM) Enter sendToClient\n";
     //std::cout.flush();
 
@@ -2899,14 +2899,14 @@ void BaconServiceManager::sendToClient(WaveShortMessage *msg) {
 }
 
 //Function responsible for sending messages to lower layers
-void BaconServiceManager::sendWSM(WaveShortMessage* wsm) {
+void ServiceManager::sendWSM(WaveShortMessage* wsm) {
     double transmissionDelay = uniform(minimumForwardDelay,maximumForwardDelay);
     sendWSM(wsm,transmissionDelay);
 }
 
 
 //Function responsible for sending messages to lower layers
-void BaconServiceManager::sendWSM(WaveShortMessage* wsm, double forwardDelay) {
+void ServiceManager::sendWSM(WaveShortMessage* wsm, double forwardDelay) {
     //std::cout << "(SM) Enter sendWSM\n";
     //std::cout.flush();
 
@@ -2920,7 +2920,7 @@ void BaconServiceManager::sendWSM(WaveShortMessage* wsm, double forwardDelay) {
     sendDelayedDown(wsm,forwardDelay);
 }
 
-void BaconServiceManager::sendBeacon() {
+void ServiceManager::sendBeacon() {
     //std::cout << "(SM) Enter sendBeacon\n";
     //std::cout.flush();
 
@@ -2952,7 +2952,7 @@ void BaconServiceManager::sendBeacon() {
 
 //Function called on SelfMessages amongst others. Forwards to HandleLowerMsg() so message management can be centralized.
 //We override this function because VEINS has fucked up data typing policies and forces "Data" and "Beacon" types. Fuck that.
-void BaconServiceManager::handleMessage(cMessage *msg) {
+void ServiceManager::handleMessage(cMessage *msg) {
     //std::cout << "(SM) Enter handleMessage\n";
     //std::cout.flush();
 
@@ -2974,7 +2974,7 @@ void BaconServiceManager::handleMessage(cMessage *msg) {
 }
 
 //Function called to handle ALL messages from lower layers
-void BaconServiceManager::handleLowerMsg(cMessage* msg) {
+void ServiceManager::handleLowerMsg(cMessage* msg) {
     //std::cout << "(SM) Enter handleLowerMsg\n";
     //std::cout.flush();
 
@@ -3007,19 +3007,19 @@ void BaconServiceManager::handleLowerMsg(cMessage* msg) {
 //=============================================================
 
 //IGNORE : Function from Base Class
-void BaconServiceManager::onBeacon(WaveShortMessage* wsm) {
+void ServiceManager::onBeacon(WaveShortMessage* wsm) {
     //std::cout << "(SM) <" << myId << "> Got a Beacon!\n";
     addNeighbor(wsm);
     delete (wsm);
 }
 
 //IGNORE : Function from Base Class
-void BaconServiceManager::onData(WaveShortMessage* wsm) {
+void ServiceManager::onData(WaveShortMessage* wsm) {
     handleContentMessage(wsm);
 }
 
 //IGNORE : Function from Base Class
-void BaconServiceManager::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj) {
+void ServiceManager::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj) {
     Enter_Method_Silent();
     if (signalID == mobilityStateChangedSignal) {
         handlePositionUpdate(obj);
@@ -3029,11 +3029,11 @@ void BaconServiceManager::receiveSignal(cComponent* source, simsignal_t signalID
 }
 
 //IGNORE : Function from Base Class
-void BaconServiceManager::handleParkingUpdate(cObject* obj) {
+void ServiceManager::handleParkingUpdate(cObject* obj) {
 }
 
 //IGNORE : Function from Base Class
-void BaconServiceManager::handlePositionUpdate(cObject* obj) {
+void ServiceManager::handlePositionUpdate(cObject* obj) {
     BaseWaveApplLayer::handlePositionUpdate(obj);
 }
 
@@ -3041,7 +3041,7 @@ void BaconServiceManager::handlePositionUpdate(cObject* obj) {
 // EXTRA FUNCTIONALITIES
 //=============================================================
 
-WaveShortMessage* BaconServiceManager::convertCMessage(cMessage* msg) {
+WaveShortMessage* ServiceManager::convertCMessage(cMessage* msg) {
     //std::cout << "(SM) Enter convertCMessage\n";
     //std::cout.flush();
 
@@ -3050,7 +3050,7 @@ WaveShortMessage* BaconServiceManager::convertCMessage(cMessage* msg) {
     return wsm;
 }
 
-ContentClass BaconServiceManager::getClassFromPrefix(string prefix) {
+ContentClass ServiceManager::getClassFromPrefix(string prefix) {
     //std::cout << "(SM) Enter getClassFromPrefix\n";
     //std::cout.flush();
 

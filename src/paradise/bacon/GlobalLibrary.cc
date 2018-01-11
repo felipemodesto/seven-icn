@@ -5,12 +5,12 @@
  *      Author: felipe
  */
 
-#include <paradise/bacon/BaconLibrary.h>
+#include <paradise/bacon/GlobalLibrary.h>
 
-Define_Module(BaconLibrary);
+Define_Module(GlobalLibrary);
 
 //Initialization Function
-void BaconLibrary::initialize(int stage) {
+void GlobalLibrary::initialize(int stage) {
 
     //Initializing
     if (stage == 0) {
@@ -70,7 +70,7 @@ void BaconLibrary::initialize(int stage) {
 
         cSimulation *sim = getSimulation();
         cModule *modp = sim->getModuleByPath("BaconScenario.statistics");
-        stats = check_and_cast<BaconStatistics *>(modp);
+        stats = check_and_cast<Statistics *>(modp);
 
         buildContentList();
 
@@ -135,14 +135,14 @@ void BaconLibrary::initialize(int stage) {
 }
 
 //Finalization Function (not a destructor!)
-void BaconLibrary::finish() {
+void GlobalLibrary::finish() {
     if (multimediaLibrary) multimediaLibrary->clear();
     if (networkLibrary) networkLibrary->clear();
     if (trafficLibrary) trafficLibrary->clear();
 }
 
 //
-void BaconLibrary::registerClient(string clientPath){
+void GlobalLibrary::registerClient(string clientPath){
     //std::cout << "(Lib) Enter registerClient\n";
     //std::cout.flush();
 
@@ -151,7 +151,7 @@ void BaconLibrary::registerClient(string clientPath){
 }
 
 //
-void BaconLibrary::deregisterClient(string clientPath) {
+void GlobalLibrary::deregisterClient(string clientPath) {
     //std::cout << "(Lib) Enter deregisterClient\n";
     //std::cout.flush();
 
@@ -165,7 +165,7 @@ void BaconLibrary::deregisterClient(string clientPath) {
 }
 
 //
-void BaconLibrary::handleMessage(cMessage *msg) {
+void GlobalLibrary::handleMessage(cMessage *msg) {
     //std::cout << "(Lib) Enter handleMessage\n";
     //std::cout.flush();
 
@@ -176,7 +176,7 @@ void BaconLibrary::handleMessage(cMessage *msg) {
 }
 
 //
-void BaconLibrary::setupPendingRequests() {
+void GlobalLibrary::setupPendingRequests() {
     //std::cout << "(Lib) Enter setupPendingRequests\n";
     //std::cout.flush();
 
@@ -204,13 +204,13 @@ void BaconLibrary::setupPendingRequests() {
             requestLocation.y = curRequest.y;
 
             double minDistance = DBL_MAX;
-            BaconClient* closestClient = NULL;
+            Client* closestClient = NULL;
 
             //Checking neighbors for closest neighbor
             for(auto it = clientList.begin(); it != clientList.end();) {
                 cModule* module = getModuleByPath((*it).c_str());
                 if (module != NULL) {
-                    BaconClient* currentClient = check_and_cast<BaconClient *>(module);
+                    Client* currentClient = check_and_cast<Client *>(module);
                     double distance = requestLocation.distance(currentClient->getPosition());
                     if (distance < minDistance) {
                         minDistance = distance;
@@ -222,12 +222,12 @@ void BaconLibrary::setupPendingRequests() {
                 }
             }
 
-            std::list<BaconClient*> viableVehicles;
+            std::list<Client*> viableVehicles;
             //viableVehicles.push_front(closestClient);
             //Rechecking list for other neighbors that might be close
             for(auto it = clientList.begin(); it != clientList.end();it++) {
                 cModule* module = getModuleByPath((*it).c_str());
-                    BaconClient* currentClient = check_and_cast<BaconClient *>(module);
+                    Client* currentClient = check_and_cast<Client *>(module);
                     double distance = requestLocation.distance(currentClient->getPosition());
                     //Filtering vehicles up to 10% further or up to 100m from the closest car
                     if ( distance <= 250 && (distance < minDistance * 1.1 || distance < minDistance + 100)) {
@@ -285,7 +285,7 @@ void BaconLibrary::setupPendingRequests() {
 }
 
 //
-void BaconLibrary::loadRequestSequence() {
+void GlobalLibrary::loadRequestSequence() {
     std::cout << "(Lib) Loading Request List..." << std::endl;
 
     clock_t buildClockTime = clock();
@@ -385,7 +385,7 @@ void BaconLibrary::loadRequestSequence() {
 }
 
 //
-NodeRole BaconLibrary::requestStatus(int vehicleID) {
+NodeRole GlobalLibrary::requestStatus(int vehicleID) {
     //Checking if we have allocated a node as a server
     if (!serverVehicles.empty()) {
         //Checking if the vehicle was already inserted... just to make sure
@@ -422,7 +422,7 @@ NodeRole BaconLibrary::requestStatus(int vehicleID) {
 }
 
 //Function called by clients when they exit the simulation to release their status as a server or client
-void BaconLibrary::releaseStatus(NodeRole status, int vehicleID){
+void GlobalLibrary::releaseStatus(NodeRole status, int vehicleID){
     if (status == NodeRole::SERVER) {
         for (auto it = serverVehicles.begin() ; it != serverVehicles.end() ; it++) {
             if ((*it) == vehicleID) {
@@ -452,21 +452,21 @@ void BaconLibrary::releaseStatus(NodeRole status, int vehicleID){
 }
 
 //
-int BaconLibrary::getActiveServers() {
+int GlobalLibrary::getActiveServers() {
     //std::cout << "(Lib) Enter getActiveServers\n";
     //std::cout.flush();
     return allocatedVehicleServers;
 }
 
 //
-int BaconLibrary::getMaximumServers() {
+int GlobalLibrary::getMaximumServers() {
     //std::cout << "(Lib) Enter getMaximumServers\n";
     //std::cout.flush();
     return maxVehicleServers;
 }
 
 //
-void BaconLibrary::buildContentList() {
+void GlobalLibrary::buildContentList() {
     //std::cout << "(Lib) Enter buildContentList\n";
     //std::cout.flush();
     //Checking for previously existing Library (Using multimedia as an example -> built one, built all)
@@ -525,7 +525,7 @@ void BaconLibrary::buildContentList() {
 }
 
 //
-std::vector<double> BaconLibrary::buildCategoryLibrary(int count, int byteSize, ContentPriority priority, ContentClass category, std::string classPrefix) {
+std::vector<double> GlobalLibrary::buildCategoryLibrary(int count, int byteSize, ContentPriority priority, ContentClass category, std::string classPrefix) {
     //std::cout << "(Lib) Enter buildCategoryLibrary\n";
     //std::cout.flush();
 
@@ -598,7 +598,7 @@ std::vector<double> BaconLibrary::buildCategoryLibrary(int count, int byteSize, 
 
 
 //Returns vector with individual probability of each item
-std::vector<double> BaconLibrary::getProbabilityCurve(int count) {
+std::vector<double> GlobalLibrary::getProbabilityCurve(int count) {
     //Setting Up for Library Popularity Calculations
     float CDF = 0;
     float Hk = 0;
@@ -642,22 +642,22 @@ std::vector<double> BaconLibrary::getProbabilityCurve(int count) {
 
 
 //
-std::list<Content_t>* BaconLibrary::getMultimediaContentList() {
+std::list<Content_t>* GlobalLibrary::getMultimediaContentList() {
     return multimediaLibrary;
 }
 
 //
-std::list<Content_t>* BaconLibrary::getTrafficContentList() {
+std::list<Content_t>* GlobalLibrary::getTrafficContentList() {
     return trafficLibrary;
 }
 
 //
-std::list<Content_t>* BaconLibrary::getNetworkContentList() {
+std::list<Content_t>* GlobalLibrary::getNetworkContentList() {
     return networkLibrary;
 }
 
 //
-Content_t* BaconLibrary::getContent(std::string contentPrefix) {
+Content_t* GlobalLibrary::getContent(std::string contentPrefix) {
     //std::cout << "(Lib) Enter getContent\n";
     //std::cout.flush();
 
@@ -692,49 +692,49 @@ Content_t* BaconLibrary::getContent(std::string contentPrefix) {
 }
 
 //
-bool BaconLibrary::independentOperationMode() {
+bool GlobalLibrary::independentOperationMode() {
     if (locationModel == LocationCorrelationModel::TWITTER) return false;
     return true;
 }
 
 //
-bool BaconLibrary::locationDependentContentMode() {
+bool GlobalLibrary::locationDependentContentMode() {
     if (locationModel == LocationCorrelationModel::GPS) return true;
     return false;
 }
 
 //
-int BaconLibrary::getContentClass(ContentClass cClass) {
+int GlobalLibrary::getContentClass(ContentClass cClass) {
     return static_cast<int>(cClass);
 }
 
 
-int BaconLibrary::getSectorSize() {
+int GlobalLibrary::getSectorSize() {
     if (sectorWidth == sectorHeight) return sectorWidth;
     return -1;  //If the sizes are different then we're fucked and who cares, I didn't have time to implement logic with non-regular sectors
 }
 
 //
-int BaconLibrary::getSectorRow(int sectorCode) {
+int GlobalLibrary::getSectorRow(int sectorCode) {
     Enter_Method_Silent();
     return static_cast<int> (floor((sectorCode-1) / widthBlocks)) + 1;
 }
 
 //
-int BaconLibrary::getSectorColumn(int sectorCode) {
+int GlobalLibrary::getSectorColumn(int sectorCode) {
     Enter_Method_Silent();
     return static_cast<int> ((sectorCode-1) % widthBlocks) + 1;
 }
 
 //
-int BaconLibrary::getSector(double xPos, double yPos) {
+int GlobalLibrary::getSector(double xPos, double yPos) {
     Enter_Method_Silent();
     int sector = floor(xPos/sectorWidth) + ( floor(yPos/sectorHeight) )* widthBlocks;
     return sector;
 }
 
 //
-int BaconLibrary::getDistanceToSector(int sectorCode, double xPos, double yPos) {
+int GlobalLibrary::getDistanceToSector(int sectorCode, double xPos, double yPos) {
     Enter_Method_Silent();
     int sectorCenterX = static_cast <int> (floor((floor((sectorCode-1) % widthBlocks) * sectorWidth) + sectorWidth/2));
     int sectorCenterY = static_cast <int> (floor((floor((sectorCode-1) / widthBlocks) * sectorHeight) + sectorHeight/2));
@@ -744,7 +744,7 @@ int BaconLibrary::getDistanceToSector(int sectorCode, double xPos, double yPos) 
 }
 
 //
-bool BaconLibrary::viablyCloseToContentLocation(int sectorCode, double xPos, double yPos) {
+bool GlobalLibrary::viablyCloseToContentLocation(int sectorCode, double xPos, double yPos) {
     Enter_Method_Silent();
     int calculatedDistance = getDistanceToSector(sectorCode, xPos, yPos);
     //std::cout << "(Lib) Node is <" << calculatedDistance << "> linear meters to sector in question";
@@ -754,12 +754,12 @@ bool BaconLibrary::viablyCloseToContentLocation(int sectorCode, double xPos, dou
 }
 
 //
-int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass ) {
+int GlobalLibrary::getIndexForDensity(double value, ContentClass contentClass ) {
     return getIndexForDensity(value,contentClass,0);
 }
 
 //
-int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, double xPos, double yPos ) {
+int GlobalLibrary::getIndexForDensity(double value, ContentClass contentClass, double xPos, double yPos ) {
     Enter_Method_Silent();
     int sector = getSector(xPos,yPos);
     switch (locationModel) {
@@ -784,7 +784,7 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, do
 }
 
 //
-float BaconLibrary::getDensityForIndex(double index,ContentClass contentClass ) {
+float GlobalLibrary::getDensityForIndex(double index,ContentClass contentClass ) {
     switch(contentClass) {
         case ContentClass::MULTIMEDIA:
             return multimediaCummulativeProbabilityCurve[index+1] - multimediaCummulativeProbabilityCurve[index];
@@ -806,7 +806,7 @@ float BaconLibrary::getDensityForIndex(double index,ContentClass contentClass ) 
 }
 
 //
-int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, int sector ) {
+int GlobalLibrary::getIndexForDensity(double value, ContentClass contentClass, int sector ) {
     //std::cout << "(Lib) Enter getIndexForDensity\n";
     //std::cout.flush();
     std::vector<double> probabilityCurve;
@@ -876,7 +876,7 @@ int BaconLibrary::getIndexForDensity(double value, ContentClass contentClass, in
 }
 
 //
-int BaconLibrary::getClassFreeIndex(string contentPrefix) {
+int GlobalLibrary::getClassFreeIndex(string contentPrefix) {
 
     std::stringstream ss(contentPrefix);
     std::string item;
@@ -890,23 +890,23 @@ int BaconLibrary::getClassFreeIndex(string contentPrefix) {
     return std::stoi(item);
 }
 
-int BaconLibrary::getSectorFromPrefixIndex(int index) {
+int GlobalLibrary::getSectorFromPrefixIndex(int index) {
     return sectorPopularityIndex[index-1];
 }
 
 //
-long int BaconLibrary::getCurrentRequestIndex() {
+long int GlobalLibrary::getCurrentRequestIndex() {
     return currentRequestIndex;
 }
 
 //
-long int BaconLibrary::getRequestIndex() {
+long int GlobalLibrary::getRequestIndex() {
     currentRequestIndex++;
     return currentRequestIndex;
 }
 
 //
-std::string BaconLibrary::cleanString(std::string inputString) {
+std::string GlobalLibrary::cleanString(std::string inputString) {
     //Removing that god damn fucking quote
     if (inputString.c_str()[0] == '\"') {
         inputString = inputString.substr(1,inputString.length()-2);

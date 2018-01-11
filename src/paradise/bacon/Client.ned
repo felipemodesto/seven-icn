@@ -23,9 +23,9 @@ package paradise.bacon;
 import org.car2x.veins.base.modules.IBaseApplLayer;
 import org.car2x.veins.modules.application.ieee80211p.BaseWaveApplLayer;
 
-simple BaconClient extends BaseWaveApplLayer {
+simple Client extends BaseWaveApplLayer {
     parameters:
-    	@class(BaconClient);
+    	@class(Client);
 		double minimumRequestDelay  = default(0); 				//Minimum time in between requests
 		double maximumRequestDelay  = default(0);				//Maximum time in between requests
 		double requestTimeout = default(2s) @unit(s);			//Time limit after which request is considered for "no response"

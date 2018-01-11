@@ -1,14 +1,14 @@
 //Concent Centric Class - Felipe Modesto
 
-#include <paradise/bacon/BaconContentProvider.h>
+#include <paradise/bacon/ContentStore.h>
 
 using Veins::TraCIMobilityAccess;
 using Veins::AnnotationManagerAccess;
 
-Define_Module(BaconContentProvider);
+Define_Module(ContentStore);
 
 //Initialization Function
-void BaconContentProvider::initialize(int stage) {
+void ContentStore::initialize(int stage) {
     if (stage == 0) {
         //Getting Parent Module Index
         myId = getParentModule()->getIndex();
@@ -16,8 +16,10 @@ void BaconContentProvider::initialize(int stage) {
         cachePolicy = static_cast<CacheReplacementPolicy>(par("cacheReplacementPolicy").longValue());
         startingCache = par("startingCache").doubleValue();
         maxCachedContents = par("maxCachedContents").longValue();
+        locationDependentCacheSize = par("geoCacheSize").longValue();
+        maxCachedContents -= locationDependentCacheSize;                //Resizing total cache size
 
-        //Defining cache subelement sizes based on cache policy
+        gpsCacheWindowSize = par("gpsKnowledgeWindowSize").longValue();
 
         librarySize = 0;
         WATCH(librarySize);
@@ -26,14 +28,14 @@ void BaconContentProvider::initialize(int stage) {
     if (stage == 1) {
         //Getting modules we have to deal with
         traci = check_and_cast<Veins::TraCIMobility*>(getParentModule()->getSubmodule("veinsmobility"));
-        manager = check_and_cast<BaconServiceManager *>(getParentModule()->getSubmodule("appl"));
+        manager = check_and_cast<ServiceManager *>(getParentModule()->getSubmodule("appl"));
     }
 
     if (stage == 2) {
         //Getting global modules we have to deal with
         cSimulation *sim = getSimulation();
-        stats = check_and_cast<BaconStatistics*>(sim->getModuleByPath("BaconScenario.statistics"));
-        library = check_and_cast<BaconLibrary*>(sim->getModuleByPath("BaconScenario.library"));
+        stats = check_and_cast<Statistics*>(sim->getModuleByPath("BaconScenario.statistics"));
+        library = check_and_cast<GlobalLibrary*>(sim->getModuleByPath("BaconScenario.library"));
 
         nodeRole = library->requestStatus(myId);
         if (nodeRole == NodeRole::SERVER) {
@@ -46,7 +48,7 @@ void BaconContentProvider::initialize(int stage) {
 }
 
 //Finalization Function (not a destructor!)
-void BaconContentProvider::finish() {
+void ContentStore::finish() {
     library->releaseStatus(nodeRole,myId);
     contentCache.empty();
 }
@@ -56,7 +58,7 @@ void BaconContentProvider::finish() {
 //=============================================================
 
 //
-void BaconContentProvider::runCacheReplacement(){
+void ContentStore::runCacheReplacement(){
     //std::cout << "(CP) Running Cache Replacement!\n";
     //std::cout.flush();
 
@@ -65,8 +67,8 @@ void BaconContentProvider::runCacheReplacement(){
         return;
     }
 
-    int cacheSize = contentCache.size();
-    int cacheOverflow = cacheSize - maxCachedContents + 1;
+    int currentCacheSize = contentCache.size();
+    int cacheOverflow = currentCacheSize - maxCachedContents + 1;
 
     //Checking if we actually have to get worried about cache replacement
     if (cacheOverflow <= 0) {
@@ -254,7 +256,7 @@ void BaconContentProvider::runCacheReplacement(){
 }
 
 //
-void BaconContentProvider::addContentToLibrary(Content_t* contentObject) {
+void ContentStore::addContentToLibrary(Content_t* contentObject) {
     if (contentObject == NULL) {
         EV_ERROR << "(CP) Content to be added to library is NULL.\n";
         EV_ERROR.flush();
@@ -280,8 +282,8 @@ void BaconContentProvider::addContentToLibrary(Content_t* contentObject) {
     }
 
     //Checking for Content replacement prior to adding content to library to ensure content will not be instantly removed based on policy behavior
-    int cacheSize = contentCache.size();
-    if ( cacheSize >= maxCachedContents && maxCachedContents != -1) {
+    int currentCacheSize = contentCache.size();
+    if ( currentCacheSize >= maxCachedContents && maxCachedContents != -1) {
         //std::cout << "(CP) Cache is full.\n";
         //std::cout.flush();
 
@@ -309,7 +311,7 @@ void BaconContentProvider::addContentToLibrary(Content_t* contentObject) {
 }
 
 //
-void BaconContentProvider::removeContentFromLibrary(Content_t* newContent) {
+void ContentStore::removeContentFromLibrary(Content_t* newContent) {
     //Searching for content
     for (auto it = contentCache.begin(); it != contentCache.end(); it++) {
         if (newContent->contentPrefix.compare(it->referenceObject->contentPrefix) == 0) {
@@ -326,7 +328,7 @@ void BaconContentProvider::removeContentFromLibrary(Content_t* newContent) {
 }
 
 //
-void BaconContentProvider::buildContentLibrary() {
+void ContentStore::buildContentLibrary() {
     //Building Content Database
     if (hasLibrary) return;
     hasLibrary = true;
@@ -423,19 +425,19 @@ void BaconContentProvider::buildContentLibrary() {
 }
 
 //Pseudosetter
-void BaconContentProvider::increaseUseCount(cMessage *msg) {
+void ContentStore::increaseUseCount(cMessage *msg) {
     cArray parArray = msg->getParList();
     cMsgPar* requestName = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
     increaseUseCount(requestName->str());
 }
 
 //PseudoSetter
-void BaconContentProvider::increaseUseCount(std::string prefix) {
+void ContentStore::increaseUseCount(std::string prefix) {
     increaseUseCount(1,prefix);
 }
 
 //
-void BaconContentProvider::increaseUseCount(int addedUses, std::string prefix) {
+void ContentStore::increaseUseCount(int addedUses, std::string prefix) {
     //Removing that god damn fucking quote
     prefix = library->cleanString(prefix);
 
@@ -456,7 +458,7 @@ void BaconContentProvider::increaseUseCount(int addedUses, std::string prefix) {
 }
 
 //Getter
-int BaconContentProvider::getUseCount(std::string prefix) {
+int ContentStore::getUseCount(std::string prefix) {
     //Removing that god damn fucking quote
     prefix = library->cleanString(prefix);
 
@@ -470,7 +472,7 @@ int BaconContentProvider::getUseCount(std::string prefix) {
 }
 
 //Function meant to handle Content Lookup Requests
-void BaconContentProvider::addToLibrary(cMessage *msg) {
+void ContentStore::addToLibrary(cMessage *msg) {
     //Unwrapping contents of request
     cArray parArray = msg->getParList();
     cMsgPar* requestName = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
@@ -484,7 +486,7 @@ void BaconContentProvider::addToLibrary(cMessage *msg) {
 }
 
 //Function meant to handle Content Lookup Requests
-bool  BaconContentProvider::handleLookup(std::string nameValue, int requestID) {
+bool  ContentStore::handleLookup(std::string nameValue, int requestID) {
     //Removing '"'s from text
     std::string lookupValue = nameValue;
     if (nameValue.c_str()[0] == '\"') {
@@ -569,18 +571,18 @@ bool  BaconContentProvider::handleLookup(std::string nameValue, int requestID) {
 }
 
 //Getter to classify node as either server or client (servers don't have cache limitation applied during computation)
-NodeRole BaconContentProvider::getRole() {
+NodeRole ContentStore::getRole() {
     //TODO: (REVIEW) Make this more malleable depending on content class (?)
     return nodeRole;
 }
 
 //Getter for the currently used Cache Policy
-CacheReplacementPolicy BaconContentProvider::getCachePolicy() {
+CacheReplacementPolicy ContentStore::getCachePolicy() {
     return cachePolicy;
 }
 
 //Decision algorithm function whether item should be cached
-bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection) {
+bool ContentStore::localPopularityCacheDecision(Connection_t* connection) {
     //Always cache if space is available
     if ( (int)contentCache.size() < maxCachedContents) {
         return true;
@@ -608,7 +610,7 @@ bool BaconContentProvider::localPopularityCacheDecision(Connection_t* connection
 }
 
 //
-bool BaconContentProvider::localMinimumPopularityCacheDecision(Connection_t* connection) {
+bool ContentStore::localMinimumPopularityCacheDecision(Connection_t* connection) {
     //Always cache if space is available
     if ( (int)contentCache.size() < maxCachedContents) {
         return true;
@@ -646,7 +648,7 @@ bool BaconContentProvider::localMinimumPopularityCacheDecision(Connection_t* con
 }
 
 //Decision algorithm function whether item should be cached
-bool BaconContentProvider::globalPopularityCacheDecision(Connection_t* connection) {
+bool ContentStore::globalPopularityCacheDecision(Connection_t* connection) {
     //Always cache if space is available
     if ( (int)contentCache.size() < maxCachedContents) {
         return true;
@@ -675,7 +677,7 @@ bool BaconContentProvider::globalPopularityCacheDecision(Connection_t* connectio
 }
 
 //Decision algorithm function whether item should be cached
-bool BaconContentProvider::globalMinimumPopularityCacheDecision(Connection_t* connection) {
+bool ContentStore::globalMinimumPopularityCacheDecision(Connection_t* connection) {
     //Always cache if space is available
     if ( (int)contentCache.size() < maxCachedContents) {
         return true;

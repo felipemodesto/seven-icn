@@ -23,9 +23,9 @@ package paradise.bacon;
 import org.car2x.veins.base.modules.IBaseApplLayer;
 import org.car2x.veins.modules.application.ieee80211p.BaseWaveApplLayer;
 
-simple BaconServiceManager extends BaseWaveApplLayer {
+simple ServiceManager extends BaseWaveApplLayer {
     parameters:
-    	@class(BaconServiceManager);
+    	@class(ServiceManager);
     	@display("i=block/routing;p=250,58");
     	bool sendWhileParking  = default(true); 			//send messages when the car is parked
     	double maxSimultaneousConnections = default(-1);	//Number of simultaneous connected allowed for a node (-1 == Infinite)

@@ -9,19 +9,19 @@
 #define BACONSTATISTICS_H
 
 
-#include <paradise/bacon/BaconLibrary.h>
-#include <paradise/bacon/BaconStructures.h>
-class BaconLibrary;
+#include <paradise/bacon/Definitions.h>
+#include <paradise/bacon/GlobalLibrary.h>
+class GlobalLibrary;
 
 using namespace omnetpp;
 using namespace std;
 
-class BaconStatistics : public omnetpp::cSimpleModule {
+class Statistics : public omnetpp::cSimpleModule {
 
 protected:
 
-    BaconStatistics* stats;
-    BaconLibrary* library;
+    Statistics* stats;
+    GlobalLibrary* library;
     cMessage *clockTimerMessage;      //Self message sent in timer
 
     //Data Collection Configuration Setup
@@ -192,7 +192,7 @@ protected:
     void handleMessage(cMessage *msg);
 
 public:
-    virtual ~BaconStatistics();
+    virtual ~Statistics();
     virtual void initialize(int stage);
     virtual void finish();
 

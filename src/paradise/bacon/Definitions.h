@@ -177,6 +177,19 @@ struct PendingContent_t : CachedContent_t {
     simtime_t fullfillTime;                 //Time in which content was fulfilled
 };
 
+
+//Used to store knowledge of server-correlated GPS frequency spikes
+struct OverheardMessageObject_t {
+    std::string contentPrefix;              //String name representation of content prefix
+    ContentClass contentClass;              //Type of Content       TODO: This might be redundant!
+    long referenceCount;                    //Number of requests this object has had in the current list (sliding window column)
+};
+
+//List of overheard GPS Stuff
+struct OverheardMessageList_t {
+    std::list<OverheardMessageObject_t> bacon;
+};
+
 ////////////////////////////////////////////////////////////////////
 //  CONNECTION & NETWORK RELATED DEFINITIONS
 ////////////////////////////////////////////////////////////////////

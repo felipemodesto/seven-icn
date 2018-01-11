@@ -8,18 +8,18 @@
 #ifndef BACONLIBRARY_H
 #define BACONLIBRARY_H
 
-#include <paradise/bacon/BaconClient.h>
-#include <paradise/bacon/BaconStatistics.h>
-#include <paradise/bacon/BaconStructures.h>
+#include <paradise/bacon/Client.h>
+#include <paradise/bacon/Definitions.h>
+#include <paradise/bacon/Statistics.h>
 
-class BaconStatistics;
-class BaconClient;
+class Statistics;
+class Client;
 
 using namespace omnetpp;
 using namespace std;
 
 //Content Library. Generates random content list and provides to whomever needs for simulation purposes. (Singleton)
-class BaconLibrary : public omnetpp::cSimpleModule {
+class GlobalLibrary : public omnetpp::cSimpleModule {
 
 private:
     //Keeping copies from appearing
@@ -94,7 +94,7 @@ protected:
     string requestSequenceFile;
 
     BaseWorldUtility *world;
-    BaconStatistics* stats;
+    Statistics* stats;
 
 public:
     std::string transitPrefix = "t";

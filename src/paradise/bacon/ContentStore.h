@@ -22,21 +22,22 @@
 #define BaconContentProvider_H
 
 
-#include <paradise/bacon/BaconLibrary.h>
-#include <paradise/bacon/BaconServiceManager.h>
-#include <paradise/bacon/BaconStructures.h>
+#include <paradise/bacon/Definitions.h>
+#include <paradise/bacon/GlobalLibrary.h>
+#include <paradise/bacon/ServiceManager.h>
 
-class BaconServiceManager;
-class BaconLibrary;
-class BaconStatistics;
+class ServiceManager;
+class GlobalLibrary;
+class Statistics;
 
 using namespace omnetpp;
 using namespace std;
 
+
 /**
  * Application Layer Service Manager
  */
-class BaconContentProvider : public omnetpp::cSimpleModule {
+class ContentStore : public omnetpp::cSimpleModule {
     public:
         virtual void initialize(int stage);
         virtual void finish();
@@ -59,18 +60,28 @@ class BaconContentProvider : public omnetpp::cSimpleModule {
         std::list<CachedContent_t> contentCache;
         int librarySize;
 
+        int gpsCacheWindowSize;
+        std::list<OverheardMessagesList_t> gpsCacheFrequencyWindow;
+
         CacheReplacementPolicy cachePolicy;
 
-        int startingCache = 0;
+
+        //Cache Size Properties (see other stuff below for more policies that affect cache size distribution)
         int maxCachedContents = 0;
+        int startingCache = 0;
+
+        //Cache split policy
+        int locationDependentCacheSize = 0;
+
+        //Additional values for cache policies that allocate part of the cache for a specific purpose
         int priorityCacheSize = 0;
         int personalCacheSize = 0;
         int friendCacheSize = 0;
         int othersCacheSize = 0;
 
-        BaconServiceManager* manager;
-        BaconStatistics* stats;
-        BaconLibrary* library;
+        ServiceManager* manager;
+        Statistics* stats;
+        GlobalLibrary* library;
 
     protected:
         void runCacheReplacement();                             //Cache replacement Policy implementation function

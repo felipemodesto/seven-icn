@@ -21,13 +21,13 @@
 #ifndef BaconServiceManager_H
 #define BaconServiceManager_H
 
-#include <paradise/bacon/BaconContentProvider.h>
-#include <paradise/bacon/BaconStatistics.h>
-#include <paradise/bacon/BaconStructures.h>
+#include <paradise/bacon/ContentStore.h>
+#include <paradise/bacon/Definitions.h>
+#include <paradise/bacon/Statistics.h>
 
-class BaconContentProvider;
-class BaconLibrary;
-class BaconStatistics;
+class ContentStore;
+class GlobalLibrary;
+class Statistics;
 
 using Veins::TraCIMobility;
 using Veins::AnnotationManager;
@@ -35,7 +35,7 @@ using Veins::AnnotationManager;
 /**
  * Application Layer Service Manager
  */
-class BaconServiceManager : public BaseWaveApplLayer {
+class ServiceManager : public BaseWaveApplLayer {
 
     public:
         virtual void receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj);
@@ -46,9 +46,9 @@ class BaconServiceManager : public BaseWaveApplLayer {
         AnnotationManager* annotations;
         simtime_t lastDroveAt;
         TraCIMobility* traci;
-        BaconStatistics* stats;
-        BaconLibrary* library;
-        BaconContentProvider* cache;
+        Statistics* stats;
+        GlobalLibrary* library;
+        ContentStore* cache;
 
         WaveShortMessage* sendBeaconEvt;
 

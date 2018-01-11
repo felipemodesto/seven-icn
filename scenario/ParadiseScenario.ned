@@ -23,7 +23,7 @@ import org.car2x.veins.modules.obstacle.ObstacleControl;
 import org.car2x.veins.modules.world.annotations.AnnotationManager;
 import paradise.bacon.*;
 
-network BaconScenario {
+network ParadiseScenario {
     parameters:
         //@display("bgb=341,200;bgi=background/terrain,s");
         
@@ -64,12 +64,12 @@ network BaconScenario {
                 @display("p=492.656,54.072002");
         }
         
-        statistics: BaconStatistics {
+        statistics: Statistics {
             parameters:
                 @display("p=66.088005,1694.2561;i=block/bucket");
         }
 
-        library: BaconLibrary {
+        library: GlobalLibrary {
             parameters:
                 @display("p=66.088005,1297.728;i=block/bucket");
         }

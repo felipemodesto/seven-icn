@@ -1,16 +1,16 @@
 //Concent Centric Class - Felipe Modesto
 
-#include <paradise/bacon/BaconClient.h>
+#include <paradise/bacon/Client.h>
 
 using Veins::TraCIMobilityAccess;
 using Veins::AnnotationManagerAccess;
 
-const simsignalwrap_t BaconClient::parkingStateChangedSignal = simsignalwrap_t(TRACI_SIGNAL_PARKING_CHANGE_NAME);
+const simsignalwrap_t Client::parkingStateChangedSignal = simsignalwrap_t(TRACI_SIGNAL_PARKING_CHANGE_NAME);
 
-Define_Module(BaconClient);
+Define_Module(Client);
 
 //Initialization Function
-void BaconClient::initialize(int stage) {
+void Client::initialize(int stage) {
 
     //Initializing
     BaseWaveApplLayer::initialize(stage);
@@ -106,13 +106,13 @@ void BaconClient::initialize(int stage) {
 //            mapNode->getModelLayerGroup()->addChild(locatorNode);
 
             traci =  check_and_cast<Veins::TraCIMobility*>(getParentModule()->getSubmodule("veinsmobility"));
-            cache = check_and_cast<BaconContentProvider *>(getParentModule()->getSubmodule("content"));
+            cache = check_and_cast<ContentStore *>(getParentModule()->getSubmodule("content"));
             cSimulation *sim = getSimulation();
             cModule *modp = sim->getModuleByPath("BaconScenario.statistics");
-            stats = check_and_cast<BaconStatistics *>(modp);
+            stats = check_and_cast<Statistics *>(modp);
 
             cModule *modlib = sim->getModuleByPath("BaconScenario.library");
-            library = check_and_cast<BaconLibrary *>(modlib);
+            library = check_and_cast<GlobalLibrary *>(modlib);
             library->registerClient(getFullPath());
 
             contentTimerMessage = NULL;
@@ -152,7 +152,7 @@ void BaconClient::initialize(int stage) {
 }
 
 //Function called prior to destructor where we close off statistics and whatnots
-void BaconClient::finish() {
+void Client::finish() {
     if (contentTimerMessage != NULL) {
         cancelAndDelete(contentTimerMessage);
         contentTimerMessage = NULL;
@@ -169,7 +169,7 @@ void BaconClient::finish() {
     //std::cout.flush();
 }
 
-BaconClient::~BaconClient() {
+Client::~Client() {
     if (contentTimerMessage != NULL) cancelAndDelete(contentTimerMessage);
     if (runtimeTimer != NULL) cancelAndDelete(runtimeTimer);
 
@@ -223,7 +223,7 @@ void BaconClient::refreshDisplay() const {
 //*/
 
 
-Coord BaconClient::getPosition() {
+Coord Client::getPosition() {
     //std::cout << "(Cl) Enter getPosition\n";
     //std::cout.flush();
     Enter_Method_Silent();
@@ -235,7 +235,7 @@ Coord BaconClient::getPosition() {
 }
 
 //
-void BaconClient::resetLocationTimer() {
+void Client::resetLocationTimer() {
     //std::cout << "(Cl) Enter resetLocationTimer\n";
     //std::cout.flush();
     if (runtimeTimer == NULL) {
@@ -247,7 +247,7 @@ void BaconClient::resetLocationTimer() {
 }
 
 //
-void BaconClient::notifyLocation() {
+void Client::notifyLocation() {
     //std::cout << "(Cl) Enter notifyLocation\n";
     //std::cout.flush();
     //Getting Vehicle's current position
@@ -267,13 +267,13 @@ void BaconClient::notifyLocation() {
 }
 
 //
-void BaconClient::startNewMessageTimer() {
+void Client::startNewMessageTimer() {
     requestTimer = uniform(minimumRequestDelay,maximumRequestDelay);
     startNewMessageTimer(requestTimer);
 }
 
 //
-void BaconClient::startNewMessageTimer(simtime_t timerTime) {
+void Client::startNewMessageTimer(simtime_t timerTime) {
     //std::cout << "(Cl) Enter startNewMessageTimer\n";
     //std::cout.flush();
     if (contentTimerMessage == NULL) {
@@ -296,7 +296,7 @@ void BaconClient::startNewMessageTimer(simtime_t timerTime) {
 //=============================================================
 
 //Function called externally if we are passively delegating packet start to the BaconLibrary
-bool BaconClient::suggestContentRequest(Content_t* suggestedContent) {
+bool Client::suggestContentRequest(Content_t* suggestedContent) {
     //Perform context switching for incoming message
     Enter_Method_Silent();
     //std::cout << "(Cl) Enter suggestContentRequest\n";
@@ -308,7 +308,7 @@ bool BaconClient::suggestContentRequest(Content_t* suggestedContent) {
 }
 
 //
-void BaconClient::cleanRequestList() {
+void Client::cleanRequestList() {
     Enter_Method_Silent();
     //std::cout << "(Cl) Enter cleanRequestList\n";
     //std::cout.flush();
@@ -360,12 +360,12 @@ void BaconClient::cleanRequestList() {
 }
 
 //
-bool BaconClient::startContentRequest() {
+bool Client::startContentRequest() {
     return startContentRequest(NULL);
 }
 
 //
-bool BaconClient::startContentRequest(Content_t* preferedRequest) {
+bool Client::startContentRequest(Content_t* preferedRequest) {
     //std::cout << "(Cl) Enter startContentRequest\n";
     //std::cout.flush();
     Enter_Method_Silent();
@@ -481,7 +481,7 @@ bool BaconClient::startContentRequest(Content_t* preferedRequest) {
 }
 
 //Returns a candidate for a request given the internal properties of the client (class frequency, etc)
-Content_t*  BaconClient::selectObjectForRequest () {
+Content_t*  Client::selectObjectForRequest () {
     //std::cout << "(Cl) Enter selectObjectForRequest\n";
     //std::cout.flush();
 
@@ -557,7 +557,7 @@ Content_t*  BaconClient::selectObjectForRequest () {
 }
 
 //
-void BaconClient::handleMessage(cMessage *msg) {
+void Client::handleMessage(cMessage *msg) {
     //std::cout << "(Cl) Enter handleMessage\n";
     //std::cout.flush();
     if ( msg == contentTimerMessage || strcmp(msg->getName(),"contentTimerMessage") == 0  ) {
@@ -585,7 +585,7 @@ void BaconClient::handleMessage(cMessage *msg) {
 //=============================================================
 
 //Function that Sends Message directly to the Content Provider
-void BaconClient::sendToServiceManager(cMessage *msg) {
+void Client::sendToServiceManager(cMessage *msg) {
     send(msg, "clientExchangeOut");
 }
 
@@ -595,19 +595,19 @@ void BaconClient::sendToServiceManager(cMessage *msg) {
 
 /**/
 //Generic Broadcast Message Transmission Function
-void BaconClient::sendMessage(std::string messageContent) {
+void Client::sendMessage(std::string messageContent) {
     std::cerr << "(Cl) Error: sendMessage method should not be called in the Client Class!\n";
     std::cerr.flush();
 }
 
 //Generic function called upon receiving a beacon message - AKA : IGNORE Clients do not implement this feature
-void BaconClient::onBeacon(WaveShortMessage* wsm) {
+void Client::onBeacon(WaveShortMessage* wsm) {
     std::cerr << "(Cl) Error: onBeacon method should not be called in the Client Class!\n";
     std::cerr.flush();
 }
 
 //Generic Function called upon receiving data message
-void BaconClient::onData(WaveShortMessage* wsm) {
+void Client::onData(WaveShortMessage* wsm) {
     //std::cout << "(Cl) Enter onData\n";
     //std::cout.flush();
     //Checking the message type
@@ -790,25 +790,25 @@ void BaconClient::onData(WaveShortMessage* wsm) {
 }
 
 //IGNORE (VEINS Code)
-void BaconClient::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj) {
+void Client::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj) {
     //std::cout << "(Cl) Enter receiveSignal\n";
     //std::cout.flush();
 }
 
 //IGNORE (VEINS Code)
-void BaconClient::handleParkingUpdate(cObject* obj) {
+void Client::handleParkingUpdate(cObject* obj) {
     std::cout << "(Cl) Enter handleParkingUpdate\n";
     std::cout.flush();
 }
 
 //IGNORE (VEINS Code)
-void BaconClient::handlePositionUpdate(cObject* obj) {
+void Client::handlePositionUpdate(cObject* obj) {
     //std::cout << "(Cl) Enter handleParkingUpdate\n";
     //std::cout.flush();
 }
 
 //IGNORE (VEINS Code)
-void BaconClient::sendWSM(WaveShortMessage* wsm) {
+void Client::sendWSM(WaveShortMessage* wsm) {
     //std::cout << "(Cl) Enter sendWSM\n";
     //std::cout.flush();
     recordPacket(PassedMessage::OUTGOING, PassedMessage::LOWER_DATA, wsm);

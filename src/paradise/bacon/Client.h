@@ -21,13 +21,13 @@
 #ifndef BaconClient_H
 #define BaconClient_H
 
-#include <paradise/bacon/BaconContentProvider.h>
-#include <paradise/bacon/BaconLibrary.h>
-#include <paradise/bacon/BaconStructures.h>
+#include <paradise/bacon/ContentStore.h>
+#include <paradise/bacon/Definitions.h>
+#include <paradise/bacon/GlobalLibrary.h>
 
-class BaconContentProvider;
-class BaconLibrary;
-class BaconStatistics;
+class ContentStore;
+class GlobalLibrary;
+class Statistics;
 
 using namespace omnetpp;
 //using namespace osgEarth;
@@ -38,10 +38,10 @@ using namespace omnetpp;
  * Application Layer Service Manager
  */
 //class BaconClient : public BaseWaveApplLayer , public IMobileNode {
-class BaconClient : public BaseWaveApplLayer {
+class Client : public BaseWaveApplLayer {
 
     public:
-        ~BaconClient();
+        ~Client();
         virtual void initialize(int stage) override;
         virtual void finish();
         virtual void receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj) override;
@@ -98,9 +98,9 @@ class BaconClient : public BaseWaveApplLayer {
         //==========================================//
         //MY STUFF!
 
-        BaconStatistics* stats;
-        BaconLibrary* library;
-        BaconContentProvider* cache;
+        Statistics* stats;
+        GlobalLibrary* library;
+        ContentStore* cache;
 
         int clientExchangeIn;           //Input from Service Manager
         int clientExchangeOut;          //Output to Service Manager
