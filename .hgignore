@@ -30,3 +30,4 @@ src/veins/modules/messages/Mac80211Pkt_m.h
 src/veins/modules/messages/PhyControlMessage_m.cc
 src/veins/modules/messages/PhyControlMessage_m.h
 src/veins/modules/messages/WaveShortMessage_m.cc
+src/Makefile
