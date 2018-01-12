@@ -24,7 +24,7 @@ import paradise.bacon.*;
 import org.car2x.veins.base.modules.*;
 import org.car2x.veins.modules.nic.Nic80211p;
 
-module BaconCar
+module ParadiseCar
 //extends MobileNode
 {
     parameters:

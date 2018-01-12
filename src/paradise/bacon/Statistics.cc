@@ -148,7 +148,7 @@ void Statistics::startStatistics() {
 
     //Getting a reference to the content Library
     cSimulation *sim = getSimulation();
-    cModule *modlib = sim->getModuleByPath("BaconScenario.library");
+    cModule *modlib = sim->getModuleByPath("ParadiseScenario.library");
     library = check_and_cast<GlobalLibrary *>(modlib);
 
     //Checking if we already have simulation results for this file

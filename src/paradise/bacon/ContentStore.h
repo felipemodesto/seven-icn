@@ -61,10 +61,10 @@ class ContentStore : public omnetpp::cSimpleModule {
         int librarySize;
 
         int gpsCacheWindowSize;
-        std::list<OverheardMessagesList_t> gpsCacheFrequencyWindow;
+        std::list<OverheardMessageList_t*> gpsCacheFrequencyWindow;
+        OverheardMessageList_t neighborGPSInformation;
 
         CacheReplacementPolicy cachePolicy;
-
 
         //Cache Size Properties (see other stuff below for more policies that affect cache size distribution)
         int maxCachedContents = 0;
@@ -83,10 +83,16 @@ class ContentStore : public omnetpp::cSimpleModule {
         Statistics* stats;
         GlobalLibrary* library;
 
+        int gpsUpdateTimerTime = 1;                 //1 second per window slice
+        cMessage *gpsCacheTimerMessage;              //Timer used for second to second updates
+
     protected:
         void runCacheReplacement();                             //Cache replacement Policy implementation function
         void buildContentLibrary();                             //
         void addToLibrary(cMessage *msg);                       //
+        void resetGPSTimer();
+
+        void handleMessage(cMessage *msg)  override;                //CALLBACK FROM SELF MESSAGE, GENERALLY USED AS RANDOM TIMER CALLBACK
 
     public:
         void increaseUseCount(std::string prefix);              //Increase the request (use) count for a specific content object
@@ -97,16 +103,20 @@ class ContentStore : public omnetpp::cSimpleModule {
         int getUseCount(std::string prefix);                    //Get the current use count for an object
         CacheReplacementPolicy getCachePolicy();                //Getter for the cache policy
 
+        void maintainGPSCache();
+        void logLocationDependentRequest(Content_t* object);
+
         //bool brokenlocalPopularityCacheDecision(Connection_t* connection);    //Decision algorithm function whether item should be cached
         bool localPopularityCacheDecision(Connection_t* connection);            //Decision algorithm function whether item should be cached
         bool localMinimumPopularityCacheDecision(Connection_t* connection);     //Decision algorithm function whether item should be cached
         bool globalPopularityCacheDecision(Connection_t* connection);           //Decision algorithm function whether item should be cached
         bool globalMinimumPopularityCacheDecision(Connection_t* connection);    //Decision algorithm function whether item should be cached
 
-        bool handleLookup(std::string prefix, int requestID);    //Deal with Content Lookup Requests
-        void removeContentFromLibrary(Content_t* newContent);   //Remove item from cache
-        void addContentToLibrary(Content_t* newContent);        //Add content to Cache
-        NodeRole getRole();                                     //Check if we're a SERVER or CLIENT or whatever (Have everything)
+        Content_t* fetchFromCache(std::string prefix);              //Obtain item from cache (not other locally available heuristics)
+        bool checkIfAvailable(std::string prefix, int requestID);   //Check if we have the item anywhere (cache, local providers, etc)
+        void removeContentFromLibrary(Content_t* newContent);       //Remove item from cache
+        void addContentToLibrary(Content_t* newContent);            //Add content to Cache
+        NodeRole getRole();                                         //Check if we're a SERVER or CLIENT or whatever (Have everything)
 };
 
 

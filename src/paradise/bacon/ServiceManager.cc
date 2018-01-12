@@ -100,8 +100,8 @@ void ServiceManager::initialize(int stage) {
         case 1: {
 
             cSimulation *sim = getSimulation();
-            stats = check_and_cast<Statistics *>(sim->getModuleByPath("BaconScenario.statistics"));
-            library = check_and_cast<GlobalLibrary *>(sim->getModuleByPath("BaconScenario.library"));
+            stats = check_and_cast<Statistics *>(sim->getModuleByPath("ParadiseScenario.statistics"));
+            library = check_and_cast<GlobalLibrary *>(sim->getModuleByPath("ParadiseScenario.library"));
             cache = check_and_cast<ContentStore *>(getParentModule()->getSubmodule("content"));
 
             //Adding vehicle to statistics
@@ -790,6 +790,33 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
         return;
     }
 
+    //Getting Message Parameters
+    cArray parArray = wsm->getParList();
+    cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
+
+    //Checking if its a beacon or some other message type specific to direct communication
+    if ( (strcmp(wsm->getName(), MessageClass::BEACON.c_str()) != 0) ){
+        //Checking if we are already tracking the connection
+        if (checkForConnections(requestID->longValue()) == false) {
+            cMsgPar* requestPrefix = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
+            std::string prefixValue = requestPrefix->stringValue();
+
+            //Checking if this type of content object is location-dependent
+            Content_t* contentObject = library->getContent(prefixValue);
+            if (contentObject->contentClass == ContentClass::TRAFFIC) {
+                //std::cout << "[" << myId << "] (SM) Passing on information to Content Store on Connection ID <" << requestID->longValue() << "> from message of type <" << wsm->getName() << ">.\n";
+                //Notify Content Store of relevant request frequency statistics
+                cache->logLocationDependentRequest(contentObject);
+            } else {
+                //std::cout << "(SM) Content belongs to a class we don't care about.\n";
+            }
+        } else {
+            //std::cout << "(SM) We already know about this communication.\n";
+        }
+    } else {
+        //TODO: Treat BEACON Messages for sharing of GPS INFO
+    }
+
     //Checking Message Type
     if (strcmp(wsm->getName(), MessageClass::INTEREST.c_str()) == 0) {
         handleInterestMessage(wsm);
@@ -868,7 +895,7 @@ void ServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
     if (downstreamConnection == NULL){
 
        //Checking if we have this piece of content. o.õ
-       if (cache->handleLookup(prefixValue,idValue) == true) {
+       if (cache->checkIfAvailable(prefixValue,idValue) == true) {
            //Nodes should not be accepting connections that have not been created. This sounds bad.
            delete(wsm);
            return;
@@ -1267,7 +1294,7 @@ void ServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
     }
 
     //Checking if item is in our database
-    if (cache->handleLookup(prefixValue,idValue) == true) {
+    if (cache->checkIfAvailable(prefixValue,idValue) == true) {
 
         //Checking to log statistics for a new connection
         if (!downstreamMessageAlreadyExisted) {
@@ -2188,6 +2215,20 @@ void ServiceManager::replyAfterContentInclusion(Connection_t* connection) {
 //=============================================================
 // CONNECTION LIST FUNCTIONS
 //=============================================================
+
+
+//Returns true if any connection has been overheard for said requestID
+bool ServiceManager::checkForConnections(long requestID) {
+    //std::cout << "(SM) Looking for any connections for specific requestID\n";
+    //std::cout.flush();
+
+    for (auto it = connectionList.begin(); it != connectionList.end(); it++) {
+        if ((*it)->requestID == requestID) {
+            return true;
+        }
+    }
+    return false;
+}
 
 //Returns connection from list of connections. Will return NULL if ID is not listed
 Connection_t* ServiceManager::getConnection(long requestID, int peerID) {

@@ -69,7 +69,7 @@ void GlobalLibrary::initialize(int stage) {
     if (stage == 1) {
 
         cSimulation *sim = getSimulation();
-        cModule *modp = sim->getModuleByPath("BaconScenario.statistics");
+        cModule *modp = sim->getModuleByPath("ParadiseScenario.statistics");
         stats = check_and_cast<Statistics *>(modp);
 
         buildContentList();

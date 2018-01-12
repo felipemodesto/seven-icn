@@ -108,10 +108,10 @@ void Client::initialize(int stage) {
             traci =  check_and_cast<Veins::TraCIMobility*>(getParentModule()->getSubmodule("veinsmobility"));
             cache = check_and_cast<ContentStore *>(getParentModule()->getSubmodule("content"));
             cSimulation *sim = getSimulation();
-            cModule *modp = sim->getModuleByPath("BaconScenario.statistics");
+            cModule *modp = sim->getModuleByPath("ParadiseScenario.statistics");
             stats = check_and_cast<Statistics *>(modp);
 
-            cModule *modlib = sim->getModuleByPath("BaconScenario.library");
+            cModule *modlib = sim->getModuleByPath("ParadiseScenario.library");
             library = check_and_cast<GlobalLibrary *>(modlib);
             library->registerClient(getFullPath());
 

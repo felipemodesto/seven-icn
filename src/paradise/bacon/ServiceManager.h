@@ -119,10 +119,11 @@ class ServiceManager : public BaseWaveApplLayer {
         }
         void updateNodeColor();                                                         //UPDATES DEBUG CIRCLE COLOR BASED ON CLIENTSTATUS
 
-        Connection_t* createGenericConnection(Content_t* content);                                                 //Create a Generic Connection Item
-        Connection_t* createClientSidedConnection(WaveShortMessage* wsm);                                   //Creates a connection based on request messages both local and remote
-        Connection_t* createServerSidedConnection(WaveShortMessage* wsm);                                   //Creates a connection based on request messages both local and remote
-        Connection_t* getConnection(long requestID, int peerID);                                            //Gets information for a given connection
+        Connection_t* createGenericConnection(Content_t* content);                      //Create a Generic Connection Item
+        Connection_t* createClientSidedConnection(WaveShortMessage* wsm);               //Creates a connection based on request messages both local and remote
+        Connection_t* createServerSidedConnection(WaveShortMessage* wsm);               //Creates a connection based on request messages both local and remote
+        Connection_t* getConnection(long requestID, int peerID);                        //Gets information for a given connection
+        bool checkForConnections(long requestID);                                       //
         void cleanConnections();                                                        //STATISTICS COLLECTION AND MEMORY MANAGEMENT FUNCTION
 
         Interest_t* getInterest(std::string interest);

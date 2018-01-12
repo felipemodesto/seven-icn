@@ -21,6 +21,12 @@ void ContentStore::initialize(int stage) {
 
         gpsCacheWindowSize = par("gpsKnowledgeWindowSize").longValue();
 
+        //Creating our GPS based list of lists
+        gpsCacheFrequencyWindow.clear();
+        OverheardMessageList_t* firstSecondList = new OverheardMessageList_t();
+        firstSecondList->simTime = 0;
+        gpsCacheFrequencyWindow.push_front(firstSecondList);
+
         librarySize = 0;
         WATCH(librarySize);
     }
@@ -34,8 +40,8 @@ void ContentStore::initialize(int stage) {
     if (stage == 2) {
         //Getting global modules we have to deal with
         cSimulation *sim = getSimulation();
-        stats = check_and_cast<Statistics*>(sim->getModuleByPath("BaconScenario.statistics"));
-        library = check_and_cast<GlobalLibrary*>(sim->getModuleByPath("BaconScenario.library"));
+        stats = check_and_cast<Statistics*>(sim->getModuleByPath("ParadiseScenario.statistics"));
+        library = check_and_cast<GlobalLibrary*>(sim->getModuleByPath("ParadiseScenario.library"));
 
         nodeRole = library->requestStatus(myId);
         if (nodeRole == NodeRole::SERVER) {
@@ -44,6 +50,9 @@ void ContentStore::initialize(int stage) {
         }
 
         buildContentLibrary();
+
+        gpsCacheTimerMessage = new cMessage("gpsCacheUpdateTimer");
+        resetGPSTimer();
     }
 }
 
@@ -51,11 +60,25 @@ void ContentStore::initialize(int stage) {
 void ContentStore::finish() {
     library->releaseStatus(nodeRole,myId);
     contentCache.empty();
+
+    if (gpsCacheTimerMessage != NULL) {
+        cancelAndDelete(gpsCacheTimerMessage);
+        gpsCacheTimerMessage = NULL;
+    }
 }
 
-//=============================================================
-// CONTENT HANDLING FUNCTION (ON MESSAGES RECEIVED)
-//=============================================================
+//
+void ContentStore::resetGPSTimer() {
+    //std::cout << "[" << myId << "]\t(CS) Reseting GPS Timer\n";
+    //std::cout.flush();
+
+    if (gpsCacheTimerMessage == NULL) {
+        gpsCacheTimerMessage = new cMessage("gpsCacheUpdateTimer");
+    } else {
+        cancelEvent(gpsCacheTimerMessage);
+    }
+    scheduleAt(simTime() + gpsUpdateTimerTime, gpsCacheTimerMessage);
+}
 
 //
 void ContentStore::runCacheReplacement(){
@@ -252,6 +275,93 @@ void ContentStore::runCacheReplacement(){
                 EV.flush();
                 break;
         }
+    }
+}
+
+//
+void ContentStore::maintainGPSCache() {
+    OverheardMessageList_t* frontFrequencySlice = gpsCacheFrequencyWindow.front();
+    if (frontFrequencySlice->simTime != floor( simTime().dbl()) ) {
+
+        //std::cout << "(CS) Moving our sliding window from <" << frontFrequencySlice->simTime << "> to <" << simTime().dbl() << ">\n";
+        //std::cout.flush();
+
+        //Checking if we need to delete a column
+        if (static_cast<int>(gpsCacheFrequencyWindow.size()) == gpsCacheWindowSize) {
+            //Deleting column and its content
+            OverheardMessageList_t* oldestFrequencySlice = gpsCacheFrequencyWindow.back();
+            gpsCacheFrequencyWindow.pop_back();
+            delete(oldestFrequencySlice);
+        }
+
+        //Since we moved to a separate second, we should merge the statistics from the previous front with our own
+        for (auto itA = neighborGPSInformation.gpsList.begin(); itA != neighborGPSInformation.gpsList.end() ; itA++) {
+            //std::cout << "(CS) Importing knowledge acquired from neighbors. We know this much knowledge: <" << neighborGPSInformation.gpsList.size() << ">\n";
+            //std::cout.flush();
+
+            bool foundRemoteItem = false;
+            for (auto itB = frontFrequencySlice->gpsList.begin(); itB != frontFrequencySlice->gpsList.end() ; itB++) {
+                if (itA->contentPrefix.compare(itB->contentPrefix) == 0) {
+                    foundRemoteItem = true;
+                    itB->referenceCount += itA->referenceCount;
+                }
+            }
+            //If we haven't found the remote item we create a new entry
+            if (!foundRemoteItem) {
+                OverheardMessageObject_t newGPSObject;
+                newGPSObject.contentPrefix = itA->contentPrefix;
+                newGPSObject.referenceCount = itA->referenceCount;
+                newGPSObject.contentClass = itA->contentClass;
+                frontFrequencySlice->gpsList.push_front(newGPSObject);
+            }
+        }
+
+        //Now we create a new column
+        OverheardMessageList_t* newerFrequencySlice = new OverheardMessageList_t();
+        newerFrequencySlice->simTime = floor(simTime().dbl());
+        gpsCacheFrequencyWindow.push_front(newerFrequencySlice);
+        frontFrequencySlice = newerFrequencySlice;
+    }
+}
+
+//
+void ContentStore::logLocationDependentRequest(Content_t* object) {
+    //std::cout << "(CS) Attempting to Log GPS relevant information for item <" << object->contentPrefix << ">\n";
+    //std::cout.flush();
+
+    //Check if the object is already cached
+    if (fetchFromCache(object->contentPrefix) != NULL) {
+        //TODO: Validate if the logic holds... perhaps if we already have the item we don't care?
+        //std::cout << "(CS) Object is cached! we don't care about GPS interests for this item.\n";
+        //std::cout.flush();
+        return;
+    }
+
+    //Maintaining Cache for the sake of maintaining cache
+    maintainGPSCache();
+    OverheardMessageList_t* frontFrequencySlice = gpsCacheFrequencyWindow.front();
+
+    //Searching most recent slice
+    bool foundItem = false;
+    for (auto it = frontFrequencySlice->gpsList.begin(); it != frontFrequencySlice->gpsList.end() ; it++) {
+        if (object->contentPrefix.compare(it->contentPrefix) == 0) {
+            //If we found the element, let's update the status
+            it->referenceCount++;
+            foundItem = true;
+
+            std::cout << "[" << myId << "]\t(CS) Increasing Popularity to <" << it->referenceCount++ << ">\n";
+            std::cout.flush();
+            break;
+        }
+    }
+
+    //If we haven't found the object, we'll create a new entry
+    if (!foundItem) {
+        OverheardMessageObject_t newGPSObject;
+        newGPSObject.contentPrefix = object->contentPrefix;
+        newGPSObject.referenceCount = 1;
+        newGPSObject.contentClass = object->contentClass;
+        frontFrequencySlice->gpsList.push_front(newGPSObject);
     }
 }
 
@@ -486,7 +596,7 @@ void ContentStore::addToLibrary(cMessage *msg) {
 }
 
 //Function meant to handle Content Lookup Requests
-bool  ContentStore::handleLookup(std::string nameValue, int requestID) {
+bool  ContentStore::checkIfAvailable(std::string nameValue, int requestID) {
     //Removing '"'s from text
     std::string lookupValue = nameValue;
     if (nameValue.c_str()[0] == '\"') {
@@ -519,55 +629,69 @@ bool  ContentStore::handleLookup(std::string nameValue, int requestID) {
         }
     }
 
-    //Looking for item in content library
-    for (auto it = contentCache.begin(); it != contentCache.end() ; it++) {
-        int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
+    Content_t* object = fetchFromCache(lookupValue);
+    if (object != NULL) {
+        if (object->contentClass == ContentClass::GPS_DATA) {
+             //TODO: (IMPLEMENT) If working with TRAFFIC information, we'll require coordinate values to be part of the name... so deal with this in the future :D
+             /*
+             cMsgPar* requestLocation = static_cast<cMsgPar*>(parArray.get(MessageParameter::COORDINATES.c_str()));
 
-        //Checking if the strings match (slow! :/)
-        if (comparison == 0) {
-             if (it->referenceObject->contentClass == ContentClass::GPS_DATA) {
-                 //TODO: (IMPLEMENT) If working with TRAFFIC information, we'll require coordinate values to be part of the name... so deal with this in the future :D
-                 /*
-                 cMsgPar* requestLocation = static_cast<cMsgPar*>(parArray.get(MessageParameter::COORDINATES.c_str()));
-
-                 //Checking for valid location
-                 if (requestLocation == NULL) {
-                     //opp_error("Traffic request has no coordinates associated with it!");
-                     EV << "(CP) Warning: Traffic request has no coordinates associated with it!";
-                     return false;
-                 }
-
-                 //Splitting String
-                 std::string coordinates = requestLocation->str();
-
-                 //Getting current location
-                 Coord currPos = traci->getCurrentPosition();
-                 std::string providerCoordinates = "\"" + std::to_string(floor(currPos.x)) + ";" + std::to_string(floor(currPos.y)) + ";" + std::to_string(floor(currPos.z)) + "\"";
-
-                 //Comparing Locations to check if we are the same vehicle
-                 if (providerCoordinates.compare(requestLocation->str()) == 0) {
-                     return false;
-                 } else {
-                     //opp_warning("OMG, SOMEONE ELSE JUST TOTES ASKED US FOR OUR TRAFFIC INFO OMG.");
-                     //TODO (IMPLEMENT) location based evaluation for GPS location requests
-                     return true;
-                 }
-                 */
-                 std::cerr << "(CP) Error: GPS Location dependent solution is not implemented\n";
-                 std::cerr.flush();
+             //Checking for valid location
+             if (requestLocation == NULL) {
+                 //opp_error("Traffic request has no coordinates associated with it!");
+                 EV << "(CP) Warning: Traffic request has no coordinates associated with it!";
                  return false;
              }
-             //std::cout << "<" << myId << ">\t \\--> Found Requested object, my role is <" << nodeRole << ">.\n";
-             //std::cout.flush();
 
-             //In general, if we found our item, we have it. (See implementation for GPS location data
-             stats->logProvisionAttempt(myId, requestID);
-             return true;
-        }
+             //Splitting String
+             std::string coordinates = requestLocation->str();
+
+             //Getting current location
+             Coord currPos = traci->getCurrentPosition();
+             std::string providerCoordinates = "\"" + std::to_string(floor(currPos.x)) + ";" + std::to_string(floor(currPos.y)) + ";" + std::to_string(floor(currPos.z)) + "\"";
+
+             //Comparing Locations to check if we are the same vehicle
+             if (providerCoordinates.compare(requestLocation->str()) == 0) {
+                 return false;
+             } else {
+                 //opp_warning("OMG, SOMEONE ELSE JUST TOTES ASKED US FOR OUR TRAFFIC INFO OMG.");
+                 //TODO (IMPLEMENT) location based evaluation for GPS location requests
+                 return true;
+             }
+             */
+             std::cerr << "(CP) Error: GPS Location dependent solution is not implemented\n";
+             std::cerr.flush();
+             return false;
+         }
+         //std::cout << "<" << myId << ">\t \\--> Found Requested object, my role is <" << nodeRole << ">.\n";
+         //std::cout.flush();
+
+         //In general, if we found our item, we have it. (See implementation for GPS location data
+         stats->logProvisionAttempt(myId, requestID);
+         return true;
     }
 
-    //If the item was not found
+       //If the item was not found
     return false;
+}
+
+//
+Content_t* ContentStore::fetchFromCache(std::string prefix){
+    std::string lookupValue = prefix;
+    if (prefix.c_str()[0] == '\"') {
+        lookupValue = prefix.substr(1,prefix.length()-2);   //No fucking idea why but strings added as parameters get extra quotes around them. WTF
+    }
+
+    //Looking for item in content library
+     for (auto it = contentCache.begin(); it != contentCache.end() ; it++) {
+         int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
+
+         //Checking if the strings match (slow! :/)
+         if (comparison == 0) {
+             return it->referenceObject;
+         }
+     }
+     return NULL;
 }
 
 //Getter to classify node as either server or client (servers don't have cache limitation applied during computation)
@@ -701,36 +825,14 @@ bool ContentStore::globalMinimumPopularityCacheDecision(Connection_t* connection
     return false;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////
-
-//(BROKEN - Sequential Downhops will cache same item, should consider distance since last cache) Decision algorithm function whether item should be cached
-/*
-bool BaconContentProvider::brokenlocalPopularityCacheDecision(Connection_t* connection) {
-    std::cerr << "(CP) Error: This should not be used!\n";
-    std::cerr.flush();
-
-    if (cachePolicy == CacheReplacementPolicy::FREQ_POPULARITY) {
-        int sum = 0;
-        int minUseCount = contentLibrary.size() > 0 ? INT_MAX : -1;
-        //Looking for Item
-        for (auto it = contentLibrary.begin(); it != contentLibrary.end(); it++) {
-            sum += it->useCount;
-            //Replacing minimum use count
-            if (it->useCount < minUseCount) {
-                minUseCount = it->useCount;
-            }
-            //minUseCount = it->useCount < minUseCount ? it->useCount : minUseCount;
-        }
-        double averagePopularity = sum > 0 ? floor(double(sum/(double)contentLibrary.size())) : 1;
-        double estimatedResult = averagePopularity > 0 ? double(floor(log2(connection->remoteHopUseCount))/(double)averagePopularity) : 0;
-        //std::cout << "< sum >< cacheSize >< minUseCount >< averagePopularity > < incomingHopCount >< remoteUseCount >\n";
-        //std::cout << "  <" << sum << ">\t<" << maxCachedContents << ">\t\t<" << minUseCount << ">\t\t<" << averagePopularity << ">\t\t\t<" << connection->downstreamHopCount << ">\t\t\t<" << connection->remoteHopUseCount << ">\n";
-        //std::cout << "  <" << estimatedResult << ">\n\n";
-        if (minUseCount < connection->remoteHopUseCount || estimatedResult > 1) {
-            return true;
-        }
+//
+void ContentStore::handleMessage(cMessage *msg) {
+    //std::cout << "ME FUDEU MANO, A LOKA ESSA PORRA AQUI TEM Q TAR RODANDO\n";
+    if ( msg == gpsCacheTimerMessage || strcmp(msg->getName(),"gpsCacheUpdateTimer") == 0  ) {
+        //TODO: perform maintenance
+        resetGPSTimer();
+    }else {
+        std::cout << "\t(CS): Error: Unknown message: Name <" << msg->getName() << ">\tand kind\t<" << msg->getKind() << ">\n";
+        std::cout.flush();
     }
-    return false;
 }
-*/
