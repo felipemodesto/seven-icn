@@ -187,7 +187,8 @@ struct OverheardMessageObject_t {
 
 //List of overheard GPS Stuff
 struct OverheardMessageList_t {
-    std::list<OverheardMessageObject_t> bacon;
+    std::list<OverheardMessageObject_t> gpsList;//
+    long simTime;                               //Time of the list
 };
 
 ////////////////////////////////////////////////////////////////////
