@@ -27,6 +27,8 @@ simple ContentStore {
 		int cacheReplacementPolicy = default(0);					//Max Replacement Policy : Enum = { RANDOM = 0, LRU = 1, FIFO = 2, BIG = 3, MULT_FIRST = 4, GPS_FIRST = 5 }
 		int startingCache = default(0);								//Initial number of content items available in cache (allocated randomly using probability distribution)
 		int maxCachedContents = default(50);						//Maximum Cache Size (in content objects which we assume have the same size but might not, whatever)
+		
+		bool usingGeoCache = default(false);
 		int geoCacheSize = default(0);								//Number of cache slots specifically allocated for GPS based objects
 		int gpsKnowledgeWindowSize = default(10);					//Number of columns in window that logs knowledge from GPS based requests neighbors and us are aware of
 		

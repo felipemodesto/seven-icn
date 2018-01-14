@@ -57,6 +57,8 @@ class ContentStore : public omnetpp::cSimpleModule {
         bool hasLibrary = false;
         NodeRole nodeRole = NodeRole::MULE;
 
+        bool usingGPSCacheSystem = false;
+
         std::list<CachedContent_t> contentCache;
         std::list<CachedContent_t> gpsCache;
         int librarySize;
@@ -93,6 +95,8 @@ class ContentStore : public omnetpp::cSimpleModule {
         void handleMessage(cMessage *msg)  override;                //CALLBACK FROM SELF MESSAGE, GENERALLY USED AS RANDOM TIMER CALLBACK
 
     public:
+        bool hasGPSCache();
+
         void increaseUseCount(std::string prefix);              //Increase the request (use) count for a specific content object
         void increaseUseCount(cMessage *msg);                   //Increase the request (use) count for a specific content object
 

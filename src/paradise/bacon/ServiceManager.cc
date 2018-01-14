@@ -794,27 +794,30 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
     cArray parArray = wsm->getParList();
     cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
 
-    //Checking if its a beacon or some other message type specific to direct communication
-    if ( (strcmp(wsm->getName(), MessageClass::BEACON.c_str()) != 0) && (strcmp(wsm->getName(), MessageClass::GPS_BEACON.c_str()) != 0) ){
-        //Checking if we are already tracking the connection
-        if (checkForConnections(requestID->longValue()) == false) {
-            cMsgPar* requestPrefix = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
-            std::string prefixValue = requestPrefix->stringValue();
+    //Checking if we have the GPS Cache subsystem enabled
+    if (cache->hasGPSCache() == true) {
+        //Checking if its a beacon or some other message type specific to direct communication
+        if ( (strcmp(wsm->getName(), MessageClass::BEACON.c_str()) != 0) && (strcmp(wsm->getName(), MessageClass::GPS_BEACON.c_str()) != 0) ){
+            //Checking if we are already tracking the connection
+            if (checkForConnections(requestID->longValue()) == false) {
+                cMsgPar* requestPrefix = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
+                std::string prefixValue = requestPrefix->stringValue();
 
-            //Checking if this type of content object is location-dependent
-            Content_t* contentObject = library->getContent(prefixValue);
-            if (contentObject->contentClass == ContentClass::TRAFFIC) {
-                //std::cout << "[" << myId << "] (SM) Passing on information to Content Store on Connection ID <" << requestID->longValue() << "> from message of type <" << wsm->getName() << ">.\n";
-                //Notify Content Store of relevant request frequency statistics
-                cache->logOverheardGPSMessage(contentObject);
+                //Checking if this type of content object is location-dependent
+                Content_t* contentObject = library->getContent(prefixValue);
+                if (contentObject->contentClass == ContentClass::TRAFFIC) {
+                    //std::cout << "[" << myId << "] (SM) Passing on information to Content Store on Connection ID <" << requestID->longValue() << "> from message of type <" << wsm->getName() << ">.\n";
+                    //Notify Content Store of relevant request frequency statistics
+                    cache->logOverheardGPSMessage(contentObject);
+                } else {
+                    //std::cout << "(SM) Content belongs to a class we don't care about.\n";
+                }
             } else {
-                //std::cout << "(SM) Content belongs to a class we don't care about.\n";
+                //std::cout << "(SM) We already know about this communication.\n";
             }
         } else {
-            //std::cout << "(SM) We already know about this communication.\n";
+            //TODO: Treat BEACON & GPS BEACON Messages for sharing of GPS INFO
         }
-    } else {
-        //TODO: Treat BEACON & GPS BEACON Messages for sharing of GPS INFO
     }
 
     //Checking Message Type
