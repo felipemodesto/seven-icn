@@ -124,7 +124,7 @@ void Statistics::keepTime() {
 
         int simNumber = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
 
-        std::cout << "[" << simNumber << "]\t(St) Current Time is: " << lastSecond << " \t CPU Time: " << std::setprecision(2) << elapsed_secs << " sec(s)\n";
+        std::cout << "[" << simNumber << "]\t(St) SimTime: " << lastSecond << " \t Took: " << std::setprecision(2) << elapsed_secs << " sec(s)\n";
         std::cout.flush();
 
         if (hasStarted && !hasStopped) statisticsTimekeepingVect.record( (lastSecond - statisticsStartTime) / (double) (statisticsStopTime - statisticsStartTime) );
@@ -164,6 +164,9 @@ void Statistics::startStatistics() {
 
     hasStarted = false;
     hasStopped = false;
+
+    gpsPacketsSent = 0;
+    gpsCacheReplacements = 0;
 
     requestsStarted = 0;
     packetsSelfServed = 0;
@@ -262,6 +265,7 @@ void Statistics::startStatistics() {
     localCacheMissVect.setName("LocalCacheMisses");
     remoteCacheMissVect.setName("RemoteCacheMisses");
     cacheReplacementVect.setName("CacheReplacements");
+    gpsCacheReplacementVect.setName("GPSCacheReplacements");
     hopCountHist.setName("HopCount");
     duplicateRequestHist.setName("DuplicateRequests");
     requestsPerConnectionHist.setName("InterestCount");
@@ -318,6 +322,7 @@ void Statistics::startStatistics() {
     localCacheMissVect.record(0);
     remoteCacheMissVect.record(0);
     cacheReplacementVect.record(0);
+    gpsCacheReplacementVect.record(0);
 
     hasStarted = true;
 }
@@ -1185,6 +1190,14 @@ void Statistics::increaseRemoteCacheMisses() {
 
     if (!shouldRecordData()) return;
     remoteCacheMissVect.record(remoteCacheMisses);
+}
+
+void Statistics::increaseGPSCacheReplacements() {
+    Enter_Method_Silent();
+    Statistics::gpsCacheReplacements++;
+
+    if (!shouldRecordData()) return;
+    gpsCacheReplacementVect.record(gpsCacheReplacements);
 }
 
 void Statistics::increaseCacheReplacements() {
