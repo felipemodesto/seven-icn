@@ -12,6 +12,9 @@ bool compareGPSItems (OverheardGPSObject_t& first, OverheardGPSObject_t& second)
     //std::cout << "(CS) Comparing items <" << first.contentPrefix << "> and <" << second.contentPrefix << ">!\n";
     return (first.referenceCount > second.referenceCount);
 }
+//
+
+
 
 //Initialization Function
 void ContentStore::initialize(int stage) {
@@ -22,16 +25,19 @@ void ContentStore::initialize(int stage) {
         cachePolicy = static_cast<CacheReplacementPolicy>(par("cacheReplacementPolicy").longValue());
         startingCache = par("startingCache").doubleValue();
         maxCachedContents = par("maxCachedContents").longValue();
-        gpsCacheSize = par("geoCacheSize").longValue();
-        maxCachedContents -= gpsCacheSize;                //Resizing total cache size
 
-        gpsCacheWindowSize = par("gpsKnowledgeWindowSize").longValue();
+        //We only do our GPS stuff if we have GPS Cache enabled
+        usingGPSCacheSystem = par("usingGeoCache");
+        if (usingGPSCacheSystem == true) {
+            gpsCacheSize = par("geoCacheSize").longValue();
+            maxCachedContents -= gpsCacheSize;                //Resizing total cache size
+            gpsCacheWindowSize = par("gpsKnowledgeWindowSize").longValue();
 
-        //Creating our GPS based list of lists
-        gpsCacheFrequencyWindow.clear();
-        OverheardGPSObjectList_t* firstSecondList = new OverheardGPSObjectList_t();
-        firstSecondList->simTime = 0;
-        gpsCacheFrequencyWindow.push_front(firstSecondList);
+            //Creating our GPS based list of lists
+            OverheardGPSObjectList_t* firstSecondList = new OverheardGPSObjectList_t();
+            firstSecondList->simTime = 0;
+            gpsCacheFrequencyWindow.push_front(firstSecondList);
+        }
 
         librarySize = 0;
         WATCH(librarySize);
@@ -57,8 +63,10 @@ void ContentStore::initialize(int stage) {
 
         buildContentCache();
 
-        gpsCacheTimerMessage = new cMessage("gpsCacheUpdateTimer");
-        resetGPSTimer();
+        if (usingGPSCacheSystem == true) {
+            gpsCacheTimerMessage = new cMessage("gpsCacheUpdateTimer");
+            resetGPSTimer();
+        }
     }
 }
 
@@ -352,7 +360,7 @@ void ContentStore::addContentToGPSCache(OverheardGPSObject_t* gpsPopularItem) {
 
 //LRU replacement policy for items cached via GPS side cache, may implement other alternate replacement models later, for now, whatever
 void ContentStore::runGPSCacheReplacement() {
-    std::cout << "(CS) Running GPS Cache Replacement.\n";
+    //std::cout << "(CS) Running GPS Cache Replacement.\n";
 
     //Checking if we actually have to get worried about cache replacement
     if ((contentCache.size() - gpsCacheSize + 1) <= 0) {
@@ -952,6 +960,12 @@ Content_t* ContentStore::fetchFromCache(std::string prefix){
 NodeRole ContentStore::getRole() {
     //TODO: (REVIEW) Make this more malleable depending on content class (?)
     return nodeRole;
+}
+
+//Getter for the Separate GPS Cache subsystem
+bool ContentStore::hasGPSCache() {
+    Enter_Method_Silent();
+    return usingGPSCacheSystem;
 }
 
 //Getter for the currently used Cache Policy
