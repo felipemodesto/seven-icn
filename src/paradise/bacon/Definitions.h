@@ -179,15 +179,15 @@ struct PendingContent_t : CachedContent_t {
 
 
 //Used to store knowledge of server-correlated GPS frequency spikes
-struct OverheardMessageObject_t {
+struct OverheardGPSObject_t {
     std::string contentPrefix;              //String name representation of content prefix
     ContentClass contentClass;              //Type of Content       TODO: This might be redundant!
-    long referenceCount;                    //Number of requests this object has had in the current list (sliding window column)
+    double referenceCount;                  //Number of requests this object has had in the current list (sliding window column) - We keep this as a double value to make our calculations later easier
 };
 
 //List of overheard GPS Stuff
-struct OverheardMessageList_t {
-    std::list<OverheardMessageObject_t> gpsList;//
+struct OverheardGPSObjectList_t {
+    std::list<OverheardGPSObject_t> gpsList;//
     long simTime;                               //Time of the list
 };
 
@@ -260,6 +260,7 @@ class MessageClass {
         static const std::string DATA_INCLUDE;      //Cache Data Inclusion Message
         static const std::string DATA_EXLUDE;       //Cache Data Exclusion Message
         static const std::string BEACON;            //Generic Data message used by Veins Wave Class
+        static const std::string GPS_BEACON;        //GPS Beacons used to share information of items
         static const std::string SELF_BEACON_TIMER; //
 };
 
@@ -342,6 +343,7 @@ public:
     static const std::string PRIORITY;          //Priority of Content : String matches enum ContentPopularity
     static const std::string POPULARITY;        //Popularity of Content : String matches enum ContentPopularity
     static const std::string SIZE;              //Total object size
+    static const std::string FREQUENCY;         //Frequency of item (either for popularity or something similar)
     static const std::string COORDINATES;       //Vehicle Location in TraCIMobility XYZ coordinates
     static const std::string HOPS_LAST_CACHE;   //Calculated Hops since last Cache
     static const std::string HOPS_DOWN;         //Calculated Hop Count for current transmission Downstream

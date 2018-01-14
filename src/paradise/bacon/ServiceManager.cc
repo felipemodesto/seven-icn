@@ -795,7 +795,7 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
     cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
 
     //Checking if its a beacon or some other message type specific to direct communication
-    if ( (strcmp(wsm->getName(), MessageClass::BEACON.c_str()) != 0) ){
+    if ( (strcmp(wsm->getName(), MessageClass::BEACON.c_str()) != 0) && (strcmp(wsm->getName(), MessageClass::GPS_BEACON.c_str()) != 0) ){
         //Checking if we are already tracking the connection
         if (checkForConnections(requestID->longValue()) == false) {
             cMsgPar* requestPrefix = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
@@ -806,7 +806,7 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
             if (contentObject->contentClass == ContentClass::TRAFFIC) {
                 //std::cout << "[" << myId << "] (SM) Passing on information to Content Store on Connection ID <" << requestID->longValue() << "> from message of type <" << wsm->getName() << ">.\n";
                 //Notify Content Store of relevant request frequency statistics
-                cache->logLocationDependentRequest(contentObject);
+                cache->logOverheardGPSMessage(contentObject);
             } else {
                 //std::cout << "(SM) Content belongs to a class we don't care about.\n";
             }
@@ -814,7 +814,7 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
             //std::cout << "(SM) We already know about this communication.\n";
         }
     } else {
-        //TODO: Treat BEACON Messages for sharing of GPS INFO
+        //TODO: Treat BEACON & GPS BEACON Messages for sharing of GPS INFO
     }
 
     //Checking Message Type
@@ -832,6 +832,9 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
         handleContentMessage(wsm);
     } else if (strcmp(wsm->getName(), MessageClass::BEACON.c_str()) == 0) {
         onBeacon(wsm);
+    } else if (strcmp(wsm->getName(), MessageClass::GPS_BEACON.c_str()) == 0) {
+        cache->handleGPSPopularityMessage(wsm);
+        delete(wsm);
     } else {
         std::cerr << "(SM) Unknown Message Type <" << wsm->getName() << ">\n";
         std::cerr.flush();
@@ -2620,7 +2623,7 @@ void ServiceManager::addContentToCache(Connection_t* connection) {
     //std::cout << "(SM) Enter addContentToCache\n";
     //std::cout.flush();
 
-    cache->addContentToLibrary(connection->requestedContent);
+    cache->addContentToCache(connection->requestedContent);
     connection->downstreamCacheDistance = 0;
 }
 
@@ -2629,7 +2632,7 @@ void ServiceManager::removeContentFromCache(Connection_t* connection) {
     //std::cout << "(SM) Enter removeContentFromCache\n";
     //std::cout.flush();
 
-    cache->removeContentFromLibrary(connection->requestedContent);
+    cache->removeContentFromCache(connection->requestedContent);
 }
 
 //=============================================================
@@ -2931,6 +2934,30 @@ void ServiceManager::logNetworkmessage(WaveShortMessage *msg) {
 // MESSAGE TRANSMISSION AND ARRIVAL FUNCTIONS
 //=============================================================
 
+//
+//Note: This is always called from the Content Store (technically once per Second or however long we set the refresh timer for it)
+void ServiceManager::advertiseGPSItem(OverheardGPSObject_t mostPopularItem) {
+    Enter_Method_Silent();
+    WaveShortMessage * gpsBeaconMessage = prepareWSM(MessageClass::GPS_BEACON, beaconLengthBits, type_CCH, dataPriority, -1, -2);
+
+    //Adding Centrality of node
+    cMsgPar* popularPrefixParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
+    popularPrefixParameter->setStringValue(mostPopularItem.contentPrefix.c_str());
+    gpsBeaconMessage->addPar(popularPrefixParameter);
+
+    //Adding Local Load Perception
+    cMsgPar* popularityFrequencyParameter = new cMsgPar(MessageParameter::FREQUENCY.c_str());
+    popularityFrequencyParameter->setDoubleValue(mostPopularItem.referenceCount);
+    gpsBeaconMessage->addPar(popularityFrequencyParameter);
+
+    //Adding -1 as a representation of no request ID
+    cMsgPar* requestIDParameter = new cMsgPar(MessageParameter::CONNECTION_ID.c_str());
+    requestIDParameter->setLongValue(-1);
+    gpsBeaconMessage->addPar(requestIDParameter);
+
+    sendWSM(gpsBeaconMessage);
+}
+
 //Function that Sends Message directly to the Client
 void ServiceManager::sendToClient(WaveShortMessage *msg) {
     //std::cout << "(SM) Enter sendToClient\n";
@@ -2944,7 +2971,6 @@ void ServiceManager::sendWSM(WaveShortMessage* wsm) {
     double transmissionDelay = uniform(minimumForwardDelay,maximumForwardDelay);
     sendWSM(wsm,transmissionDelay);
 }
-
 
 //Function responsible for sending messages to lower layers
 void ServiceManager::sendWSM(WaveShortMessage* wsm, double forwardDelay) {

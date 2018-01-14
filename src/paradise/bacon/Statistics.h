@@ -42,6 +42,7 @@ protected:
     long int unviableRequests;      //Requests that were not initiated because the client was busy or something similar
 
     //Data Packet Related Statistics
+    long int gpsPacketsSent;        //Preemptive GPS Packets stored
     long int packetsSent;           //Requests fulfilled by remote node
     long int packetsSelfServed;     //Requests fulfilled locally
     long int packetsForwarded;      //Requests forwarded (is not restrict to complete return path)
@@ -77,6 +78,7 @@ protected:
     long int localCacheMisses;
     long int remoteCacheMisses;
     long int cacheReplacements;
+    long int gpsCacheReplacements;
 
     long int serverCacheHits;
     long int backloggedResponses;
@@ -175,6 +177,7 @@ protected:
     omnetpp::cOutVector localCacheMissVect;
     omnetpp::cOutVector remoteCacheMissVect;
     omnetpp::cOutVector cacheReplacementVect;
+    omnetpp::cOutVector gpsCacheReplacementVect;
 
     omnetpp::cOutVector overallTranmissionDelayVect;
     omnetpp::cOutVector completeTranmissionDelayVect;
@@ -251,6 +254,7 @@ public:
     bool increaseActiveVehicles(int vehicleId); //Increase the number of active Vehicles by 1 (new vehicle spawned)
     bool decreaseActiveVehicles(int vehicleId); //Decrease the number of active Vehicles by 1 (vehicle "deleted" / journey complete)
 
+    void increaseGPSMessagesPreSent();
     void increaseMessagesSent(ContentClass cClass);
     void increaseMultimediaMessagesSent();
     void increaseTrafficMessagesSent();
@@ -282,6 +286,7 @@ public:
     void increaseLocalCacheMisses();
     void increaseRemoteCacheMisses();
     void increaseCacheReplacements();
+    void increaseGPSCacheReplacements();
 
     void addcompleteTransmissionDelay(double delay);
     void addincompleteTransmissionDelay(double delay);

@@ -58,22 +58,19 @@ class ContentStore : public omnetpp::cSimpleModule {
         NodeRole nodeRole = NodeRole::MULE;
 
         std::list<CachedContent_t> contentCache;
+        std::list<CachedContent_t> gpsCache;
         int librarySize;
 
         int gpsCacheWindowSize;
-        std::list<OverheardMessageList_t*> gpsCacheFrequencyWindow;
-        OverheardMessageList_t neighborGPSInformation;
+        std::list<OverheardGPSObjectList_t*> gpsCacheFrequencyWindow;
+        OverheardGPSObjectList_t neighborGPSInformation;
 
         CacheReplacementPolicy cachePolicy;
 
         //Cache Size Properties (see other stuff below for more policies that affect cache size distribution)
         int maxCachedContents = 0;
         int startingCache = 0;
-
-        //Cache split policy
-        int locationDependentCacheSize = 0;
-
-        //Additional values for cache policies that allocate part of the cache for a specific purpose
+        int gpsCacheSize = 0;
         int priorityCacheSize = 0;
         int personalCacheSize = 0;
         int friendCacheSize = 0;
@@ -87,8 +84,9 @@ class ContentStore : public omnetpp::cSimpleModule {
         cMessage *gpsCacheTimerMessage;              //Timer used for second to second updates
 
     protected:
+        void runGPSCacheReplacement();                          //Cache replacement Policy implementation function
         void runCacheReplacement();                             //Cache replacement Policy implementation function
-        void buildContentLibrary();                             //
+        void buildContentCache();                             //
         void addToLibrary(cMessage *msg);                       //
         void resetGPSTimer();
 
@@ -103,10 +101,12 @@ class ContentStore : public omnetpp::cSimpleModule {
         int getUseCount(std::string prefix);                    //Get the current use count for an object
         CacheReplacementPolicy getCachePolicy();                //Getter for the cache policy
 
+        void shareGPSStatistics();
         void maintainGPSCache();
-        void logLocationDependentRequest(Content_t* object);
+        void logOverheardGPSMessage(Content_t* object);
+        void handleGPSPopularityMessage(WaveShortMessage* wsm);
 
-        //bool brokenlocalPopularityCacheDecision(Connection_t* connection);    //Decision algorithm function whether item should be cached
+        bool gpsPopularityCacheDecision(OverheardGPSObject_t* connection);      //Decision algorithm function whether item should be cached
         bool localPopularityCacheDecision(Connection_t* connection);            //Decision algorithm function whether item should be cached
         bool localMinimumPopularityCacheDecision(Connection_t* connection);     //Decision algorithm function whether item should be cached
         bool globalPopularityCacheDecision(Connection_t* connection);           //Decision algorithm function whether item should be cached
@@ -114,8 +114,10 @@ class ContentStore : public omnetpp::cSimpleModule {
 
         Content_t* fetchFromCache(std::string prefix);              //Obtain item from cache (not other locally available heuristics)
         bool checkIfAvailable(std::string prefix, int requestID);   //Check if we have the item anywhere (cache, local providers, etc)
-        void removeContentFromLibrary(Content_t* newContent);       //Remove item from cache
-        void addContentToLibrary(Content_t* newContent);            //Add content to Cache
+        void removeContentFromCache(Content_t* newContent);       //Remove item from cache
+        void removeFromGPSSideStatistics(Content_t* contentObject);
+        void addContentToCache(Content_t* newContent);            //Add content to Cache
+        void addContentToGPSCache(OverheardGPSObject_t* gpsPopularItem);
         NodeRole getRole();                                         //Check if we're a SERVER or CLIENT or whatever (Have everything)
 };
 
