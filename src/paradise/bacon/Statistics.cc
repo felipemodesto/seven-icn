@@ -122,9 +122,13 @@ void Statistics::keepTime() {
         double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
         begin = end;
 
+        std::time_t result = std::time(nullptr);
+        struct tm * now = localtime( &result );
+
         int simNumber = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
 
-        std::cout << "[" << simNumber << "]\t(St) SimTime: " << lastSecond << " \t Took: " << std::setprecision(2) << elapsed_secs << " sec(s)\n";
+        //char mbstr[100];
+        std::cout << "[" << simNumber << "]\t SimTime: " << lastSecond << " \t Cost: " << std::setprecision(2) << elapsed_secs << " sec(s)\tNow: " << std::asctime(now);//std::strftime(mbstr, sizeof(mbstr), "%b %e %H $M",now) << ">\n";
         std::cout.flush();
 
         if (hasStarted && !hasStopped) statisticsTimekeepingVect.record( (lastSecond - statisticsStartTime) / (double) (statisticsStopTime - statisticsStartTime) );
@@ -144,6 +148,8 @@ bool Statistics::shouldRecordData() {
 //
 void Statistics::startStatistics() {
     Enter_Method_Silent();
+    int simNumber = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
+
     if (hasStarted || hasStopped || !collectingStatistics) return;
 
     //Getting a reference to the content Library
@@ -154,12 +160,12 @@ void Statistics::startStatistics() {
     //Checking if we already have simulation results for this file
     FILE *  pFile = fopen ( generalStatisticsFile.c_str(), "r");
     if (pFile != NULL) {
-        std::cout << "(St) Warning: Simulation file already present in folder. Skipping simulation to accelerate simulation.\n";
+        std::cout << "[" << simNumber << "]\t (St) Warning: Simulation file already present in folder. Skipping simulation to accelerate simulation.\n";
         std::cout.flush();
         exit(0);
     }
 
-    std::cout << "(St) Statistics Collection has started.\n";
+    std::cout << "[" << simNumber << "]\t (St) Statistics Collection has started.\n";
     std::cout.flush();
 
     hasStarted = false;
@@ -339,7 +345,7 @@ void Statistics::stopStatistics() {
         return;
     }
 
-    std::cout << "[" << simNumber << "]\t (St) File Folder <" << simulationDirectoryFolder << ">\n";
+    //std::cout << "[" << simNumber << "]\t (St) File Folder <" << simulationDirectoryFolder << ">\n";
 
     //std::cout << "[" << simNumber << "]\t (St) Saving File <" << requestLocationStatsFile << ">\n";
     //std::cout << "[" << simNumber << "]\t (St) Saving File <" << locationStatisticsFile << ">\n";

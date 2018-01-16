@@ -58,8 +58,8 @@ void GlobalLibrary::initialize(int stage) {
 
         sectorCount = widthBlocks*heightBlocks;
 
-        std::cout << "(Lib) Request Location Correlation follows Distribution <" << locationModel << "> in <" << widthBlocks << ";" << heightBlocks << "> Grid.\n";
-        std::cout.flush();
+        //std::cout << "(Lib) Request Location Correlation follows Distribution <" << locationModel << "> in <" << widthBlocks << ";" << heightBlocks << "> Grid.\n";
+        //std::cout.flush();
 
         //Setting Sequential request index
         currentRequestIndex = 0;
@@ -74,7 +74,8 @@ void GlobalLibrary::initialize(int stage) {
 
         buildContentList();
 
-        std::cout << "(Lib) Writing Content List to Statistics for collection (warning: might be ignored).\n";
+        int simNumber = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
+        std::cout << "[" << simNumber << "]\t(Lib) Writing Content List to Statistics for collection (warning: might be ignored).\n";
         std::cout.flush();
 
         //TODO: Fix so that our twitter shit still maps to content categories
@@ -108,8 +109,8 @@ void GlobalLibrary::initialize(int stage) {
             }
 
 
-            std::cout << "(Lib) Created a sector map with <" << sectorCount << "> sectors.";
-            std::cout.flush();
+            //std::cout << "(Lib) Created a sector map with <" << sectorCount << "> sectors.";
+            //std::cout.flush();
 
             std::vector<double> probCurve = getProbabilityCurve(sectorCount);
 
@@ -529,8 +530,8 @@ std::vector<double> GlobalLibrary::buildCategoryLibrary(int count, int byteSize,
     //std::cout << "(Lib) Enter buildCategoryLibrary\n";
     //std::cout.flush();
 
-    std::cout << "(Lib) Building Category <" << classPrefix << ">: Zipf <" << zipfCaracterization << "> Item Count <" << (count) << ">.\n";
-    std::cout.flush();
+    //std::cout << "(Lib) Building Category <" << classPrefix << ">: Zipf <" << zipfCaracterization << "> Item Count <" << (count) << ">.\n";
+    //std::cout.flush();
 
     //Setting Up for Library Popularity Calculations
     float CDF = 0;

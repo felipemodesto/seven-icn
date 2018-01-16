@@ -363,9 +363,9 @@ void ContentStore::runGPSCacheReplacement() {
     //std::cout << "(CS) Running GPS Cache Replacement.\n";
 
     //Checking if we actually have to get worried about cache replacement
-    if ((contentCache.size() - gpsCacheSize + 1) <= 0) {
-        std::cout << "(CS) GPS Cache is fine... don't worry about it.\n";
-        std::cout.flush();
+    if ((contentCache.size() - gpsCacheSize) <= 0) {
+        //std::cout << "(CS) GPS Cache is fine... don't worry about it.\n";
+        //std::cout.flush();
         return;
     }
 
@@ -396,8 +396,8 @@ void ContentStore::runGPSCacheReplacement() {
     while (foundRemoval == false) {
         for (auto it = gpsCache.begin(); it != gpsCache.end() ; it++) {
             if (it->useCount == timesUsed) {
-                if ( (foundRemoval == false) &&
-                     (sameUseCount == 1 || uniform(0,1) < individualProbability)) {
+                //We just remove the first one we find, dont care about having multiple items with the same probability anymore
+                //if ( (foundRemoval == false) && (sameUseCount == 1 || (uniform(0,1) < individualProbability))) {
                     foundRemoval = true;
 
                     //std::cout << "(CS) <" << myId << "> Removing Item <" << it->contentPrefix << "> from Cache with Uses <" << it->useCount << ">.\n";
@@ -406,7 +406,7 @@ void ContentStore::runGPSCacheReplacement() {
                     it = gpsCache.erase(it);
                     stats->increaseGPSCacheReplacements();
                     break;
-                }
+                //}
             }
         }
     }
