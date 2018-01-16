@@ -691,14 +691,17 @@ void Client::onData(WaveShortMessage* wsm) {
 
     //Checking if we simply don't have this request anywhere, which is pretty wtf to be honest and would imply a logic error in the service manager
     if (desiredRequest == NULL) {
-        std::cerr << "(Cl) Error: We got data but had no pending requests! Check ServiceManager for potential Network Data being routed to local client.\n";
+        std::cerr << "(Cl) Error: We got data but had no pending requests!\n";
+        std::cerr << "\t\\--> Check ServiceManager for potential Network Data being routed to local client.\n";
+        std::cerr << "\t\\--> WSM Name <" << wsm->getName() << ", Kind" << wsm->getKind() << "> for <" << prefixString << ">!\n";
         std::cerr.flush();
 
-        if (!foundRequest) {
-            std::cerr << "\t\\--> WSM Name <" << wsm->getName() << ";" << wsm->getKind() << "> for <" << prefixString << ">!\n\t\\--> Please Check ServiceManager for potential Network Data being routed to local client.\n";
-            std::cerr.flush();
-            return;
-        }
+        //if (!foundRequest) {
+        //    \t\\--> Please Check ServiceManager for potential Network Data being routed to local client.\n";
+        //    std::cerr.flush();
+        //    return;
+        //}
+        return;
     }
 
     if (strcmp(wsm->getName(),MessageClass::DATA.c_str()) == 0 ) {
