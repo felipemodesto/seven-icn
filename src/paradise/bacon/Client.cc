@@ -419,7 +419,7 @@ bool Client::startContentRequest(Content_t* preferedRequest) {
     //Content Type
     cMsgPar* contentTypeParameter = new cMsgPar(MessageParameter::CLASS.c_str());
     ContentClass tempClass = preferedRequest->contentClass;
-    std::string tempPrefix = preferedRequest->contentPrefix;
+    //std::string tempPrefix = preferedRequest->contentPrefix;
     contentTypeParameter->setLongValue(library->getContentClass(tempClass));
     requestMessage->addPar(contentTypeParameter);
 

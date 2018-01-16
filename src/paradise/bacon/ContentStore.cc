@@ -11,6 +11,7 @@ Define_Module(ContentStore);
 bool compareGPSItems (OverheardGPSObject_t& first, OverheardGPSObject_t& second) {
     //std::cout << "(CS) Comparing items <" << first.contentPrefix << "> and <" << second.contentPrefix << ">!\n";
     return (first.referenceCount > second.referenceCount);
+    //TODO: Decide if there should be an alterate scheme where the referenceCount/originCount should matter
 }
 //
 
@@ -128,6 +129,7 @@ void ContentStore::maintainGPSCache() {
                 newGPSObject.contentPrefix = itA->contentPrefix;
                 newGPSObject.referenceCount = itA->referenceCount;
                 newGPSObject.contentClass = itA->contentClass;
+                newGPSObject.referenceOriginCount = itA->referenceOriginCount;
                 frontFrequencySlice->gpsList.push_front(newGPSObject);
             }
         }
@@ -169,6 +171,7 @@ void ContentStore::shareGPSStatistics() {
                 newObject.referenceCount = gpsObject->referenceCount * pow(easingFactor,temporalIndex);
                 newObject.contentPrefix = gpsObject->contentPrefix;
                 newObject.contentClass = gpsObject->contentClass;
+                newObject.referenceOriginCount = gpsObject->referenceOriginCount;
                 aggregatedGPSStatistics.gpsList.push_back(newObject);
             }
         }
@@ -227,6 +230,7 @@ void ContentStore::logOverheardGPSMessage(Content_t* object) {
         newGPSObject.contentPrefix = object->contentPrefix;
         newGPSObject.referenceCount = 1;
         newGPSObject.contentClass = object->contentClass;
+        newGPSObject.referenceOriginCount = 1;
         frontFrequencySlice->gpsList.push_front(newGPSObject);
     }
 }
@@ -238,11 +242,13 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
     cArray parArray = wsm->getParList();
     cMsgPar* prefixParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
     cMsgPar* frequencyParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::FREQUENCY.c_str()));
+    cMsgPar* referenceFrequencyParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::NEIGHBORS.c_str()));
 
     OverheardGPSObject_t incomingPopularItem;
     incomingPopularItem.contentPrefix = prefixParameter->stringValue();
     incomingPopularItem.referenceCount = frequencyParameter->doubleValue();
     incomingPopularItem.contentClass = ContentClass::TRAFFIC;
+    incomingPopularItem.referenceOriginCount = referenceFrequencyParameter->doubleValue();
 
     //Searching to add to neighbor popularity index thing
     //neighborGPSInformation
@@ -256,6 +262,7 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
     for (auto iterator = neighborGPSInformation.gpsList.begin(); iterator != neighborGPSInformation.gpsList.end() ; iterator++) {
         if (iterator->contentPrefix.compare(incomingPopularItem.contentPrefix) == 0) {
             iterator->referenceCount += incomingPopularItem.referenceCount;
+            iterator->referenceOriginCount += incomingPopularItem.referenceOriginCount;
             foundInNeighborList = true;
             incomingPopularItemReference = &*iterator;
             break;
@@ -266,8 +273,8 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
         incomingPopularItemReference = &incomingPopularItem;
     }
 
-    //Call the GPS popularity evaluation thing
-    if (gpsPopularityCacheDecision(incomingPopularItemReference)) {
+    //Call the GPS popularity evaluation thingw (true = insert)
+    if (gpsPopularityCacheDecision(incomingPopularItemReference) == true) {
         //We don't actually have the item here, but we are interested in it, so we should request it!
         //Don't add it to the cache :P
         //std::cout << "[" << myId << "]\t(CS) Auto obtaining item <" << incomingPopularItemReference->contentPrefix << "> cause fuck it, fuck you!\n";
@@ -322,6 +329,7 @@ bool ContentStore::gpsPopularityCacheDecision(OverheardGPSObject_t* gpsPopularIt
         }
 
         //Deciding whether we remove the item
+        //TODO: Consider the referenceOriginCount neighbor advertisements as part of the solution
         if (minimumObject->useCount <= gpsPopularItem->referenceCount) {
             return true;
         }

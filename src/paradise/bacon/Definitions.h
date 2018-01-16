@@ -155,8 +155,9 @@ enum class ContentStatus {
 
 //Generic object description
 struct Content_t {
-    std::string contentPrefix;              //String name representation of content prefix
+    //std::string contentPrefix;              //String name representation of content prefix
     ContentClass contentClass;              //Type of Content
+    long contentIndex;                      //Content Index within its class
     ContentPriority priority;               //Content Class Specific Ranking (1 = top rank, highest probability)
     long popularityRanking;                 //Content Popularity
     long contentSize;                       //Content Size in Bytes
@@ -183,6 +184,7 @@ struct OverheardGPSObject_t {
     std::string contentPrefix;              //String name representation of content prefix
     ContentClass contentClass;              //Type of Content       TODO: This might be redundant!
     double referenceCount;                  //Number of requests this object has had in the current list (sliding window column) - We keep this as a double value to make our calculations later easier
+    double referenceOriginCount;            //Number of advertisements that lead to the current Reference Count
 };
 
 //List of overheard GPS Stuff
@@ -338,12 +340,14 @@ public:
     static const std::string TYPE;              //Content Request Type (Used during Message Exchange)
     static const std::string SEQUENCE_NUMBER;   //Offset of chunk during message exchange
     static const std::string CLASS;             //Content Class / Type  : String matches enum ContentClass
-    static const std::string PREFIX;            //Prefix in Naming Scheme
+    static const std::string INDEX;             //Content Index within its class (for simulation ease we use numbers instead of human readable strings)
+    static const std::string PREFIX;            //Prefix in Naming Scheme (Class + Index)
     static const std::string STATUS;            //Status of Content in Response : String matches enum ContentStatus
     static const std::string PRIORITY;          //Priority of Content : String matches enum ContentPopularity
     static const std::string POPULARITY;        //Popularity of Content : String matches enum ContentPopularity
     static const std::string SIZE;              //Total object size
     static const std::string FREQUENCY;         //Frequency of item (either for popularity or something similar)
+    static const std::string NEIGHBORS;         //Number of neighbors (Used for neighbor count sharing and neighbor awareness and participation)
     static const std::string COORDINATES;       //Vehicle Location in TraCIMobility XYZ coordinates
     static const std::string HOPS_LAST_CACHE;   //Calculated Hops since last Cache
     static const std::string HOPS_DOWN;         //Calculated Hop Count for current transmission Downstream

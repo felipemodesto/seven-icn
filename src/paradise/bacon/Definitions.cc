@@ -4,8 +4,9 @@ const std::string MessageParameter::CONNECTION_ID       = "connection_id";      
 const std::string MessageParameter::TYPE                = "type";                   //Used by Data Transfers
 const std::string MessageParameter::SEQUENCE_NUMBER     = "sequence_number";        //
 const std::string MessageParameter::PEER_ID             = "peer_id";                //
-const std::string MessageParameter::CLASS               = "class";                  //
-const std::string MessageParameter::PREFIX              = "prefix";                 //
+const std::string MessageParameter::CLASS               = "class";                  //Class of Content
+const std::string MessageParameter::INDEX               = "index";                  //Index of item within its class
+const std::string MessageParameter::PREFIX              = "prefix";                 //Prefix = Class + Index
 const std::string MessageParameter::STATUS              = "status";                 //
 const std::string MessageParameter::PRIORITY            = "priority";               //
 const std::string MessageParameter::POPULARITY          = "popularity";             //
