@@ -597,7 +597,6 @@ std::vector<double> GlobalLibrary::buildCategoryLibrary(int count, int byteSize,
     return cummulativeProbability;
 }
 
-
 //Returns vector with individual probability of each item
 std::vector<double> GlobalLibrary::getProbabilityCurve(int count) {
     //Setting Up for Library Popularity Calculations
@@ -640,7 +639,6 @@ std::vector<double> GlobalLibrary::getProbabilityCurve(int count) {
     //Returning the probability list
     return individualProbability;
 }
-
 
 //
 std::list<Content_t>* GlobalLibrary::getMultimediaContentList() {
@@ -891,6 +889,7 @@ int GlobalLibrary::getClassFreeIndex(string contentPrefix) {
     return std::stoi(item);
 }
 
+//
 int GlobalLibrary::getSectorFromPrefixIndex(int index) {
     return sectorPopularityIndex[index-1];
 }

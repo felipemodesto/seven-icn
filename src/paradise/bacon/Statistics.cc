@@ -128,7 +128,7 @@ void Statistics::keepTime() {
         int simNumber = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
 
         //char mbstr[100];
-        std::cout << "[" << simNumber << "]\t SimTime: " << lastSecond << " \t Cost: " << std::setprecision(2) << elapsed_secs << " sec(s)\tNow: " << std::asctime(now);//std::strftime(mbstr, sizeof(mbstr), "%b %e %H $M",now) << ">\n";
+        std::cout << "[" << simNumber << "]\t SimTime: " << lastSecond << " \t CPU: " << std::setprecision(2) << elapsed_secs << " s\tNow: " << std::asctime(now);//std::strftime(mbstr, sizeof(mbstr), "%b %e %H $M",now) << ">\n";
         std::cout.flush();
 
         if (hasStarted && !hasStopped) statisticsTimekeepingVect.record( (lastSecond - statisticsStartTime) / (double) (statisticsStopTime - statisticsStartTime) );

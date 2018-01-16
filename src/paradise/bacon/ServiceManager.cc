@@ -2943,15 +2943,20 @@ void ServiceManager::advertiseGPSItem(OverheardGPSObject_t mostPopularItem) {
     Enter_Method_Silent();
     WaveShortMessage * gpsBeaconMessage = prepareWSM(MessageClass::GPS_BEACON, beaconLengthBits, type_CCH, dataPriority, -1, -2);
 
-    //Adding Centrality of node
+    //Adding Prefix of popular item
     cMsgPar* popularPrefixParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
     popularPrefixParameter->setStringValue(mostPopularItem.contentPrefix.c_str());
     gpsBeaconMessage->addPar(popularPrefixParameter);
 
-    //Adding Local Load Perception
+    //Adding Local perception of item Popularity
     cMsgPar* popularityFrequencyParameter = new cMsgPar(MessageParameter::FREQUENCY.c_str());
     popularityFrequencyParameter->setDoubleValue(mostPopularItem.referenceCount);
     gpsBeaconMessage->addPar(popularityFrequencyParameter);
+
+    //Adding Local Load Perception
+    cMsgPar* neighborParticipationParameters = new cMsgPar(MessageParameter::NEIGHBORS.c_str());
+    neighborParticipationParameters->setDoubleValue(mostPopularItem.referenceOriginCount);
+    gpsBeaconMessage->addPar(neighborParticipationParameters);
 
     //Adding -1 as a representation of no request ID
     cMsgPar* requestIDParameter = new cMsgPar(MessageParameter::CONNECTION_ID.c_str());
