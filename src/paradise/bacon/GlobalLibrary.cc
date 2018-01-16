@@ -948,16 +948,16 @@ bool GlobalLibrary::equals(Content_t first, std::string second) {
 
     //Fetching and Comparing Category
     if (secondCategory.compare(transitPrefix) == 0) {
-        if (first.contentClass != ContentClass::TRAFFIC) return true;
+        if (first.contentClass == ContentClass::TRAFFIC) return true;
     } else if (secondCategory.compare(networkPrefix) == 0) {
-        if (first.contentClass != ContentClass::NETWORK) return true;
+        if (first.contentClass == ContentClass::NETWORK) return true;
     } else if (secondCategory.compare(multimediaPrefix) == 0) {
-        if (first.contentClass != ContentClass::MULTIMEDIA) return true;
+        if (first.contentClass == ContentClass::MULTIMEDIA) return true;
     }
 
     //Edge Case
-    std::cerr << "(Lib) Error: Content Category substring is not valid <" << secondCategory << ">\n";
-    std::cerr.flush();
+    std::cerr << "(Lib) Error: Content Category substring was not found <" << secondCategory << ">\n";
+    std::cerr << "\t" << secondCategory.compare(transitPrefix) << "\t" << secondCategory.compare(networkPrefix) << "\t" << secondCategory.compare(multimediaPrefix) << "\n";
     return false;
 }
 
