@@ -464,7 +464,7 @@ void ServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
         //TODO: (DECIDE) Will we cancel our thing after this number of attempts? Will we just ignore this timer?
 
         //Checking if this is a server-sided or client-sided connection. If it's a client-sided connection then we gotta reset some stuff
-        Interest_t* pendingInterest = getInterest(connection->requestPrefix);
+        Interest_t* pendingInterest = getInterest(connection->requestedContent);
 
         if (pendingInterest == NULL) {
             if (connection->peerID == myId) {
@@ -536,12 +536,12 @@ void ServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
                 //std::cout << "(SM) Removing Connection <" << connection->requestID << "> with peer <" << connection->peerID << "> and status <" << connection->chunkStatusList << ">\n";
 
                 //Checking if we're the only person looking for this interest (If we're the only ones, the interest becomes empty :D
-                removeFromInterest(connection->requestPrefix,connection->peerID);
+                removeFromInterest(connection->requestedContent,connection->peerID);
 
             } else {
                 //Updating connection status and carrying on... not my problem anymore
                 connection->connectionStatus = ConnectionStatus::DONE_UNAVAILABLE;
-                removeFromInterest(connection->requestedContent->contentPrefix,connection->peerID);
+                removeFromInterest(connection->requestedContent,connection->peerID);
 
                 //Outsourced network communications
                 cancelTimer(connection);
@@ -670,7 +670,7 @@ void ServiceManager::handleSelfTimer(WaveShortMessage* timerMessage) {
                 } else {
                     //If we're the server who has dealt with a connection that has looped back to idle due to errors or X, we'll just delete it.
                     connection->connectionStatus = ConnectionStatus::DONE_NO_CLIENT_REPLY;
-                    removeFromInterest(connection->requestPrefix,connection->peerID);
+                    removeFromInterest(connection->requestedContent,connection->peerID);
                     cancelTimer(connection);
                 }
                 break;
@@ -893,8 +893,7 @@ void ServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
     int idValue = requestID->longValue();
     std::string prefixValue = requestPrefix->stringValue();
 
-    // :/
-    prefixValue = library->cleanString(prefixValue);
+    Content_t* contentObject = library->getContent(prefixValue);
 
     //Checking if we already have a downstream connection for this interest (we should)
     Connection_t* downstreamConnection = getConnection(idValue,wsm->getSenderAddress());
@@ -906,7 +905,7 @@ void ServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
            delete(wsm);
            return;
        } else {
-           Interest_t* interest = getInterest(prefixValue);
+           Interest_t* interest = getInterest(contentObject);
 
            //Checking if there is already an impending interest regarding this content.. if so we just ignore
            if (interest != NULL) {
@@ -980,6 +979,7 @@ void ServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
                 std::cerr.flush();
             }
 
+            //Splicing remaining chunk string to find which subpackets are still missing
             while ((pos = chunkString.find(delimiter)) != std::string::npos) {
                 token = chunkString.substr(0, pos);
                 if (token.length() != 0 && token.compare("") != 0) {
@@ -1006,7 +1006,7 @@ void ServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
 //        std::cout.flush();
 
         //This will only actually increase use count if object has been cached locally
-        cache->increaseUseCount(downstreamConnection->requestPrefix);
+        cache->increaseUseCount(downstreamConnection->requestedContent);
     }
 
     transmitDataChunks(downstreamConnection,chunkVector);
@@ -1034,13 +1034,7 @@ void ServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
     int idValue = requestID->longValue();
     std::string prefixValue = requestPrefix->stringValue();
 
-    //std::cout << "(SM) <" << myId << "> is handling an Interest Reply from <" << wsm->getSenderAddress() << "> for connection <" << idValue << ">. Time: <" << simTime() << ">\n";
-    //std::cout.flush();
-
-    //if (myId == 10) {
-    //    std::cout << "\t(SM) Look for a selftimer!\n";
-    //    std::cout.flush();
-    //}
+    Content_t* contentObject = library->getContent(prefixValue);
 
     //Checking if we already have an upstream connection for this interest (Possibly because we heard a loop)
     Connection_t* upstreamConnection = getConnection(idValue,wsm->getSenderAddress());
@@ -1101,7 +1095,7 @@ void ServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
     }
 
     //Checking if we already have an interest for the given prefix
-    Interest_t* interest = getInterest(prefixValue);
+    Interest_t* interest = getInterest(contentObject);
     if (interest == NULL) {
         //std::cerr << "(SM) <" << myId << "> We don't have an interest for <" << prefixValue << "> but we technically have a connection on it?.\n";
         //std::cerr.flush();
@@ -1118,7 +1112,7 @@ void ServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
                 //std::cout << "(SM) <" << myId << "> It seems our peer <" << pendingConnection->peerID << "> got the content object before us and wants to provide us with it. Rubbing it in, eh?\n";
                 //std::cout.flush();
                 //it = interest->pendingConnections.erase(it);
-                removeFromInterest(interest->interestPrefix,upstreamConnection->peerID);
+                removeFromInterest(interest->contentReference,upstreamConnection->peerID);
                 //TODO (REVIEW) See if this causes shit to go haywire
                 break;
             }
@@ -1128,7 +1122,7 @@ void ServiceManager::handleInterestReplyMessage(WaveShortMessage* wsm) {
                 std::cerr << "(SM) <" << myId << "> Obtaining content from <" << pendingConnection->peerID << "> would be pointless.\n";
                 std::cerr.flush();
 
-                deleteInterest(prefixValue);
+                deleteInterest(interest->contentReference);
                 rejectNetworkrequest(wsm,upstreamConnection);
                 return;
             }
@@ -1189,10 +1183,7 @@ void ServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
     int idValue = requestID->longValue();
     std::string prefixValue = requestPrefix->stringValue();
 
-    //if (myId == 0) {
-    //    std::cout << "(SM) <" << myId << "> We have the Desired Object <" << prefixValue << "> for connection <" << idValue << "> from <" << wsm->getSenderAddress() << "> time: <" << simTime() << ">\n";
-    //    std::cout.flush();
-    //}
+    Content_t* contentObject = library->getContent(prefixValue);
 
     //If we have a priority/content restriction policy we check if it will be applied to this interest request
     if (priorityPolicy == AccessRestrictionPolicy::FORWARD_50 || priorityPolicy == AccessRestrictionPolicy::FORWARD_AND_DELAY ) {
@@ -1337,12 +1328,12 @@ void ServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
         return;
     } else {
         //Checking if we already have an interest for the given prefix
-        Interest_t* interest = getInterest(prefixValue);
+        Interest_t* interest = getInterest(contentObject);
         if (interest == NULL) {
 
             downstreamConnection->connectionStatus = ConnectionStatus::WAITING_FOR_NETWORK;
             //Creating new interest and forwarding it!
-            bool result = createInterest(prefixValue, wsm->getSenderAddress());
+            bool result = createInterest(contentObject, wsm->getSenderAddress());
             if (result == false) {
                 std::cerr << "(SM) Error: Interest creation failed.\n";
                 std::cerr.flush();
@@ -1365,7 +1356,7 @@ void ServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
             //TODO: (DECIDE) Use the existing knowledge of previous interests (time since last request) to rebroadcast interests, possibly reset some timers?
 
             //We only start timers for interests we made changes to Old ones we have to let expire
-            if (addToInterest(prefixValue, wsm->getSenderAddress()) == true) {
+            if (addToInterest(contentObject, wsm->getSenderAddress()) == true) {
                 //We start a timer because even if we have an interest the request might have come from a local interaface
                 //This way, we need to have a way to notify our local client that the request has no response
                 startTimer(downstreamConnection);
@@ -1722,10 +1713,6 @@ void ServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection_t* c
         return;
     }
 
-    //std::cout << "(SM) <" << wsm->getSenderAddress() << "> --> data --> <" << myId << "> Up/Down <" << connection->upstreamHopCount << ";" << connection->downstreamHopCount << ">. simTime: <" << simTime() << ">\n";
-    //std::cout.flush();
-
-
     //Checking our connection, which we assume is already configured as an upstream connection (connecting us to the server which will provide us with data)
     if (connection->chunkStatusList == NULL) {
         std::cerr << "(SM) Error: Chunk status list for connection does not exist.\n";
@@ -1736,7 +1723,7 @@ void ServiceManager::acceptNetworkrequest(WaveShortMessage* wsm, Connection_t* c
 
     //Setting relevant parameters in connection
     connection->connectionStatus = ConnectionStatus::RECEIVE_CLIENT;
-    Interest_t* relatedInterest = getInterest(connection->requestedContent->contentPrefix);
+    Interest_t* relatedInterest = getInterest(connection->requestedContent);
 
     //Making sure we are still interested in this content
     if (relatedInterest == NULL) {
@@ -2072,7 +2059,7 @@ void ServiceManager::fulfillPendingInterest(Connection_t* connection) {
     //std::cout << "(SM) Enter fulfillPendingInterest\n";
     //std::cout.flush();
 
-    Interest_t* pendingInterest = getInterest(connection->requestedContent->contentPrefix);
+    Interest_t* pendingInterest = getInterest(connection->requestedContent);
 
     //This should be not null because even local requests have
     if (pendingInterest == NULL) {
@@ -2132,7 +2119,7 @@ void ServiceManager::fulfillPendingInterest(Connection_t* connection) {
     }
 
     //Deleting Pending Interest
-    deleteInterest(connection->requestPrefix);
+    deleteInterest(connection->requestedContent);
     //pendingInterest->pendingConnections.clear();
     //PIT.remove(pendingInterest);
 
@@ -2644,12 +2631,17 @@ void ServiceManager::removeContentFromCache(Connection_t* connection) {
 
 //Function called to obtain connection from list of connections. Will return NULL if ID is not listed
 Interest_t* ServiceManager::getInterest(std::string interest) {
+    return getInterest(library->getContent(interest));
+}
+
+//Function called to obtain connection from list of connections. Will return NULL if ID is not listed
+Interest_t* ServiceManager::getInterest(Content_t* contentobject) {
     //std::cout << "(SM) Enter getInterest\n";
     //std::cout.flush();
 
     for (auto it = PIT.begin(); it != PIT.end(); it++) {
         //Comparing Request ID
-        if ((*it)->interestPrefix.compare(interest) == 0) {
+        if (library->equals((*it)->contentReference,contentobject)) {
             return *it;
         }
     }
@@ -2658,18 +2650,22 @@ Interest_t* ServiceManager::getInterest(std::string interest) {
 
 //
 bool ServiceManager::createInterest(std::string interestPrefix, int senderAddress) {
+    return createInterest(library->getContent(interestPrefix),senderAddress);
+}
+
+bool ServiceManager::createInterest(Content_t* contentObject, int senderAddress) {
     //std::cout << "(SM) Enter createInterest\n";
     //std::cout.flush();
 
     //Checking if connection is already listed
-    if (getInterest(interestPrefix) != NULL) {
+    if (getInterest(contentObject) != NULL) {
         EV_WARN << "Interest already exists. Ignoring request.\n";
         EV_WARN.flush();
         return false;
     }
 
     Interest_t* newInterest = new Interest_t();
-    newInterest->interestPrefix = interestPrefix;
+    newInterest->contentReference = contentObject;
     newInterest->lastTimeRequested = simTime();
     newInterest->totalTimesRequested = 1;
     newInterest->pendingConnections = std::vector<int>();
@@ -2684,15 +2680,20 @@ bool ServiceManager::createInterest(std::string interestPrefix, int senderAddres
     return true;
 }
 
-//Function used add another node to the interest list
+//
 bool ServiceManager::addToInterest(std::string interestPrefix, int senderAddress) {
+    return addToInterest(library->getContent(interestPrefix),senderAddress);
+}
+
+//Function used add another node to the interest list
+bool ServiceManager::addToInterest(Content_t* contentObject, int senderAddress) {
     //std::cout << "(SM) Enter addToInterest\n";
     //std::cout.flush();
 
     //Unwrapping contents of request
-    Interest_t* interest = getInterest(interestPrefix);
+    Interest_t* interest = getInterest(contentObject);
     if (interest == NULL) {
-        EV_ERROR << "(SM) Error: Interest <" << interestPrefix << "> does not exist, unable to update.\n";
+        EV_ERROR << "(SM) Error: Interest <" << contentObject->contentPrefix << "> does not exist, unable to update.\n";
         EV_ERROR.flush();
         return false;
     }
@@ -2718,15 +2719,21 @@ bool ServiceManager::addToInterest(std::string interestPrefix, int senderAddress
     return true;
 }
 
-//Function used remove a node to the interest list
+//
 bool ServiceManager::removeFromInterest(std::string interestPrefix, int senderAddress) {
+    return removeFromInterest(library->getContent(interestPrefix),senderAddress);
+}
+
+//
+//Function used remove a node to the interest list
+bool ServiceManager::removeFromInterest(Content_t* contentObject, int senderAddress) {
     //std::cout << "(SM) Enter removeFromInterest\n";
     //std::cout.flush();
 
     //Unwrapping contents of request
-    Interest_t* interest = getInterest(interestPrefix);
+    Interest_t* interest = getInterest(contentObject);
     if (interest == NULL) {
-        EV_ERROR << "(SM) Error: Interest <" << interestPrefix << "> does not exist, unable to update.\n";
+        EV_ERROR << "(SM) Error: Interest <" << contentObject->contentPrefix << "> does not exist, unable to update.\n";
         EV_ERROR.flush();
         return false;
     }
@@ -2736,7 +2743,7 @@ bool ServiceManager::removeFromInterest(std::string interestPrefix, int senderAd
         if ((*it) == senderAddress) {
             it = interest->pendingConnections.erase(it);
             if (interest->pendingConnections.size() == 0) {
-                deleteInterest(interestPrefix);
+                deleteInterest(contentObject);
             }
             break;
         }
@@ -2749,12 +2756,18 @@ bool ServiceManager::removeFromInterest(std::string interestPrefix, int senderAd
 
 //
 bool ServiceManager::deleteInterest(std::string interest) {
+    return deleteInterest(library->getContent(interest));
+}
+
+//
+bool ServiceManager::deleteInterest(Content_t* contentObject) {
     //std::cout << "(SM) Enter deleteInterest\n";
     //std::cout.flush();
 
     for (auto it = PIT.begin(); it != PIT.end(); it++) {
         //Comparing Request ID
-        if ((*it)->interestPrefix.compare(interest) == 0) {
+        if (library->equals((*it)->contentReference,contentObject)) {
+        //if ((*it)->interestPrefix.compare(interest) == 0) {
             (*it)->pendingConnections.clear();
             (*it)->contentReference = NULL;
             (*it)->providingConnection = NULL;
@@ -2933,19 +2946,22 @@ void ServiceManager::logNetworkmessage(WaveShortMessage *msg) {
     //std::cout.flush();
 }
 
+
 //=============================================================
 // MESSAGE TRANSMISSION AND ARRIVAL FUNCTIONS
 //=============================================================
 
 //
 //Note: This is always called from the Content Store (technically once per Second or however long we set the refresh timer for it)
+
+//
 void ServiceManager::advertiseGPSItem(OverheardGPSObject_t mostPopularItem) {
     Enter_Method_Silent();
     WaveShortMessage * gpsBeaconMessage = prepareWSM(MessageClass::GPS_BEACON, beaconLengthBits, type_CCH, dataPriority, -1, -2);
 
     //Adding Prefix of popular item
     cMsgPar* popularPrefixParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
-    popularPrefixParameter->setStringValue(mostPopularItem.contentPrefix.c_str());
+    popularPrefixParameter->setStringValue(mostPopularItem.referenceObject->contentPrefix.c_str());
     gpsBeaconMessage->addPar(popularPrefixParameter);
 
     //Adding Local perception of item Popularity
@@ -2966,6 +2982,7 @@ void ServiceManager::advertiseGPSItem(OverheardGPSObject_t mostPopularItem) {
     sendWSM(gpsBeaconMessage);
 }
 
+//
 //Function that Sends Message directly to the Client
 void ServiceManager::sendToClient(WaveShortMessage *msg) {
     //std::cout << "(SM) Enter sendToClient\n";
@@ -2974,6 +2991,7 @@ void ServiceManager::sendToClient(WaveShortMessage *msg) {
     send(msg, "clientExchangeOut");
 }
 
+//
 //Function responsible for sending messages to lower layers
 void ServiceManager::sendWSM(WaveShortMessage* wsm) {
     double transmissionDelay = uniform(minimumForwardDelay,maximumForwardDelay);
@@ -2995,6 +3013,8 @@ void ServiceManager::sendWSM(WaveShortMessage* wsm, double forwardDelay) {
     sendDelayedDown(wsm,forwardDelay);
 }
 
+
+//
 void ServiceManager::sendBeacon() {
     //std::cout << "(SM) Enter sendBeacon\n";
     //std::cout.flush();
@@ -3116,6 +3136,7 @@ void ServiceManager::handlePositionUpdate(cObject* obj) {
 // EXTRA FUNCTIONALITIES
 //=============================================================
 
+//
 WaveShortMessage* ServiceManager::convertCMessage(cMessage* msg) {
     //std::cout << "(SM) Enter convertCMessage\n";
     //std::cout.flush();
@@ -3125,6 +3146,7 @@ WaveShortMessage* ServiceManager::convertCMessage(cMessage* msg) {
     return wsm;
 }
 
+//
 ContentClass ServiceManager::getClassFromPrefix(string prefix) {
     //std::cout << "(SM) Enter getClassFromPrefix\n";
     //std::cout.flush();

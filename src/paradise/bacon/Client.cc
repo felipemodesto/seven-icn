@@ -635,7 +635,8 @@ void Client::onData(WaveShortMessage* wsm) {
 
     //Searching for the request in our list of ongoing requests
     for (auto it = ongoingRequests.begin(); it != ongoingRequests.end();) {
-        if ( prefixString.compare((*it)->referenceObject->contentPrefix) == 0 && requestID == (*it)->pendingID ) {
+        if (library->equals(*((*it)->referenceObject),prefixString) && (requestID == (*it)->pendingID) ) {
+        //if ( prefixString.compare((*it)->referenceObject->contentPrefix) == 0 && requestID == (*it)->pendingID ) {
             foundRequest = true;
             desiredRequest = *it;
 
@@ -652,8 +653,8 @@ void Client::onData(WaveShortMessage* wsm) {
     //If the current respond does not match to the current pending request (given it exists)
     if (!foundRequest) {
         for (auto it = backloggedRequests.begin(); it != backloggedRequests.end();) {
-            //std::cerr << "\t<" << it->contentPrefix << ">.\n";
-            if (prefixString.compare((*it)->referenceObject->contentPrefix) == 0 && requestID == (*it)->pendingID) {
+            if (library->equals(*((*it)->referenceObject),prefixString) && (requestID == (*it)->pendingID) ) {
+            //if (prefixString.compare((*it)->referenceObject->contentPrefix) == 0 && requestID == (*it)->pendingID) {
                 foundRequest = true;
                 desiredRequest = *it;
                 stats->increasedBackloggedResponses();
@@ -677,7 +678,8 @@ void Client::onData(WaveShortMessage* wsm) {
     //If we haven't found the request in the backlog, the only locally available option is in the complete list
     if (!foundRequest) {
         for (auto it = completedRequests.begin(); it != completedRequests.end(); it++) {
-            if (prefixString.compare((*it)->referenceObject->contentPrefix) == 0 && requestID == (*it)->pendingID) {
+            if (library->equals(*((*it)->referenceObject),prefixString) && (requestID == (*it)->pendingID) ) {
+            //if (prefixString.compare((*it)->referenceObject->contentPrefix) == 0 && requestID == (*it)->pendingID) {
                 //We should be fine here, as we have confirmed having received the content we don't care about its future
                 foundRequest = true;
                 desiredRequest = *it;
@@ -693,7 +695,7 @@ void Client::onData(WaveShortMessage* wsm) {
         std::cerr.flush();
 
         if (!foundRequest) {
-            std::cerr << "\t(Cl) Error: <" << myId << "> We got the following response <" << wsm->getName() << ";" << wsm->getKind() << "> but had no pending requests for <" << prefixString << ">!\n\tPlease Check ServiceManager for potential Network Data being routed to local client.\n";
+            std::cerr << "\t\\--> WSM Name <" << wsm->getName() << ";" << wsm->getKind() << "> for <" << prefixString << ">!\n\t\\--> Please Check ServiceManager for potential Network Data being routed to local client.\n";
             std::cerr.flush();
             return;
         }

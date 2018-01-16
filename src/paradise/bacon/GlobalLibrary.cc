@@ -551,6 +551,7 @@ std::vector<double> GlobalLibrary::buildCategoryLibrary(int count, int byteSize,
         Content_t newContent;
 
         newContent.popularityRanking = j+1;         //Used as shorthand to the ranking of the object in its relative popularity queue
+        //newContent.contentIndex = j+1;
         newContent.contentClass = category;
         newContent.contentSize = byteSize;
         newContent.contentPrefix = classPrefix + "/" + std::to_string(j+1);
@@ -667,6 +668,8 @@ Content_t* GlobalLibrary::getContent(std::string contentPrefix) {
 
     //Splitting into Substring to get classification
     std::string category = contentPrefix.substr(0, contentPrefix.find("/"));
+    char *pEnd;
+    long int itemIndex = std::strtol(contentPrefix.substr(contentPrefix.find("/") + 1).c_str() , &pEnd, 10);
     std::list<Content_t>* correctLibrary;
 
     if (category.compare(transitPrefix) == 0) {
@@ -681,6 +684,13 @@ Content_t* GlobalLibrary::getContent(std::string contentPrefix) {
         return NULL;
     }
 
+    //Attempting to directly fetch the object from the library to speed lookups as items are stored sequentially
+    std::list<Content_t>::iterator attemptedContent = correctLibrary->begin();
+    std::advance(attemptedContent,itemIndex-1);
+    if (attemptedContent->popularityRanking == itemIndex) return &*attemptedContent;
+
+    //If the new method fails, we use the old method where we actualy iterate over the Library
+    std::cout << "(Lib) Warning: Library Indexes are de-synced/\n";
     for (auto it = correctLibrary->begin(); it != correctLibrary->end(); it++) {
         if (it->contentPrefix.compare(contentPrefix) == 0) {
             return &*it;
@@ -914,3 +924,40 @@ std::string GlobalLibrary::cleanString(std::string inputString) {
     return inputString;
     //return inputString.erase(std::remove(inputString.begin(), inputString.end(), '\"'), inputString.end());
 }
+
+//
+bool GlobalLibrary::equals(Content_t* first, Content_t* second) {
+    return equals(*first,*second);
+}
+//
+bool GlobalLibrary::equals(Content_t first, Content_t second) {
+    if (first.contentClass != second.contentClass) return false;
+    if (first.popularityRanking != second.popularityRanking) return false;
+    return true;
+}
+
+//
+bool GlobalLibrary::equals(Content_t first, std::string second) {
+    //Splitting into Substring to get classification
+    std::string secondCategory = second.substr(0, second.find("/"));
+    char *pEnd;
+    long int itemIndex = std::strtol(second.substr(second.find("/") + 1).c_str() , &pEnd, 10);
+
+    //Comparing Index
+    if (first.popularityRanking != itemIndex) return false;
+
+    //Fetching and Comparing Category
+    if (secondCategory.compare(transitPrefix) == 0) {
+        if (first.contentClass != ContentClass::TRAFFIC) return true;
+    } else if (secondCategory.compare(networkPrefix) == 0) {
+        if (first.contentClass != ContentClass::NETWORK) return true;
+    } else if (secondCategory.compare(multimediaPrefix) == 0) {
+        if (first.contentClass != ContentClass::MULTIMEDIA) return true;
+    }
+
+    //Edge Case
+    std::cerr << "(Lib) Error: Content Category substring is not valid <" << secondCategory << ">\n";
+    std::cerr.flush();
+    return false;
+}
+

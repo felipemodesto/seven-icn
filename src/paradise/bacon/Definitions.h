@@ -157,7 +157,7 @@ enum class ContentStatus {
 struct Content_t {
     std::string contentPrefix;              //String name representation of content prefix
     ContentClass contentClass;              //Type of Content
-    long contentIndex;                      //Content Index within its class
+    //long contentIndex;                      //Content Index within its class
     ContentPriority priority;               //Content Class Specific Ranking (1 = top rank, highest probability)
     long popularityRanking;                 //Content Popularity
     long contentSize;                       //Content Size in Bytes
@@ -181,8 +181,9 @@ struct PendingContent_t : CachedContent_t {
 
 //Used to store knowledge of server-correlated GPS frequency spikes
 struct OverheardGPSObject_t {
-    std::string contentPrefix;              //String name representation of content prefix
-    ContentClass contentClass;              //Type of Content       TODO: This might be redundant!
+    Content_t* referenceObject;
+    //std::string contentPrefix;              //String name representation of content prefix
+    //ContentClass contentClass;              //Type of Content       TODO: This might be redundant!
     double referenceCount;                  //Number of requests this object has had in the current list (sliding window column) - We keep this as a double value to make our calculations later easier
     double referenceOriginCount;            //Number of advertisements that lead to the current Reference Count
 };
@@ -366,7 +367,7 @@ struct ContentCategoryDistribution_t {
 };
 
 struct Interest_t {
-    std::string interestPrefix;                             //prefix of the content request
+    //std::string interestPrefix;                             //prefix of the content request
     simtime_t lastTimeRequested;                            //Time the request was made
     int totalTimesRequested;                                //Number of times the given contest was requested locally
     Content_t* contentReference;                            //Reference to Content Object

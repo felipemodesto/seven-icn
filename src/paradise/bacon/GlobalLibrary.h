@@ -139,6 +139,10 @@ public:
     int getSectorFromPrefixIndex(int index);
 
     static std::string cleanString(std::string inputString);
+    bool equals(Content_t* first, Content_t* second);
+    bool equals(Content_t first, Content_t second);
+    bool equals(Content_t first, std::string second);
+
 };
 
 #endif /* BACONLIBRARY_H */
