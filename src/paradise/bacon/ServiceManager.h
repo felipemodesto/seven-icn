@@ -126,10 +126,15 @@ class ServiceManager : public BaseWaveApplLayer {
         bool checkForConnections(long requestID);                                       //
         void cleanConnections();                                                        //STATISTICS COLLECTION AND MEMORY MANAGEMENT FUNCTION
 
+        Interest_t* getInterest(Content_t* contentObject);
         Interest_t* getInterest(std::string interest);
+        bool createInterest(Content_t* contentObject,int senderAdress);
         bool createInterest(std::string interestPrefix, int senderAddress);
         bool addToInterest(std::string interestPrefix, int senderAddress);
+        bool addToInterest(Content_t* contentObject,int senderAddress);
         bool removeFromInterest(std::string interestPrefix, int senderAddress);
+        bool removeFromInterest(Content_t* contentObject,int senderAddress);
+        bool deleteInterest(Content_t* contentObject);
         bool deleteInterest(std::string interestPrefix);
         void fulfillPendingInterest(Connection_t* connection);
 

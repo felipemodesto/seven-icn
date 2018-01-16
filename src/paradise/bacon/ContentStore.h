@@ -99,7 +99,8 @@ class ContentStore : public omnetpp::cSimpleModule {
 
         void increaseUseCount(std::string prefix);              //Increase the request (use) count for a specific content object
         void increaseUseCount(cMessage *msg);                   //Increase the request (use) count for a specific content object
-
+        void increaseUseCount(Content_t* object);
+        void increaseUseCount(int addedUses, Content_t* object);
         void increaseUseCount(int addedUses,std::string prefix);//Increase the request (use) count for a specific content object
 
         int getUseCount(std::string prefix);                    //Get the current use count for an object
@@ -116,13 +117,14 @@ class ContentStore : public omnetpp::cSimpleModule {
         bool globalPopularityCacheDecision(Connection_t* connection);           //Decision algorithm function whether item should be cached
         bool globalMinimumPopularityCacheDecision(Connection_t* connection);    //Decision algorithm function whether item should be cached
 
-        Content_t* fetchFromCache(std::string prefix);              //Obtain item from cache (not other locally available heuristics)
-        bool checkIfAvailable(std::string prefix, int requestID);   //Check if we have the item anywhere (cache, local providers, etc)
-        void removeContentFromCache(Content_t* newContent);       //Remove item from cache
+        Content_t* fetchFromCache(std::string prefix);                //Obtain item from cache (not other locally available heuristics)
+        Content_t* fetchFromCache(Content_t* prefix);                   //Obtain item from cache (not other locally available heuristics)
+        bool checkIfAvailable(std::string prefix, int requestID);       //Check if we have the item anywhere (cache, local providers, etc)
+        void removeContentFromCache(Content_t* newContent);             //Remove item from cache
         void removeFromGPSSideStatistics(Content_t* contentObject);
-        void addContentToCache(Content_t* newContent);            //Add content to Cache
+        void addContentToCache(Content_t* newContent);                  //Add content to Cache
         void addContentToGPSCache(OverheardGPSObject_t* gpsPopularItem);
-        NodeRole getRole();                                         //Check if we're a SERVER or CLIENT or whatever (Have everything)
+        NodeRole getRole();                                             //Check if we're a SERVER or CLIENT or whatever (Have everything)
 };
 
 

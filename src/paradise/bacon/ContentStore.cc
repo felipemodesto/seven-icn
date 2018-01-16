@@ -118,7 +118,8 @@ void ContentStore::maintainGPSCache() {
 
             bool foundRemoteItem = false;
             for (auto itB = frontFrequencySlice->gpsList.begin(); itB != frontFrequencySlice->gpsList.end() ; itB++) {
-                if (itA->contentPrefix.compare(itB->contentPrefix) == 0) {
+                if (library->equals(itA->referenceObject,itB->referenceObject)) {
+                //if (itA->referenceObject->contentPrefix.compare(itB->referenceObject->contentPrefix) == 0) {
                     foundRemoteItem = true;
                     itB->referenceCount += itA->referenceCount;
                 }
@@ -126,9 +127,9 @@ void ContentStore::maintainGPSCache() {
             //If we haven't found the remote item we create a new entry
             if (!foundRemoteItem) {
                 OverheardGPSObject_t newGPSObject;
-                newGPSObject.contentPrefix = itA->contentPrefix;
+                newGPSObject.referenceObject = itA->referenceObject;
                 newGPSObject.referenceCount = itA->referenceCount;
-                newGPSObject.contentClass = itA->contentClass;
+                //newGPSObject.contentClass = itA->contentClass;
                 newGPSObject.referenceOriginCount = itA->referenceOriginCount;
                 frontFrequencySlice->gpsList.push_front(newGPSObject);
             }
@@ -160,7 +161,8 @@ void ContentStore::shareGPSStatistics() {
         for (auto gpsObject = (*slice)->gpsList.begin(); gpsObject != (*slice)->gpsList.end() ; gpsObject++) {
             bool foundItem = false;
             for(auto aggregatedObject = aggregatedGPSStatistics.gpsList.begin() ; aggregatedObject != aggregatedGPSStatistics.gpsList.end(); aggregatedObject++) {
-                if (aggregatedObject->contentPrefix.compare(gpsObject->contentPrefix) == 0) {
+                if (library->equals(aggregatedObject->referenceObject,gpsObject->referenceObject)) {
+                //if (aggregatedObject->referenceObject->contentPrefix.compare(gpsObject->referenceObject->contentPrefix) == 0) {
                     aggregatedObject->referenceCount += gpsObject->referenceCount * pow(easingFactor,temporalIndex);
                     foundItem = true;
                     break;
@@ -169,8 +171,9 @@ void ContentStore::shareGPSStatistics() {
             if (!foundItem) {
                 OverheardGPSObject_t newObject;
                 newObject.referenceCount = gpsObject->referenceCount * pow(easingFactor,temporalIndex);
-                newObject.contentPrefix = gpsObject->contentPrefix;
-                newObject.contentClass = gpsObject->contentClass;
+                newObject.referenceObject = gpsObject->referenceObject;
+                //newObject.contentPrefix = gpsObject->contentPrefix;
+                //newObject.contentClass = gpsObject->contentClass;
                 newObject.referenceOriginCount = gpsObject->referenceOriginCount;
                 aggregatedGPSStatistics.gpsList.push_back(newObject);
             }
@@ -199,7 +202,7 @@ void ContentStore::logOverheardGPSMessage(Content_t* object) {
     //std::cout.flush();
 
     //Check if the object is already cached (or GPS Cached)
-    if (fetchFromCache(object->contentPrefix) != NULL) {
+    if (fetchFromCache(object) != NULL) {
         //TODO: Validate if the logic holds... perhaps if we already have the item we don't care?
         //std::cout << "(CS) Object is cached! we don't care about GPS interests for this item.\n";
         //std::cout.flush();
@@ -213,7 +216,8 @@ void ContentStore::logOverheardGPSMessage(Content_t* object) {
     //Searching most recent slice
     bool foundItem = false;
     for (auto it = frontFrequencySlice->gpsList.begin(); it != frontFrequencySlice->gpsList.end() ; it++) {
-        if (object->contentPrefix.compare(it->contentPrefix) == 0) {
+        if (library->equals(object,it->referenceObject)) {
+        //if (object->contentPrefix.compare(it->referenceObject->contentPrefix) == 0) {
             //If we found the element, let's update the status
             it->referenceCount++;
             foundItem = true;
@@ -227,9 +231,10 @@ void ContentStore::logOverheardGPSMessage(Content_t* object) {
     //If we haven't found the object, we'll create a new entry
     if (!foundItem) {
         OverheardGPSObject_t newGPSObject;
-        newGPSObject.contentPrefix = object->contentPrefix;
         newGPSObject.referenceCount = 1;
-        newGPSObject.contentClass = object->contentClass;
+        newGPSObject.referenceObject = object;
+        //newGPSObject.contentPrefix = object->contentPrefix;
+        //newGPSObject.contentClass = object->contentClass;
         newGPSObject.referenceOriginCount = 1;
         frontFrequencySlice->gpsList.push_front(newGPSObject);
     }
@@ -245,9 +250,10 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
     cMsgPar* referenceFrequencyParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::NEIGHBORS.c_str()));
 
     OverheardGPSObject_t incomingPopularItem;
-    incomingPopularItem.contentPrefix = prefixParameter->stringValue();
     incomingPopularItem.referenceCount = frequencyParameter->doubleValue();
-    incomingPopularItem.contentClass = ContentClass::TRAFFIC;
+    incomingPopularItem.referenceObject = library->getContent(prefixParameter->stringValue());
+    //incomingPopularItem.contentPrefix = ;
+    //incomingPopularItem.contentClass = ContentClass::TRAFFIC;
     incomingPopularItem.referenceOriginCount = referenceFrequencyParameter->doubleValue();
 
     //Searching to add to neighbor popularity index thing
@@ -260,7 +266,8 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
     OverheardGPSObject_t* incomingPopularItemReference = NULL;
     bool foundInNeighborList = false;
     for (auto iterator = neighborGPSInformation.gpsList.begin(); iterator != neighborGPSInformation.gpsList.end() ; iterator++) {
-        if (iterator->contentPrefix.compare(incomingPopularItem.contentPrefix) == 0) {
+        if (library->equals(iterator->referenceObject,incomingPopularItem.referenceObject) == true) {
+        //if (iterator->referenceObject->contentPrefix.compare(incomingPopularItem.referenceObject->contentPrefix) == 0) {
             iterator->referenceCount += incomingPopularItem.referenceCount;
             iterator->referenceOriginCount += incomingPopularItem.referenceOriginCount;
             foundInNeighborList = true;
@@ -293,7 +300,8 @@ void ContentStore::removeFromGPSSideStatistics(Content_t* contentObject) {
 
     //Removing from Neighbor Statistics
     for (auto iterator = neighborGPSInformation.gpsList.begin(); iterator != neighborGPSInformation.gpsList.end() ; iterator++) {
-       if (contentObject->contentPrefix.compare(iterator->contentPrefix) == 0) {
+        if (library->equals(iterator->referenceObject,contentObject) == true) {
+        //if (contentObject->contentPrefix.compare(iterator->referenceObject->contentPrefix) == 0) {
            neighborGPSInformation.gpsList.erase(iterator);
            break;
        }
@@ -302,7 +310,8 @@ void ContentStore::removeFromGPSSideStatistics(Content_t* contentObject) {
     //Removing from all slices
     for (auto iterator = gpsCacheFrequencyWindow.begin(); iterator != gpsCacheFrequencyWindow.end(); iterator++) {
         for (auto sliceIterator = (*iterator)->gpsList.begin(); sliceIterator != (*iterator)->gpsList.end() ; sliceIterator++) {
-            if (contentObject->contentPrefix.compare(sliceIterator->contentPrefix) == 0) {
+            if (library->equals(contentObject,sliceIterator->referenceObject)) {
+            //if (contentObject->contentPrefix.compare(sliceIterator->referenceObject->contentPrefix) == 0) {
                 (*iterator)->gpsList.erase(sliceIterator);
                 break;
             }
@@ -345,7 +354,7 @@ void ContentStore::addContentToGPSCache(OverheardGPSObject_t* gpsPopularItem) {
     if (nodeRole == NodeRole::SERVER) return;
 
     //Check if item is already cached
-    if (fetchFromCache(gpsPopularItem->contentPrefix) != NULL) return;
+    if (fetchFromCache(gpsPopularItem->referenceObject) != NULL) return;
 
     //Checking if our GPS Cache is full (and suggesting a replacement if that is the case)
     int currentCacheSize = gpsCache.size();
@@ -356,7 +365,7 @@ void ContentStore::addContentToGPSCache(OverheardGPSObject_t* gpsPopularItem) {
 
     //Adding new item to cache
     CachedContent_t newContent;
-    newContent.referenceObject = library->getContent(gpsPopularItem->contentPrefix);
+    newContent.referenceObject = gpsPopularItem->referenceObject;
     newContent.contentStatus = ContentStatus::AVAILABLE;
     newContent.lastAccessTime = simTime();
     newContent.useCount = gpsPopularItem->referenceCount;
@@ -440,7 +449,8 @@ void ContentStore::addContentToCache(Content_t* contentObject) {
     if (nodeRole == NodeRole::SERVER) {
         //Looking for item in content library
         for (auto it = contentCache.begin(); it != contentCache.end() ; it++) {
-            if (it->referenceObject->contentPrefix.compare(contentObject->contentPrefix) == 0) {
+            if (library->equals(it->referenceObject,contentObject)) {
+            //if (it->referenceObject->contentPrefix.compare(contentObject->contentPrefix) == 0) {
                 //std::cout << "(CS) <" << myId << "> Already has " << contentObject->contentPrefix << " in local Library.\n";
                 //std::cout.flush();
                 //increaseUseCount(contentObject->contentPrefix);
@@ -483,7 +493,8 @@ void ContentStore::addContentToCache(Content_t* contentObject) {
 void ContentStore::removeContentFromCache(Content_t* newContent) {
     //Searching for content
     for (auto it = contentCache.begin(); it != contentCache.end(); it++) {
-        if (newContent->contentPrefix.compare(it->referenceObject->contentPrefix) == 0) {
+        if (library->equals(newContent,it->referenceObject)) {
+        //if (newContent->contentPrefix.compare(it->referenceObject->contentPrefix) == 0) {
             //std::cout << "(CS) <" << myId << "> Removing Item <" << it->referenceObject->contentPrefix << "> from Cache with Use Count <" << it->useCount << ">.\n";
             //std::cout.flush();
             it = contentCache.erase(it);
@@ -527,7 +538,7 @@ void ContentStore::runCacheReplacement(){
                 int currentIndex = 0;
                 for (auto it = contentCache.begin(); it != contentCache.end(); it++) {
                     if (currentIndex == removableIndex) {
-                        std::string itemName = it->referenceObject->contentPrefix;
+                        //std::string itemName = it->referenceObject->contentPrefix;
 
                         //EV << "(CS) Removing Item <" << itemName << "> from Cache.\n";
                         //EV.flush();
@@ -581,7 +592,7 @@ void ContentStore::runCacheReplacement(){
                             if ( (foundRemoval == false) &&
                                  (sameTimeCount == 1 || uniform(0,1) < individualProbability)) {
                                 foundRemoval = true;
-                                std::string itemName = it->referenceObject->contentPrefix;
+                                //std::string itemName = it->referenceObject->contentPrefix;
 
                                 //std::cout << "(CS) <" << myId << "> Removing Item <" << it->contentPrefix << "> from Cache with Use Count <" << it->useCount << ">\t last access <" << it->lastAccessTime << ">.\n";
                                 //std::cout.flush();
@@ -807,11 +818,22 @@ void ContentStore::increaseUseCount(std::string prefix) {
 //
 void ContentStore::increaseUseCount(int addedUses, std::string prefix) {
     //Removing that god damn fucking quote
+
     prefix = library->cleanString(prefix);
+    Content_t* referenceObject = library->getContent(prefix);
+    increaseUseCount(addedUses,referenceObject);
+}
+
+void ContentStore::increaseUseCount(Content_t* object) {
+    increaseUseCount(1,object);
+}
+
+void ContentStore::increaseUseCount(int addedUses, Content_t* object) {
 
     //Looking for Item
     for (auto it = contentCache.begin(); it != contentCache.end(); it++) {
-        if (prefix.compare(it->referenceObject->contentPrefix) == 0) {
+        if (library->equals(object,it->referenceObject)) {
+        //if (prefix.compare(it->referenceObject->contentPrefix) == 0) {
             it->useCount += addedUses;
             it->lastAccessTime = simTime();
             return;
@@ -832,7 +854,8 @@ int ContentStore::getUseCount(std::string prefix) {
 
     //Looking for Item
     for (auto it = contentCache.begin(); it != contentCache.end(); it++) {
-        if (prefix.compare(it->referenceObject->contentPrefix) == 0) {
+        if (library->equals(*(it->referenceObject),prefix)) {
+        //if (prefix.compare(it->referenceObject->contentPrefix) == 0) {
             return it->useCount;
         }
     }
@@ -935,30 +958,37 @@ bool  ContentStore::checkIfAvailable(std::string nameValue, int requestID) {
 
 //
 Content_t* ContentStore::fetchFromCache(std::string prefix){
-    std::string lookupValue = prefix;
-    if (prefix.c_str()[0] == '\"') {
-        lookupValue = prefix.substr(1,prefix.length()-2);   //No fucking idea why but strings added as parameters get extra quotes around them. WTF
-    }
+    Content_t* objectReference = library->getContent(prefix);
+    return fetchFromCache(objectReference);
+}
+
+Content_t* ContentStore::fetchFromCache(Content_t* object){
+    //std::string lookupValue = prefix;
+    //if (prefix.c_str()[0] == '\"') {
+    //    lookupValue = prefix.substr(1,prefix.length()-2);   //No fucking idea why but strings added as parameters get extra quotes around them. WTF
+    //}
 
     //Looking for item in content library
      for (auto it = contentCache.begin(); it != contentCache.end() ; it++) {
-         int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
+         if (library->equals(it->referenceObject,object) == true) return it->referenceObject;
+         //int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
 
          //Checking if the strings match (slow! :/)
-         if (comparison == 0) {
-             return it->referenceObject;
-         }
+         //if (comparison == 0) {
+         //    return it->referenceObject;
+         //}
      }
 
      //Looking for item in GPS Content Library
      for (auto it = gpsCache.begin(); it != gpsCache.end() ; it++) {
-         int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
+         if (library->equals(it->referenceObject,object) == true) return it->referenceObject;
+         //int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
 
          //Checking if the strings match (slow! :/)
-         if (comparison == 0) {
-             //std::cout << "(CS) Fetching content from GPS Cache\n";
-             return it->referenceObject;
-         }
+         //if (comparison == 0) {
+         //    //std::cout << "(CS) Fetching content from GPS Cache\n";
+         //    return it->referenceObject;
+         //}
      }
 
      return NULL;
