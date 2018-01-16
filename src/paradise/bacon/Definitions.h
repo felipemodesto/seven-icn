@@ -155,7 +155,7 @@ enum class ContentStatus {
 
 //Generic object description
 struct Content_t {
-    //std::string contentPrefix;              //String name representation of content prefix
+    std::string contentPrefix;              //String name representation of content prefix
     ContentClass contentClass;              //Type of Content
     long contentIndex;                      //Content Index within its class
     ContentPriority priority;               //Content Class Specific Ranking (1 = top rank, highest probability)
