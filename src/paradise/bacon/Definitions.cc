@@ -12,6 +12,7 @@ const std::string MessageParameter::PRIORITY            = "priority";           
 const std::string MessageParameter::POPULARITY          = "popularity";             //
 const std::string MessageParameter::SIZE                = "size";                   //
 const std::string MessageParameter::FREQUENCY           = "frequency";              //
+const std::string MessageParameter::NEIGHBORS           = "neighbors";              //
 const std::string MessageParameter::COORDINATES         = "coordinates";            //
 const std::string MessageParameter::HOPS_LAST_CACHE     = "hops_last_cache";        //
 const std::string MessageParameter::HOPS_DOWN           = "hops_down";              //
