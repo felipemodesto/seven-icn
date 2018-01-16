@@ -157,9 +157,9 @@ enum class ContentStatus {
 struct Content_t {
     std::string contentPrefix;              //String name representation of content prefix
     ContentClass contentClass;              //Type of Content
-    //long contentIndex;                      //Content Index within its class
+    long contentIndex;                      //Content Index within its class
     ContentPriority priority;               //Content Class Specific Ranking (1 = top rank, highest probability)
-    long popularityRanking;                 //Content Popularity
+    long popularityRanking;                 //Content Popularity (Might be different from index considering we get data from stuff like twitter and have popularity phasing schemes)
     long contentSize;                       //Content Size in Bytes
 };
 

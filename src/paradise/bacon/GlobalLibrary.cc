@@ -9,6 +9,10 @@
 
 Define_Module(GlobalLibrary);
 
+bool compareLibraryItems(Content_t first, Content_t second) {
+    return (first.contentIndex <= second.contentIndex);
+}
+
 //Initialization Function
 void GlobalLibrary::initialize(int stage) {
 
@@ -287,9 +291,11 @@ void GlobalLibrary::setupPendingRequests() {
 
 //
 void GlobalLibrary::loadRequestSequence() {
-    std::cout << "(Lib) Loading Request List..." << std::endl;
 
-    clock_t buildClockTime = clock();
+    int simNumber = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
+    std::cout << "[" << simNumber << "]\t(Lib) Loading Request List..." << std::endl;
+
+    //clock_t buildClockTime = clock();
 
     std::string fileString = loadFile(requestSequenceFile);
     std::string token;
@@ -333,15 +339,20 @@ void GlobalLibrary::loadRequestSequence() {
         }
 
         if (!foundDuplicate) {
+            char *pEnd;
+            long int itemIndex = std::strtol(arr[3].c_str() , &pEnd, 10);
+
             Content_t newContent;
             //newContent.popularityRanking = j;         //Used as shorthand to the ranking of the object in its relative popularity queue
             newContent.popularityRanking = 1;
+            newContent.contentIndex = itemIndex;
             newContent.priority = ContentPriority::PRIORITY_LOW;
             newContent.contentClass = ContentClass::MULTIMEDIA;
             newContent.contentSize = sizeMultimedia;
             newContent.contentPrefix = contentPrefix;
             //std::cout << "(Lib) Pushed Library Item: <" << newContent.contentPrefix << "> to library>\n";
             multimediaLibrary->push_back(newContent);
+
         }
 
         LocationRequest_t newRequest;
@@ -379,10 +390,14 @@ void GlobalLibrary::loadRequestSequence() {
     requestTimer = new cMessage("requestTimer");
     scheduleAt(firstTime, requestTimer);
 
-    clock_t buildEndTime = clock();
-    double elapsed_secs = double(buildEndTime - buildClockTime) / CLOCKS_PER_SEC;
+    //clock_t buildEndTime = clock();
+    //double elapsed_secs = double(buildEndTime - buildClockTime) / CLOCKS_PER_SEC;
 
-    std::cout << "\t Done. Build took : " << elapsed_secs << " second(s)" << std::endl;
+    //Sorting Content Library (So our items are sorted based on their index, fuck it if we have to do this a thousand times)
+    multimediaLibrary->sort(compareLibraryItems);
+
+    //Warning our simulation we are ready
+    //std::cout << "\t Done. Build took : " << elapsed_secs << " second(s)" << std::endl;
 }
 
 //
@@ -551,7 +566,7 @@ std::vector<double> GlobalLibrary::buildCategoryLibrary(int count, int byteSize,
         Content_t newContent;
 
         newContent.popularityRanking = j+1;         //Used as shorthand to the ranking of the object in its relative popularity queue
-        //newContent.contentIndex = j+1;
+        newContent.contentIndex = j+1;
         newContent.contentClass = category;
         newContent.contentSize = byteSize;
         newContent.contentPrefix = classPrefix + "/" + std::to_string(j+1);
@@ -689,8 +704,12 @@ Content_t* GlobalLibrary::getContent(std::string contentPrefix) {
     std::advance(attemptedContent,itemIndex-1);
     if (attemptedContent->popularityRanking == itemIndex) return &*attemptedContent;
 
+    //We warn of errors only if we are not in setup time
+    if (simTime() > 1) {
+        std::cout << "(Lib) Warning: Library Indexes are de-synced. We asked for <" << itemIndex << "> and got <" << attemptedContent->popularityRanking << ">\n";
+    }
+
     //If the new method fails, we use the old method where we actualy iterate over the Library
-    std::cout << "(Lib) Warning: Library Indexes are de-synced/\n";
     for (auto it = correctLibrary->begin(); it != correctLibrary->end(); it++) {
         if (it->contentPrefix.compare(contentPrefix) == 0) {
             return &*it;
@@ -932,7 +951,7 @@ bool GlobalLibrary::equals(Content_t* first, Content_t* second) {
 //
 bool GlobalLibrary::equals(Content_t first, Content_t second) {
     if (first.contentClass != second.contentClass) return false;
-    if (first.popularityRanking != second.popularityRanking) return false;
+    if (first.contentIndex != second.contentIndex) return false;
     return true;
 }
 
@@ -944,7 +963,7 @@ bool GlobalLibrary::equals(Content_t first, std::string second) {
     long int itemIndex = std::strtol(second.substr(second.find("/") + 1).c_str() , &pEnd, 10);
 
     //Comparing Index
-    if (first.popularityRanking != itemIndex) return false;
+    if (first.contentIndex != itemIndex) return false;
 
     //Fetching and Comparing Category
     if (secondCategory.compare(transitPrefix) == 0) {
