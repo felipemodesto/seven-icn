@@ -795,7 +795,8 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
     cMsgPar* requestID = static_cast<cMsgPar*>(parArray.get(MessageParameter::CONNECTION_ID.c_str()));
 
     //Checking if we have the GPS Cache subsystem enabled
-    if (cache->hasGPSCache() == true) {
+    if (cache->gpsSubCacheEnabled()) {
+        //std::cout << "Enabled\n";
         //Checking if its a beacon or some other message type specific to direct communication
         if ( (strcmp(wsm->getName(), MessageClass::BEACON.c_str()) != 0) && (strcmp(wsm->getName(), MessageClass::GPS_BEACON.c_str()) != 0) ){
             //Checking if we are already tracking the connection
@@ -810,7 +811,7 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
                     //Notify Content Store of relevant request frequency statistics
                     cache->logOverheardGPSMessage(contentObject);
                 } else {
-                    //std::cout << "(SM) Content belongs to a class we don't care about.\n";
+                    //std::cout << "(SM) Content belongs to a class we don't care about? Confused\n";
                 }
             } else {
                 //std::cout << "(SM) We already know about this communication.\n";
@@ -900,7 +901,7 @@ void ServiceManager::handleInterestAcceptMessage(WaveShortMessage* wsm) {
     if (downstreamConnection == NULL){
 
        //Checking if we have this piece of content. o.õ
-       if (cache->checkIfAvailable(prefixValue,idValue) == true) {
+       if (cache->availableForProvisioning(contentObject,idValue) == true) {
            //Nodes should not be accepting connections that have not been created. This sounds bad.
            delete(wsm);
            return;
@@ -1291,7 +1292,7 @@ void ServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
     }
 
     //Checking if item is in our database
-    if (cache->checkIfAvailable(prefixValue,idValue) == true) {
+    if (cache->availableForProvisioning(contentObject,idValue) == true) {
 
         //Checking to log statistics for a new connection
         if (!downstreamMessageAlreadyExisted) {

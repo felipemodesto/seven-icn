@@ -54,18 +54,20 @@ enum NodeRole {
     MULE = 2            //Mules only retransmit packets but do not initiate requests nor have libraries from the get-go
 };
 
-enum CacheDistributionModel {
+
+enum CacheDistributionModel {   //I Don't recall what this was supposed to be used for and its not being referenced anywhere
     ALL_EQUAL = 0,
     WAVE_THIRDS = 1,
     HALF_PRIORITY = 2
 };
 
-enum CacheSection {
+enum CacheSection {     //TODO: Reimplement cache structure system to read the sections that exist in the cache from a vector that exists in this file
     GENERIC = 0,        //Generic All-purpose section of cache, used if no policy is applied
     PRIORITY = 1,       //Priority only cache, where popular and other "important" items are placed
     PERSONAL = 2,       //Local Requests only Cache portion
     FRIEND = 3,         //Friend-cache portion, used for coordination with nodes that have been neighbors for longer periods of time
-    STRANGER = 4        //Cache portion used for requests sent from strangers
+    STRANGER = 4,        //Cache portion used for requests sent from strangers
+    LOCATION = 5
 };
 
 enum LocationCorrelationModel {
@@ -119,6 +121,12 @@ enum CacheReplacementPolicy {
     //FREQ_POPULARITY = 20,           //Coordinate Frequency observation based popularity Replacement
 };
 
+//Policy used to take advantage of Location Correlation
+enum CacheLocationPolicy {
+    IGNORE_LOCATION = 0,
+    SERVER_CENTRIC = 1,     //Server Centric - If Content is available, log request
+    CLIENT_CENTRIC = 2      //Client Centric - If content is available in cache, ignore request
+};
 
 ////////////////////////////////////////////////////////////////////
 //  CONTENT RELATED DEFINITIONS

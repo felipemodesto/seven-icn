@@ -13,9 +13,6 @@ bool compareGPSItems (OverheardGPSObject_t& first, OverheardGPSObject_t& second)
     return (first.referenceCount > second.referenceCount);
     //TODO: Decide if there should be an alterate scheme where the referenceCount/originCount should matter
 }
-//
-
-
 
 //Initialization Function
 void ContentStore::initialize(int stage) {
@@ -28,8 +25,9 @@ void ContentStore::initialize(int stage) {
         maxCachedContents = par("maxCachedContents").longValue();
 
         //We only do our GPS stuff if we have GPS Cache enabled
-        usingGPSCacheSystem = par("usingGeoCache");
-        if (usingGPSCacheSystem == true) {
+        usingGPSCacheSystem = static_cast<CacheLocationPolicy>(par("geoCachePolicy").longValue());
+        if (usingGPSCacheSystem != CacheLocationPolicy::IGNORE_LOCATION) {
+            //std::cout << "(CS) USING GPS\n";
             gpsCacheSize = par("geoCacheSize").longValue();
             maxCachedContents -= gpsCacheSize;                //Resizing total cache size
             gpsCacheWindowSize = par("gpsKnowledgeWindowSize").longValue();
@@ -121,7 +119,8 @@ void ContentStore::maintainGPSCache() {
                 if (library->equals(itA->referenceObject,itB->referenceObject)) {
                 //if (itA->referenceObject->contentPrefix.compare(itB->referenceObject->contentPrefix) == 0) {
                     foundRemoteItem = true;
-                    itB->referenceCount += itA->referenceCount;
+                    itB->referenceCount += itA->referenceCount * easingFactor;
+                    //Popularity information incoming from other items has the easing added to it, even if they are part of the most recent sector, cause I said so, fuck it!
                 }
             }
             //If we haven't found the remote item we create a new entry
@@ -155,7 +154,6 @@ void ContentStore::shareGPSStatistics() {
 
     //Aggregating Values into it
     int temporalIndex = 0;
-    double easingFactor = 0.75;
     for (auto slice = gpsCacheFrequencyWindow.begin(); slice != gpsCacheFrequencyWindow.end() ; slice++) {
         //std::cout << "(CS) Evaluating Cache Column Temporal Index: <" << temporalIndex << "> with size <" << gpsCacheFrequencyWindow.size() << ">\n";
         for (auto gpsObject = (*slice)->gpsList.begin(); gpsObject != (*slice)->gpsList.end() ; gpsObject++) {
@@ -189,29 +187,50 @@ void ContentStore::shareGPSStatistics() {
         //std::cout << "\t[" << myId << "]\t(CS) Sorted list has size: <" << aggregatedGPSStatistics.gpsList.size() << ">\n";
         OverheardGPSObject_t mostPopularObject = aggregatedGPSStatistics.gpsList.front();
 
-        //std::cout << "[" << myId << "]\t(CS) Advertising most popular non-cached item : <" << mostPopularObject.contentPrefix << "> with count <" << mostPopularObject.referenceCount << ">\n";
+        //std::cout << "[" << myId << "]\t(CS) Advertising most popular non-cached item : <" << mostPopularObject.referenceObject->contentPrefix << "> with count <" << mostPopularObject.referenceCount << ">\n";
 
         //Advertising most popular object
         manager->advertiseGPSItem(mostPopularObject);
     }
 }
 
-//
-void ContentStore::logOverheardGPSMessage(Content_t* object) {
-    //std::cout << "(CS) Attempting to Log GPS relevant information for item <" << object->contentPrefix << ">\n";
-    //std::cout.flush();
+//Function called to check whether object is relevant to us in terms of logging it for our Current Location Correlation Policy
+bool ContentStore::isObjectGPSRelevant(Content_t* object) {
+    //Reacting according to the Location Policy
+    switch(usingGPSCacheSystem) {
+        case CacheLocationPolicy::IGNORE_LOCATION:
+            //Always return (Ignore subsystem)
+            return false;
 
-    //Check if the object is already cached (or GPS Cached)
-    if (fetchFromCache(object) != NULL) {
-        //TODO: Validate if the logic holds... perhaps if we already have the item we don't care?
-        //std::cout << "(CS) Object is cached! we don't care about GPS interests for this item.\n";
-        //std::cout.flush();
-        return;
+        case CacheLocationPolicy::CLIENT_CENTRIC:
+            //Client-correlation: If cached == not relevant
+            if (availableFromCache(object) != NULL) return false;
+            break;
+
+        case CacheLocationPolicy::SERVER_CENTRIC:
+            //Server-Correlation: Relevant to log requests if we are where its valid
+            //if ((availableFromCache(object) == NULL) && (availableFromLocation(object) == NULL)) return false;
+            //std::cout << "\t\tMAYBE\n";
+            if ((availableFromLocation(object) == NULL)) return false;
+            break;
     }
+    return true;
+}
 
-    //Maintaining Cache for the sake of maintaining cache
+//Function called once per request
+void ContentStore::logOverheardGPSMessage(Content_t* object) {
+
+    //std::cout << "\tPlease?\n";
+
+    //If the object is not relevant for us given the current Location policy, we dont log the message
+    if (!isObjectGPSRelevant(object)) return;
+
+    //Maintaining Cache for the sake of maintaining cache (moving if we change seconds, etc)
     maintainGPSCache();
     OverheardGPSObjectList_t* frontFrequencySlice = gpsCacheFrequencyWindow.front();
+
+    //std::cout << "(CS) Attempting to Log GPS relevant information for item <" << object->contentPrefix << ">\n";
+    //std::cout.flush();
 
     //Searching most recent slice
     bool foundItem = false;
@@ -240,7 +259,7 @@ void ContentStore::logOverheardGPSMessage(Content_t* object) {
     }
 }
 
-//
+//Function called to potentially update our GPS statistics (and even our cache) with item
 void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
     Enter_Method_Silent();
 
@@ -252,15 +271,11 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
     OverheardGPSObject_t incomingPopularItem;
     incomingPopularItem.referenceCount = frequencyParameter->doubleValue();
     incomingPopularItem.referenceObject = library->getContent(prefixParameter->stringValue());
-    //incomingPopularItem.contentPrefix = ;
-    //incomingPopularItem.contentClass = ContentClass::TRAFFIC;
     incomingPopularItem.referenceOriginCount = referenceFrequencyParameter->doubleValue();
 
-    //Searching to add to neighbor popularity index thing
-    //neighborGPSInformation
-
-    //std::cout << "[" << myId << "] (CS) Overheard popularity about item: <" << incomingPopularItem.contentPrefix << "> value: <" << incomingPopularItem.referenceCount << ">\n";
-
+    //Note: If we're learning information from other nodes, it might be relevant to log that info, even if direct requests are not necessarily valid for us, right?
+    //For now, we're only interested in locally popular content objects
+    if (isObjectGPSRelevant(incomingPopularItem.referenceObject) == false) return;
 
     //Updating statistics
     OverheardGPSObject_t* incomingPopularItemReference = NULL;
@@ -275,6 +290,7 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
             break;
         }
     }
+
     if (!foundInNeighborList) {
         neighborGPSInformation.gpsList.push_front(incomingPopularItem);
         incomingPopularItemReference = &incomingPopularItem;
@@ -285,6 +301,7 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
         //We don't actually have the item here, but we are interested in it, so we should request it!
         //Don't add it to the cache :P
         //std::cout << "[" << myId << "]\t(CS) Auto obtaining item <" << incomingPopularItemReference->contentPrefix << "> cause fuck it, fuck you!\n";
+        //TODO: (IMPLEMENT) Actually request the item!
         addContentToGPSCache(incomingPopularItemReference);
     }
 }
@@ -351,10 +368,13 @@ void ContentStore::addContentToGPSCache(OverheardGPSObject_t* gpsPopularItem) {
     //std::cout << "[" << myId << "]\t(CS)\tAttempting to add a GPS item <" << gpsPopularItem->contentPrefix << "> to our Specialized GPS Cache <" << gpsCache.size() << " / " << gpsCacheSize << " >.\n";
 
     //If we're a server this is never relevant (or is it?)
-    if (nodeRole == NodeRole::SERVER) return;
+    if (nodeRole == NodeRole::SERVER) {
+        std::cout << "(CS) Warning: We are servers so we shouldnt be receiving requests to log location-specific items.\n";
+        return;
+    }
 
     //Check if item is already cached
-    if (fetchFromCache(gpsPopularItem->referenceObject) != NULL) return;
+    if (availableFromCache(gpsPopularItem->referenceObject) != NULL) return;
 
     //Checking if our GPS Cache is full (and suggesting a replacement if that is the case)
     int currentCacheSize = gpsCache.size();
@@ -877,40 +897,19 @@ void ContentStore::addToLibrary(cMessage *msg) {
 }
 
 //Function meant to handle Content Lookup Requests
-bool  ContentStore::checkIfAvailable(std::string nameValue, int requestID) {
-    //Removing '"'s from text
-    std::string lookupValue = nameValue;
-    if (nameValue.c_str()[0] == '\"') {
-        lookupValue = nameValue.substr(1,nameValue.length()-2);   //No fucking idea why but strings added as parameters get extra quotes around them. WTF
-    }
-
+bool  ContentStore::availableForProvisioning(Content_t* contentObject, int requestID) {
     //This function only runs once, but we call it just in case the vehicle receives a request during its setup
     buildContentCache();
 
     //Initially, we check if we are using provider-based location for content availability, and if we are close, yes, we can provide the content (skips cache searches)
     if (library->locationDependentContentMode()) {
-        //Get Local Position
-        Coord currentLocation = traci->getCurrentPosition();
-
-        //Extrapolating theoretical sector from content prefix
-        int contextFreeIndex = library->getClassFreeIndex(lookupValue);
-        int sectorCode = library->getSectorFromPrefixIndex(contextFreeIndex);
-
-        if (library->viablyCloseToContentLocation(sectorCode, currentLocation.x, currentLocation.y)) {
-            //int calculatedDistance = library->getDistanceToSector(sectorCode, currentLocation.x, currentLocation.y);
-            //std::cout << "(Lib) \tNode is close enough to fulfill request for <" << lookupValue << ">!\n";
-            //std::cout << "\t\\-->We are <" << calculatedDistance << "> linear meters from sector center <" << sectorCode << "> in question.\n";
-            //std::cout << "\t\\--> Our position is: < " << currentLocation.x << " ; " << currentLocation.y << " >\n";
-            //std::cout << "\t\\--> Sector Center-point is located at <" << (library->getSectorColumn(sectorCode) * library->getSectorSize()) << " ; " << std::to_string(library->getSectorRow(sectorCode) * library->getSectorSize()) << " >\n";
-            //std::cout.flush();
-
-            //todo? Apply cache insertion rules to this new object we hypothetically have access to (?)
+        if (availableFromLocation(contentObject) != NULL) {
             stats->logProvisionAttempt(myId, requestID);
             return true;
         }
     }
 
-    Content_t* object = fetchFromCache(lookupValue);
+    Content_t* object = availableFromCache(contentObject);
     if (object != NULL) {
         if (object->contentClass == ContentClass::GPS_DATA) {
              //TODO: (IMPLEMENT) If working with TRAFFIC information, we'll require coordinate values to be part of the name... so deal with this in the future :D
@@ -957,38 +956,31 @@ bool  ContentStore::checkIfAvailable(std::string nameValue, int requestID) {
 }
 
 //
-Content_t* ContentStore::fetchFromCache(std::string prefix){
-    Content_t* objectReference = library->getContent(prefix);
-    return fetchFromCache(objectReference);
+Content_t* ContentStore::availableFromLocation(Content_t* contentObject) {
+    //Get Local Position
+     Coord currentLocation = traci->getCurrentPosition();
+
+     //Extrapolating theoretical sector from content prefix
+     //int contextFreeIndex = library->getClassFreeIndex(contentPrefix);
+     int sectorCode = library->getSectorFromPrefixIndex(contentObject->contentIndex);
+
+     if (library->viablyCloseToContentLocation(sectorCode, currentLocation.x, currentLocation.y)) {
+         //TODO: (CONFIRM) Apply cache insertion rules to this new object we hypothetically have access to (?)
+         return contentObject;
+     }
+     return NULL;
 }
 
-Content_t* ContentStore::fetchFromCache(Content_t* object){
-    //std::string lookupValue = prefix;
-    //if (prefix.c_str()[0] == '\"') {
-    //    lookupValue = prefix.substr(1,prefix.length()-2);   //No fucking idea why but strings added as parameters get extra quotes around them. WTF
-    //}
-
+//
+Content_t* ContentStore::availableFromCache(Content_t* object){
     //Looking for item in content library
      for (auto it = contentCache.begin(); it != contentCache.end() ; it++) {
          if (library->equals(it->referenceObject,object) == true) return it->referenceObject;
-         //int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
-
-         //Checking if the strings match (slow! :/)
-         //if (comparison == 0) {
-         //    return it->referenceObject;
-         //}
      }
 
      //Looking for item in GPS Content Library
      for (auto it = gpsCache.begin(); it != gpsCache.end() ; it++) {
          if (library->equals(it->referenceObject,object) == true) return it->referenceObject;
-         //int comparison = it->referenceObject->contentPrefix.compare(lookupValue);
-
-         //Checking if the strings match (slow! :/)
-         //if (comparison == 0) {
-         //    //std::cout << "(CS) Fetching content from GPS Cache\n";
-         //    return it->referenceObject;
-         //}
      }
 
      return NULL;
@@ -1001,9 +993,9 @@ NodeRole ContentStore::getRole() {
 }
 
 //Getter for the Separate GPS Cache subsystem
-bool ContentStore::hasGPSCache() {
+bool ContentStore::gpsSubCacheEnabled() {
     Enter_Method_Silent();
-    return usingGPSCacheSystem;
+    return usingGPSCacheSystem != CacheLocationPolicy::IGNORE_LOCATION;
 }
 
 //Getter for the currently used Cache Policy

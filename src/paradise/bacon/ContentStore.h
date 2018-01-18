@@ -57,7 +57,7 @@ class ContentStore : public omnetpp::cSimpleModule {
         bool hasLibrary = false;
         NodeRole nodeRole = NodeRole::MULE;
 
-        bool usingGPSCacheSystem = false;
+        CacheLocationPolicy usingGPSCacheSystem = CacheLocationPolicy::IGNORE_LOCATION;
 
         std::list<CachedContent_t> contentCache;
         std::list<CachedContent_t> gpsCache;
@@ -78,6 +78,9 @@ class ContentStore : public omnetpp::cSimpleModule {
         int friendCacheSize = 0;
         int othersCacheSize = 0;
 
+
+        double easingFactor = 0.75;
+
         ServiceManager* manager;
         Statistics* stats;
         GlobalLibrary* library;
@@ -95,7 +98,7 @@ class ContentStore : public omnetpp::cSimpleModule {
         void handleMessage(cMessage *msg)  override;                //CALLBACK FROM SELF MESSAGE, GENERALLY USED AS RANDOM TIMER CALLBACK
 
     public:
-        bool hasGPSCache();
+        bool gpsSubCacheEnabled();
 
         void increaseUseCount(std::string prefix);              //Increase the request (use) count for a specific content object
         void increaseUseCount(cMessage *msg);                   //Increase the request (use) count for a specific content object
@@ -117,12 +120,14 @@ class ContentStore : public omnetpp::cSimpleModule {
         bool globalPopularityCacheDecision(Connection_t* connection);           //Decision algorithm function whether item should be cached
         bool globalMinimumPopularityCacheDecision(Connection_t* connection);    //Decision algorithm function whether item should be cached
 
-        Content_t* fetchFromCache(std::string prefix);                //Obtain item from cache (not other locally available heuristics)
-        Content_t* fetchFromCache(Content_t* prefix);                   //Obtain item from cache (not other locally available heuristics)
-        bool checkIfAvailable(std::string prefix, int requestID);       //Check if we have the item anywhere (cache, local providers, etc)
-        void removeContentFromCache(Content_t* newContent);             //Remove item from cache
+        bool isObjectGPSRelevant(Content_t* object);                                //Return True if object is relevant for current Location Policy
+        Content_t* availableFromCache(Content_t* contentObject);                    //Obtain item from cache (not other locally available heuristics)
+        Content_t* availableFromLocation(Content_t* contentObject);                 //Obtain item from cache (not other locally available heuristics)
+        Content_t* fetchViaLocation(Content_t* contentObject);
+        bool availableForProvisioning(Content_t* contentObject, int requestID);       //Check if we have the item anywhere (cache, local providers, etc)
+        void removeContentFromCache(Content_t* newContent);                     //Remove item from cache
         void removeFromGPSSideStatistics(Content_t* contentObject);
-        void addContentToCache(Content_t* newContent);                  //Add content to Cache
+        void addContentToCache(Content_t* newContent);                          //Add content to Cache
         void addContentToGPSCache(OverheardGPSObject_t* gpsPopularItem);
         NodeRole getRole();                                             //Check if we're a SERVER or CLIENT or whatever (Have everything)
 };

@@ -699,14 +699,17 @@ Content_t* GlobalLibrary::getContent(std::string contentPrefix) {
         return NULL;
     }
 
-    //Attempting to directly fetch the object from the library to speed lookups as items are stored sequentially
-    std::list<Content_t>::iterator attemptedContent = correctLibrary->begin();
-    std::advance(attemptedContent,itemIndex-1);
-    if (attemptedContent->popularityRanking == itemIndex) return &*attemptedContent;
+    //We don't apply the good method on twitter requests because its not efficient, shit is not ordered properly
+    if (locationModel != LocationCorrelationModel::TWITTER) {
+        //Attempting to directly fetch the object from the library to speed lookups as items are stored sequentially
+        std::list<Content_t>::iterator attemptedContent = correctLibrary->begin();
+        std::advance(attemptedContent,itemIndex-1);
+        if (attemptedContent->contentIndex == itemIndex) return &*attemptedContent;
 
-    //We warn of errors only if we are not in setup time
-    if (simTime() > 1) {
-        std::cout << "(Lib) Warning: Library Indexes are de-synced. We asked for <" << itemIndex << "> and got <" << attemptedContent->popularityRanking << ">\n";
+        //We warn of errors only if we are not in setup time
+        if (simTime() > 1) {
+            std::cout << "(Lib) Warning: Library Indexes are de-synced. We asked for <" << itemIndex << "> and got <" << attemptedContent->popularityRanking << ">\n";
+        }
     }
 
     //If the new method fails, we use the old method where we actualy iterate over the Library
@@ -946,7 +949,8 @@ std::string GlobalLibrary::cleanString(std::string inputString) {
 
 //
 bool GlobalLibrary::equals(Content_t* first, Content_t* second) {
-    return equals(*first,*second);
+    return first == second;
+    //return equals(*first,*second);
 }
 //
 bool GlobalLibrary::equals(Content_t first, Content_t second) {
