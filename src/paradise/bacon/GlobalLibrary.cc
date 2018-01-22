@@ -702,12 +702,12 @@ Content_t* GlobalLibrary::getContent(std::string contentPrefix) {
     //Attempting to directly fetch the object from the library to speed lookups as items are stored sequentially
     std::list<Content_t>::iterator attemptedContent = correctLibrary->begin();
     std::advance(attemptedContent,itemIndex-1);
-    if (attemptedContent->popularityRanking == itemIndex) return &*attemptedContent;
+    if (attemptedContent->contentIndex == itemIndex) return &*attemptedContent;
 
     //We warn of errors only if we are not in setup time
-    if (simTime() > 1) {
-        std::cout << "(Lib) Warning: Library Indexes are de-synced. We asked for <" << itemIndex << "> and got <" << attemptedContent->popularityRanking << ">\n";
-    }
+    //if (simTime() > 1) {
+    //    std::cout << "(Lib) Warning: Library Indexes are de-synced. We asked for <" << itemIndex << "> and got <" << attemptedContent->popularityRanking << ">\n";
+    //}
 
     //If the new method fails, we use the old method where we actualy iterate over the Library
     for (auto it = correctLibrary->begin(); it != correctLibrary->end(); it++) {
