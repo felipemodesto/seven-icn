@@ -13,8 +13,6 @@ bool compareGPSItems (OverheardGPSObject_t& first, OverheardGPSObject_t& second)
     return (first.referenceCount > second.referenceCount);
     //TODO: Decide if there should be an alterate scheme where the referenceCount/originCount should matter
 }
-//
-
 
 
 //Initialization Function
@@ -261,7 +259,6 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
 
     //std::cout << "[" << myId << "] (CS) Overheard popularity about item: <" << incomingPopularItem.contentPrefix << "> value: <" << incomingPopularItem.referenceCount << ">\n";
 
-
     //Updating statistics
     OverheardGPSObject_t* incomingPopularItemReference = NULL;
     bool foundInNeighborList = false;
@@ -368,7 +365,7 @@ void ContentStore::addContentToGPSCache(OverheardGPSObject_t* gpsPopularItem) {
     newContent.referenceObject = gpsPopularItem->referenceObject;
     newContent.contentStatus = ContentStatus::AVAILABLE;
     newContent.lastAccessTime = simTime();
-    newContent.useCount = gpsPopularItem->referenceCount;
+    newContent.useCount = gpsPopularItem->referenceCount > 0 ? gpsPopularItem->referenceCount : 0;
     gpsCache.push_front(newContent);
 
     //removing it from our overheardGPS tables;
@@ -380,7 +377,7 @@ void ContentStore::runGPSCacheReplacement() {
     //std::cout << "(CS) Running GPS Cache Replacement.\n";
 
     //Checking if we actually have to get worried about cache replacement
-    if ((contentCache.size() - gpsCacheSize) <= 0) {
+    if ((gpsCache.size() - gpsCacheSize) <= 0) {
         //std::cout << "(CS) GPS Cache is fine... don't worry about it.\n";
         //std::cout.flush();
         return;
@@ -391,6 +388,7 @@ void ContentStore::runGPSCacheReplacement() {
     int sameUseCount = 1;
     int timesUsed = library->getCurrentRequestIndex()+1;
     for (auto it = gpsCache.begin(); it != gpsCache.end() ; it++) {
+        if (it->useCount < 0) it->useCount = 0;
         if (it->useCount < timesUsed) {
             timesUsed = it->useCount;
             sameUseCount = 1;
@@ -408,11 +406,16 @@ void ContentStore::runGPSCacheReplacement() {
         std::cout.flush();
     }
 
+    int attempts = 0;
     bool foundRemoval = false;
     //Searching for last item with desired time value to be removed
     while (foundRemoval == false) {
+        if (attempts >= 1000) {
+            std::cout << "Infinite Loop detected, breaking for debug <"<< sameUseCount <<"> <"<< individualProbability <<"> <"<< gpsCache.size() <<"> <"<<timesUsed<<">.\n";
+            std::cout.flush();
+        }
         for (auto it = gpsCache.begin(); it != gpsCache.end() ; it++) {
-            if (it->useCount == timesUsed) {
+            if (it->useCount <= timesUsed) {    //Changed to LEQ cause fuck it
                 //We just remove the first one we find, dont care about having multiple items with the same probability anymore
                 //if ( (foundRemoval == false) && (sameUseCount == 1 || (uniform(0,1) < individualProbability))) {
                     foundRemoval = true;
@@ -426,6 +429,12 @@ void ContentStore::runGPSCacheReplacement() {
                 //}
             }
         }
+        //Checking if we actually have to get worried about cache replacement (fallback?)
+        if ((gpsCache.size() - gpsCacheSize) <= 0) {
+            return;
+        }
+
+        attempts++;
     }
 }
 
