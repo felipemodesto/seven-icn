@@ -33,12 +33,6 @@ void GlobalLibrary::initialize(int stage) {
         priorityNetwork = static_cast<ContentPriority>(par("priorityNetwork").longValue());
         priorityMultimedia = static_cast<ContentPriority>(par("priorityMultimedia").longValue());
 
-        //If some of our Interest properties are 0 we null the library sizes
-        //TODO: Clean this code by getting general interest statistics from users
-        //if (priorityTransit == 0) libraryTransit = 0;
-        //if (priorityNetwork == 0) libraryNetwork = 0;
-        //if (priorityMultimedia == 0) libraryMultimedia = 0;
-
         locationModel = static_cast<LocationCorrelationModel>(par("locationCorrelationModel").longValue());
 
         maxVehicleServers = par("maxVehicleServers").longValue();

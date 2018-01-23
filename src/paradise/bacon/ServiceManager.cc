@@ -763,7 +763,7 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
 
     //Checking if we are the recipient
     if (wsm->getRecipientAddress() != -1 && wsm->getRecipientAddress() != myId) {
-        //TODO: FINISH IMPLEMENTING PACKET OVERHEARING!!!
+        //TODO: (IMPLEMENT) FINISH IMPLEMENTING PACKET OVERHEARING, WE NEED TO TREAT OVERHEARD MESSAGES :3
         /*
         //Checking if this is a data object
         if (strcmp(wsm->getName(), MessageClass::DATA.c_str()) == 0) {
@@ -1292,20 +1292,37 @@ void ServiceManager::handleInterestMessage(WaveShortMessage* wsm) {
     }
 
     //Checking if item is in our database
-    if (cache->availableForProvisioning(contentObject,idValue) == true) {
+    ContentAvailabilityStatus availabilityStatus = cache->availableForProvisioning(contentObject,idValue);
+    if (availabilityStatus != ContentAvailabilityStatus::NOT_AVAILABLE) {
 
-        //Checking to log statistics for a new connection
-        if (!downstreamMessageAlreadyExisted) {
-            if (downstreamConnection->peerID == myId) {
-                stats->increaseLocalCacheHits();
-            } else {
-                //Having all items implies being a server, which we use to log server based statistics
-                if (cache->getRole() == NodeRole::SERVER) {
-                    stats->increaseServerCacheHits();
-                } else {
-                    stats->increaseRemoteCacheHits();
+        //Classifying statistics based on availability Origin
+        switch (availabilityStatus) {
+            case ContentAvailabilityStatus::AVAILABLE_CACHE:
+                //Checking to log statistics for a new connection
+                if (!downstreamMessageAlreadyExisted) {
+                    if (downstreamConnection->peerID == myId) {
+                        stats->increaseLocalCacheHits();
+                    } else {
+                        //Having all items implies being a server, which we use to log server based statistics
+                        if (cache->getRole() == NodeRole::SERVER) {
+                            stats->increaseServerCacheHits();
+                        } else {
+                            stats->increaseRemoteCacheHits();
+                        }
+                    }
                 }
-            }
+                break;
+
+            case ContentAvailabilityStatus::AVAILABLE_LOCATION:
+                stats->increaseNodeAtGPSLocationCacheHits();
+                break;
+
+            case ContentAvailabilityStatus::AVAILABLE_GPS_CACHE:
+                stats->increasePLCCacheHits();
+                break;
+
+            default:
+                std::cout << "(SM) Warning: This should not be called, as we account for all viable availability statuses\n";
         }
 
         //Updating Connection Status to reflect that we have the content

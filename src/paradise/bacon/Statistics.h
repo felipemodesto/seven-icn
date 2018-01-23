@@ -42,7 +42,6 @@ protected:
     long int unviableRequests;      //Requests that were not initiated because the client was busy or something similar
 
     //Data Packet Related Statistics
-    long int gpsPacketsSent;        //Preemptive GPS Packets stored
     long int packetsSent;           //Requests fulfilled by remote node
     long int packetsSelfServed;     //Requests fulfilled locally
     long int packetsForwarded;      //Requests forwarded (is not restrict to complete return path)
@@ -72,13 +71,19 @@ protected:
     //long int fallbackOutsourcedRequests;
 
     //Caching statistics
-    long int localCacheLateHits; //PIT RELATED LOCAL HITS
-    long int localCacheHits;
-    long int remoteCacheHits;
-    long int localCacheMisses;
-    long int remoteCacheMisses;
-    long int cacheReplacements;
-    long int gpsCacheReplacements;
+    long int localCacheLateHits;            //PIT RELATED LOCAL HITS
+    long int localCacheHits;                //
+    long int remoteCacheHits;               //
+    long int localCacheMisses;              //
+    long int remoteCacheMisses;             //
+    long int cacheReplacements;             //
+
+    //Location-dependent statistics logging
+    long int gpsAvailableFromLocation;      //Hits due to vehicle being in the correct location
+    long int gpsProvisoningAttempts;        //
+    long int gpsCacheHits;                  //Preemptive GPS Packets stored
+    long int gpsCacheReplacements;          //
+    long int gpsPreemptiveRequests;         //Special Preemptive caching requests made based on disclosed made based on server advertisement
 
     long int serverCacheHits;
     long int backloggedResponses;
@@ -286,7 +291,6 @@ public:
     void increaseLocalCacheMisses();
     void increaseRemoteCacheMisses();
     void increaseCacheReplacements();
-    void increaseGPSCacheReplacements();
 
     void addcompleteTransmissionDelay(double delay);
     void addincompleteTransmissionDelay(double delay);
@@ -298,6 +302,19 @@ public:
 
     void increasedUnviableRequests();
     void increasedBackloggedResponses();
+
+    //GPS / Location Correlation Stuff
+    void increaseNodeAtGPSLocationCacheHits();
+    void increasePLCPreemptiveCacheRequests();
+    void increasePLCCacheHits();
+    void increasePLCCacheReplacements();
+    void increasePLCProvisioningAttempts();
+
+    //Location-dependent statistics logging
+    //long int gpsProvisoningAttempts;
+    //long int gpsCacheHits;                //Preemptive GPS Packets stored
+    //long int gpsCacheReplacements;
+    //long int gpsPreemptiveRequests;
 
     //HISTOGRAMS
     void setPacketsSent(int x);             //Set the number of packets sent by a vehicle (only called on vehicle destructor)

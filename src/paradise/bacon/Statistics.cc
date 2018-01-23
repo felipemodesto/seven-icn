@@ -172,7 +172,10 @@ void Statistics::startStatistics() {
     hasStarted = false;
     hasStopped = false;
 
-    gpsPacketsSent = 0;
+    gpsAvailableFromLocation = 0;
+    gpsCacheHits = 0;
+    gpsProvisoningAttempts = 0;
+    gpsPreemptiveRequests = 0;
     gpsCacheReplacements = 0;
 
     requestsStarted = 0;
@@ -367,7 +370,7 @@ void Statistics::stopStatistics() {
     if( stat( simulationDirectoryFolder.c_str(), &info ) != 0 ) {
         std::cout << "[" << simNumber << "]\t (St) Warning: Statistics file path does not exist, creating...\n";
         std::cout.flush();
-        mkdir(simulationDirectoryFolder.c_str(), 0755);     //TODO: (Rework) code to make it compilable with windows (_mkdir(folder))
+        mkdir(simulationDirectoryFolder.c_str(), 0755);     //TODO: (REFACTOR) code to make it compilable with windows (_mkdir(folder))
         std::cout << "[" << simNumber << "]\t\t(St) \\--> Done.\n";
         std::cout.flush();
 
@@ -479,7 +482,13 @@ void Statistics::stopStatistics() {
 
     //Saving Communication statistics previously saved as scalar and vector files
     pFile = fopen ( generalStatisticsFile.c_str(), "w");
-    fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency,packetsSent,packetsSelfServed,packetsForwarded,packetsUnserved,packetsLost,packetsFallback,chunksLost,chunksSent,multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks,localCacheHits,remoteCacheHits,serverCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements,averagedHopcount\n");
+    fprintf(pFile,"%s","averageLatency,averageCompletedLatency,averageFailedLatency");
+    fprintf(pFile,"%s",",packetsSent,packetsSelfServed,packetsForwarded,packetsUnserved,packetsLost,packetsFallback,chunksLost,chunksSent");
+    fprintf(pFile,"%s",",plcRequests,pclTransmissionAttempts,pclReplacements,plcCacheHits");
+    //fprintf(pFile,"%s",",multimediaSentPackets,multimediaUnservedPackets,multimediaLostPackets,multimediaLostChunks,trafficSentPackets,trafficUnservedPackets,trafficLostPackets,trafficLostChunks,networkSentPackets,networkUnservedPackets,networkLostPackets,networkLostChunks,emergencySentPackets,emergencyUnservedPackets,emergencyLostPackets,emergencyLostChunks");
+    fprintf(pFile,"%s",",localCacheHits,remoteCacheHits,serverCacheHits,localCacheMisses,remoteCacheMisses,cacheReplacements");
+    fprintf(pFile,"%s",",averagedHopcount");
+    fprintf(pFile,"%s","\n");
 
     fprintf(pFile,"%F",totalTransmissionDelay);
     fprintf(pFile,",%F",completeTransmissionDelay);
@@ -493,6 +502,14 @@ void Statistics::stopStatistics() {
     fprintf(pFile,",%ld",packetsFallenback);
     fprintf(pFile,",%ld",chunksLost);
     fprintf(pFile,",%ld",chunksSent);
+
+
+    fprintf(pFile,",%ld",gpsPreemptiveRequests);
+    fprintf(pFile,",%ld",gpsProvisoningAttempts);
+    fprintf(pFile,",%ld",gpsCacheReplacements);
+    fprintf(pFile,",%ld",gpsCacheHits);
+
+    /*
     fprintf(pFile,",%ld",multimediaSentPackets);
     fprintf(pFile,",%ld",multimediaUnservedPackets);
     fprintf(pFile,",%ld",multimediaLostPackets);
@@ -509,6 +526,8 @@ void Statistics::stopStatistics() {
     fprintf(pFile,",%ld",emergencyUnservedPackets);
     fprintf(pFile,",%ld",emergencyLostPackets);
     fprintf(pFile,",%ld",emergencyLostChunks);
+    */
+
     fprintf(pFile,",%ld",localCacheHits);
     fprintf(pFile,",%ld",remoteCacheHits);
     fprintf(pFile,",%ld",serverCacheHits);
@@ -1157,6 +1176,30 @@ void Statistics::increaseEmergencyChunksLost() {
 }
 
 
+void Statistics::increaseNodeAtGPSLocationCacheHits() {
+    Enter_Method_Silent();
+    Statistics::gpsAvailableFromLocation++;
+}
+
+void Statistics::increasePLCPreemptiveCacheRequests() {
+    Enter_Method_Silent();
+    Statistics::gpsPreemptiveRequests++;
+}
+
+void Statistics::increasePLCCacheHits() {
+    Enter_Method_Silent();
+    Statistics::gpsCacheHits++;
+}
+
+void Statistics::increasePLCCacheReplacements() {
+    Enter_Method_Silent();
+    Statistics::gpsCacheReplacements++;
+}
+
+void Statistics::increasePLCProvisioningAttempts() {
+    Enter_Method_Silent();
+    Statistics::gpsProvisoningAttempts++;
+}
 
 
 void Statistics::increaseLocalLateCacheHits() {
@@ -1197,14 +1240,6 @@ void Statistics::increaseRemoteCacheMisses() {
 
     if (!shouldRecordData()) return;
     remoteCacheMissVect.record(remoteCacheMisses);
-}
-
-void Statistics::increaseGPSCacheReplacements() {
-    Enter_Method_Silent();
-    Statistics::gpsCacheReplacements++;
-
-    if (!shouldRecordData()) return;
-    gpsCacheReplacementVect.record(gpsCacheReplacements);
 }
 
 void Statistics::increaseCacheReplacements() {
