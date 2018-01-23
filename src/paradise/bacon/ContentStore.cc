@@ -301,7 +301,8 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
         //We don't actually have the item here, but we are interested in it, so we should request it!
         //Don't add it to the cache :P
         //std::cout << "[" << myId << "]\t(CS) Auto obtaining item <" << incomingPopularItemReference->contentPrefix << "> cause fuck it, fuck you!\n";
-        //TODO: (IMPLEMENT) Actually request the item!
+        //TODO: (IMPLEMENT) Actually request the GPS item! (We already log our preemptive request)
+        stats->increasePLCPreemptiveCacheRequests();
         addContentToGPSCache(incomingPopularItemReference);
     }
 }
@@ -342,7 +343,7 @@ bool ContentStore::gpsPopularityCacheDecision(OverheardGPSObject_t* gpsPopularIt
     //TODO: Decide if this is reasonable
     if (static_cast<int>(gpsCache.size()) < gpsCacheSize) return true;
 
-    //TODO: Create a greater than average mode
+    //TODO: (IMPLEMENT) Design and Implement a greater than average mode evaluation for the GPS Pre-caching decision
     {
         //We currently only have a bigger than the smallest item in side-cache mode
 
@@ -441,7 +442,8 @@ void ContentStore::runGPSCacheReplacement() {
                     //std::cout.flush();
 
                     it = gpsCache.erase(it);
-                    stats->increaseGPSCacheReplacements();
+                    stats->increasePLCCacheReplacements();
+
                     break;
                 //}
             }
@@ -897,7 +899,7 @@ void ContentStore::addToLibrary(cMessage *msg) {
 }
 
 //Function meant to handle Content Lookup Requests
-bool  ContentStore::availableForProvisioning(Content_t* contentObject, int requestID) {
+ContentAvailabilityStatus  ContentStore::availableForProvisioning(Content_t* contentObject, int requestID) {
     //This function only runs once, but we call it just in case the vehicle receives a request during its setup
     buildContentCache();
 
@@ -905,7 +907,7 @@ bool  ContentStore::availableForProvisioning(Content_t* contentObject, int reque
     if (library->locationDependentContentMode()) {
         if (availableFromLocation(contentObject) != NULL) {
             stats->logProvisionAttempt(myId, requestID);
-            return true;
+            return ContentAvailabilityStatus::AVAILABLE_LOCATION;
         }
     }
 
@@ -941,18 +943,18 @@ bool  ContentStore::availableForProvisioning(Content_t* contentObject, int reque
              */
              std::cerr << "(CS) Error: GPS Location dependent solution is not implemented\n";
              std::cerr.flush();
-             return false;
+             return ContentAvailabilityStatus::AVAILABLE_GPS_CACHE;
          }
          //std::cout << "<" << myId << ">\t \\--> Found Requested object, my role is <" << nodeRole << ">.\n";
          //std::cout.flush();
 
          //In general, if we found our item, we have it. (See implementation for GPS location data
          stats->logProvisionAttempt(myId, requestID);
-         return true;
+         return ContentAvailabilityStatus::AVAILABLE_CACHE;
     }
 
        //If the item was not found
-    return false;
+    return ContentAvailabilityStatus::NOT_AVAILABLE;
 }
 
 //

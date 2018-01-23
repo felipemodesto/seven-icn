@@ -80,6 +80,13 @@ enum LocationCorrelationModel {
     GPS =   6           //GPS
 };
 
+enum ContentAvailabilityStatus {
+    NOT_AVAILABLE,
+    AVAILABLE_LOCATION,
+    AVAILABLE_CACHE,
+    AVAILABLE_GPS_CACHE
+};
+
 enum class AccessRestrictionPolicy {
     NO_RESTRICTION = 0,
     FORWARD_50 = 1,
@@ -190,8 +197,6 @@ struct PendingContent_t : CachedContent_t {
 //Used to store knowledge of server-correlated GPS frequency spikes
 struct OverheardGPSObject_t {
     Content_t* referenceObject;
-    //std::string contentPrefix;              //String name representation of content prefix
-    //ContentClass contentClass;              //Type of Content       TODO: This might be redundant!
     double referenceCount;                  //Number of requests this object has had in the current list (sliding window column) - We keep this as a double value to make our calculations later easier
     double referenceOriginCount;            //Number of advertisements that lead to the current Reference Count
 };

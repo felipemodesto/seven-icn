@@ -299,10 +299,9 @@ void Client::startNewMessageTimer(simtime_t timerTime) {
 bool Client::suggestContentRequest(Content_t* suggestedContent) {
     //Perform context switching for incoming message
     Enter_Method_Silent();
-    //std::cout << "(Cl) Enter suggestContentRequest\n";
-    //std::cout.flush();
-    //std::cout << "(Cl) Hey, lets ask for: <" << requestID << ">\n";
-    //TODO: Decide on stuff?
+
+    //TODO: (DECIDE) Decide whether we always accept suggestions from our content Requester or if we explicitly adopt restrictions
+    //NOTE: currently the start Function is the one that does consecutive request management, no other policies exist.
 
     return startContentRequest(suggestedContent);
 }

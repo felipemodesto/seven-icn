@@ -124,7 +124,7 @@ class ContentStore : public omnetpp::cSimpleModule {
         Content_t* availableFromCache(Content_t* contentObject);                    //Obtain item from cache (not other locally available heuristics)
         Content_t* availableFromLocation(Content_t* contentObject);                 //Obtain item from cache (not other locally available heuristics)
         Content_t* fetchViaLocation(Content_t* contentObject);
-        bool availableForProvisioning(Content_t* contentObject, int requestID);       //Check if we have the item anywhere (cache, local providers, etc)
+        ContentAvailabilityStatus availableForProvisioning(Content_t* contentObject, int requestID);       //Check if we have the item anywhere (cache, local providers, etc)
         void removeContentFromCache(Content_t* newContent);                     //Remove item from cache
         void removeFromGPSSideStatistics(Content_t* contentObject);
         void addContentToCache(Content_t* newContent);                          //Add content to Cache
