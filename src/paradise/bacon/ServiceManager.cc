@@ -1577,6 +1577,15 @@ void ServiceManager::notifyOfContentAvailability(WaveShortMessage* wsm, Connecti
     downwardDistance->setLongValue(connection->downstreamHopCount);
     wsm->addPar(downwardDistance);
 
+    cArray parArray = wsm->getParList();
+
+    //Not sure why this would be null but it is so whatever (code worked for a really long while without this needing to be addressed).
+    if (static_cast<cMsgPar*>(parArray.get(MessageParameter::HOPS_LAST_CACHE.c_str())) == NULL) {
+        cMsgPar* cacheDistanceStream = new cMsgPar(MessageParameter::HOPS_LAST_CACHE.c_str());
+        cacheDistanceStream->setLongValue(connection->downstreamHopCount);
+        wsm->addPar(cacheDistanceStream);
+    }
+
     //Setting parameters
     wsm->setSenderPos(traci->getPositionAt(simTime()));
     wsm->setSenderAddress(myId);
@@ -2376,8 +2385,9 @@ Connection_t* ServiceManager::createClientSidedConnection(WaveShortMessage *wsm)
     cMsgPar* requestCacheDistance = static_cast<cMsgPar*>(parArray.get(MessageParameter::HOPS_LAST_CACHE.c_str()));
 
     //
-    if (requestUpHops == NULL || requestDownHops == NULL) {
-        std::cerr << "(SM) Error: either hop count is null in response message!\n";
+    if (requestUpHops == NULL || requestDownHops == NULL || requestCacheDistance == NULL) {
+        std::cerr << "(SM) Error: either hop count or cache distance is null in response message!\n";
+        std::cerr << "\t \\--> <" << myId << "> Request ID: <" <<  requestID->longValue() << "> Prefix <" << requestPrefixField->stringValue() << ">\n";
         std::cerr.flush();
         return NULL;
     }
