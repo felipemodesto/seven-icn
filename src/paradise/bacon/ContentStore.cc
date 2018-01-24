@@ -19,6 +19,7 @@ void ContentStore::initialize(int stage) {
     if (stage == 0) {
         //Getting Parent Module Index
         myId = getParentModule()->getIndex();
+        gpsCacheTimerMessage = NULL;
 
         cachePolicy = static_cast<CacheReplacementPolicy>(par("cacheReplacementPolicy").longValue());
         startingCache = par("startingCache").doubleValue();
@@ -75,7 +76,8 @@ void ContentStore::finish() {
     contentCache.empty();
 
     if (gpsCacheTimerMessage != NULL) {
-        cancelAndDelete(gpsCacheTimerMessage);
+        if (gpsCacheTimerMessage->isScheduled()) cancelAndDelete(gpsCacheTimerMessage);
+        else delete(gpsCacheTimerMessage);
         gpsCacheTimerMessage = NULL;
     }
 }
