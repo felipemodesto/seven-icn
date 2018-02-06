@@ -34,6 +34,10 @@ fi
 
 RUN_CODE="/home/felipe/Simulation/omnetpp-5.0/bin/opp_run"
 
+if [ "OptiPlex-70X0" = "${HOSTNAME}" ]; then
+	RUN_CODE="/home/shared/omnet/bin/opp_run"
+fi
+
 if [ "OptiPlex-70XX" = "${HOSTNAME}" ]; then
 	RUN_CODE="/home/shared/omnet/bin/opp_run"
 fi
