@@ -399,7 +399,7 @@ bool ContentStore::gpsPopularityCacheDecision(OverheardGPSObject_t* gpsPopularIt
                         //We do this preemptively to ensure correct item selection
                         iterator = gpsCache.erase(iterator);
                         stats->increasePLCCacheReplacements();
-                        std::cout << "(CS) Preemptive GPS Preference!\n";
+                        //std::cout << "(CS) Preemptive GPS Preference!\n";
                         return true;
                     }
 
@@ -417,7 +417,8 @@ bool ContentStore::gpsPopularityCacheDecision(OverheardGPSObject_t* gpsPopularIt
                 //If item is below average, we don't care about it
                 if (sumValue > gpsPopularItem->referenceCount) return false;
 
-                //TODO: WAKAWAKA
+                //TODO: Think if we have to do something better?
+                return true;
             }
             break;
 
