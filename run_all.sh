@@ -7,7 +7,6 @@
 make clean
 make MODE=release -j4
 
-
 cd /home/felipe/Simulation/BaconNet/scenario/unified
 
 # Scenario Selection
