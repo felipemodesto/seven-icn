@@ -312,7 +312,7 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
 void ContentStore::handleGPSPopularityResponseMessage(WaveShortMessage* wsm) {
     Enter_Method_Silent();
 
-    std::cout << "(CS) Someone accepted our content. Cool\n";
+    //std::cout << "(CS) Someone accepted our content. Cool\n";
 
     cArray parArray = wsm->getParList();
     cMsgPar* prefixParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
