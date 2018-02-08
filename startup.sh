@@ -27,5 +27,5 @@ echo " --> System Name is $HOSTNAME"
 #	/home/felipe/Simulation/BaconNet/sumo-launchd.py -vv -c sumoD
 #else
 echo "Environment set on Machine [  ${HOSTNAME}  ]"
-~/Simulation/BaconNet/sumo-launchd.py -vv -c sumo &
+~/Simulation/BaconNet/sumo-launchd.py -vv -c sumoD &
 #fi

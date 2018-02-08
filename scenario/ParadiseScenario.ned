@@ -23,15 +23,16 @@ import org.car2x.veins.modules.obstacle.ObstacleControl;
 import org.car2x.veins.modules.world.annotations.AnnotationManager;
 import paradise.bacon.*;
 
-network ParadiseScenario {
+network ParadiseScenario
+{
     parameters:
         //@display("bgb=341,200;bgi=background/terrain,s");
-        
+
         double playgroundSizeX @unit(m); // x size of the area the nodes are in (in meters)
         double playgroundSizeY @unit(m); // y size of the area the nodes are in (in meters)
         double playgroundSizeZ @unit(m); // z size of the area the nodes are in (in meters)
         @display("bgb=3000,3000");
-        
+
         double playgroundLatitude; // geographic position of the playground's north-west corner
         double playgroundLongitude; // geographic position of the playground's north-west corner
         double playgroundWidth @unit("m") = default(10000m);  // the E-W size of playground
@@ -44,7 +45,7 @@ network ParadiseScenario {
         //obstacles: ObstacleControl {
         //    @display("p=72,59");
         //}
-        
+
         annotations: AnnotationManager {
             @display("p=961.28,54.072002");
         }
@@ -59,11 +60,11 @@ network ParadiseScenario {
                 playgroundSizeZ = playgroundSizeZ;
                 @display("p=66.088005,474.63202;i=misc/globe");
         }
-        manager: TraCIScenarioManagerLaunchd {
+        traci: TraCIScenarioManagerLaunchd {
             parameters:
                 @display("p=492.656,54.072002");
         }
-        
+
         statistics: Statistics {
             parameters:
                 @display("p=66.088005,1694.2561;i=block/bucket");
@@ -77,6 +78,6 @@ network ParadiseScenario {
         //osgEarthScene: OsgEarthScene {
         //    @display("p=72,59");
         //}
-        
-    	connections allowunconnected:
+
+    connections allowunconnected:
 }
