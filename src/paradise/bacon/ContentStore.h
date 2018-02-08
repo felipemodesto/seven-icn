@@ -57,7 +57,7 @@ class ContentStore : public omnetpp::cSimpleModule {
         bool hasLibrary = false;
         NodeRole nodeRole = NodeRole::MULE;
 
-        CacheLocationPolicy usingGPSCacheSystem = CacheLocationPolicy::IGNORE_LOCATION;
+        CacheLocationPolicy GPSCachePolicy = CacheLocationPolicy::IGNORE_LOCATION;
 
         std::list<CachedContent_t> contentCache;
         std::list<CachedContent_t> gpsCache;
@@ -77,7 +77,6 @@ class ContentStore : public omnetpp::cSimpleModule {
         int personalCacheSize = 0;
         int friendCacheSize = 0;
         int othersCacheSize = 0;
-
 
         double easingFactor = 0.75;
 
@@ -113,6 +112,7 @@ class ContentStore : public omnetpp::cSimpleModule {
         void maintainGPSCache();
         void logOverheardGPSMessage(Content_t* object);
         void handleGPSPopularityMessage(WaveShortMessage* wsm);
+        void handleGPSPopularityResponseMessage(WaveShortMessage* wsm);
 
         bool gpsPopularityCacheDecision(OverheardGPSObject_t* connection);      //Decision algorithm function whether item should be cached
         bool localPopularityCacheDecision(Connection_t* connection);            //Decision algorithm function whether item should be cached

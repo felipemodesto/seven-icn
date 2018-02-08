@@ -839,6 +839,9 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
     } else if (strcmp(wsm->getName(), MessageClass::GPS_BEACON.c_str()) == 0) {
         cache->handleGPSPopularityMessage(wsm);
         delete(wsm);
+    } else if (strcmp(wsm->getName(), MessageClass::GPS_ACCEPT.c_str()) == 0) {
+        cache->handleGPSPopularityResponseMessage(wsm);
+        delete(wsm);
     } else {
         std::cerr << "(SM) Unknown Message Type <" << wsm->getName() << ">\n";
         std::cerr.flush();
@@ -2236,7 +2239,6 @@ void ServiceManager::replyAfterContentInclusion(Connection_t* connection) {
 // CONNECTION LIST FUNCTIONS
 //=============================================================
 
-
 //Returns true if any connection has been overheard for said requestID
 bool ServiceManager::checkForConnections(long requestID) {
     //std::cout << "(SM) Looking for any connections for specific requestID\n";
@@ -2681,6 +2683,7 @@ bool ServiceManager::createInterest(std::string interestPrefix, int senderAddres
     return createInterest(library->getContent(interestPrefix),senderAddress);
 }
 
+//
 bool ServiceManager::createInterest(Content_t* contentObject, int senderAddress) {
     //std::cout << "(SM) Enter createInterest\n";
     //std::cout.flush();
@@ -2974,7 +2977,6 @@ void ServiceManager::logNetworkmessage(WaveShortMessage *msg) {
     //std::cout.flush();
 }
 
-
 //=============================================================
 // MESSAGE TRANSMISSION AND ARRIVAL FUNCTIONS
 //=============================================================
@@ -3002,10 +3004,37 @@ void ServiceManager::advertiseGPSItem(OverheardGPSObject_t mostPopularItem) {
     neighborParticipationParameters->setDoubleValue(mostPopularItem.referenceOriginCount);
     gpsBeaconMessage->addPar(neighborParticipationParameters);
 
+    //TODO: FIX/FINISH/WORK? XXXXXXXXXXXXXXXXXXXXXXXX
+    //Adding Local Load Perception
+    //cMsgPar* neighborParticipationParameters = new cMsgPar(MessageParameter::NEIGHBORS.c_str());
+    //neighborParticipationParameters->setDoubleValue(mostPopularItem.referenceOriginCount);
+    //gpsBeaconMessage->addPar(neighborParticipationParameters);
+
     //Adding -1 as a representation of no request ID
     cMsgPar* requestIDParameter = new cMsgPar(MessageParameter::CONNECTION_ID.c_str());
     requestIDParameter->setLongValue(-1);
     gpsBeaconMessage->addPar(requestIDParameter);
+
+    sendWSM(gpsBeaconMessage);
+}
+
+//
+void ServiceManager::notifyOfGPSInclusion(int providerID, OverheardGPSObject_t* insertedItem) {
+    Enter_Method_Silent();
+    WaveShortMessage * gpsBeaconMessage = prepareWSM(MessageClass::GPS_ACCEPT, beaconLengthBits, type_CCH, dataPriority, -1, -2);
+
+    //Adding Prefix of popular item
+    cMsgPar* popularPrefixParameter = new cMsgPar(MessageParameter::PREFIX.c_str());
+    popularPrefixParameter->setStringValue(insertedItem->referenceObject->contentPrefix.c_str());
+    gpsBeaconMessage->addPar(popularPrefixParameter);
+
+    //Adding -1 as a representation of no request ID
+    cMsgPar* requestIDParameter = new cMsgPar(MessageParameter::CONNECTION_ID.c_str());
+    requestIDParameter->setLongValue(-1);
+    gpsBeaconMessage->addPar(requestIDParameter);
+
+    //Setting our peer as the target
+    gpsBeaconMessage->setRecipientAddress(providerID);
 
     sendWSM(gpsBeaconMessage);
 }
@@ -3041,17 +3070,10 @@ void ServiceManager::sendWSM(WaveShortMessage* wsm, double forwardDelay) {
     sendDelayedDown(wsm,forwardDelay);
 }
 
-
 //
 void ServiceManager::sendBeacon() {
-    //std::cout << "(SM) Enter sendBeacon\n";
-    //std::cout.flush();
-
     //Updating neighbor prior to beacon broadcast
     refreshNeighborhood();
-
-    //std::cout << "(SM) <" << myId << "> Sending Beacon!\n";
-
 
     WaveShortMessage * beaconMessage = prepareWSM(MessageClass::BEACON, beaconLengthBits, type_CCH, beaconPriority, -1, -1);
 

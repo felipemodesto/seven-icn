@@ -920,6 +920,11 @@ int GlobalLibrary::getSectorFromPrefixIndex(int index) {
     return sectorPopularityIndex[index-1];
 }
 
+
+int GlobalLibrary::getSectorFromPrefix(string prefix) {
+    return sectorPopularityIndex[getClassFreeIndex(prefix)-1];
+}
+
 //
 long int GlobalLibrary::getCurrentRequestIndex() {
     return currentRequestIndex;
@@ -946,6 +951,7 @@ bool GlobalLibrary::equals(Content_t* first, Content_t* second) {
     return first == second;
     //return equals(*first,*second);
 }
+
 //
 bool GlobalLibrary::equals(Content_t first, Content_t second) {
     if (first.contentClass != second.contentClass) return false;
@@ -977,4 +983,21 @@ bool GlobalLibrary::equals(Content_t first, std::string second) {
     std::cerr << "\t" << secondCategory.compare(transitPrefix) << "\t" << secondCategory.compare(networkPrefix) << "\t" << secondCategory.compare(multimediaPrefix) << "\n";
     return false;
 }
+
+
+
+double GlobalLibrary::distanceBetweenGPSContents(Content_t* first, Content_t* second) {
+    int firstSector = getSectorFromPrefix(first->contentPrefix);
+    int secondSector = getSectorFromPrefix(second->contentPrefix);
+
+    int sector01CenterX = static_cast <int> (floor((floor((firstSector-1) % widthBlocks) * sectorWidth) + sectorWidth/2));
+    int sector01CenterY = static_cast <int> (floor((floor((firstSector-1) / widthBlocks) * sectorHeight) + sectorHeight/2));
+
+    int sector02CenterX = static_cast <int> (floor((floor((secondSector-1) % widthBlocks) * sectorWidth) + sectorWidth/2));
+    int sector02CenterY = static_cast <int> (floor((floor((secondSector-1) / widthBlocks) * sectorHeight) + sectorHeight/2));
+
+    return round(sqrt( pow(sector01CenterX - sector02CenterX, 2) + pow(sector01CenterY - sector02CenterY, 2) ));
+}
+
+
 

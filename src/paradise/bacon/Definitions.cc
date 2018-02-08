@@ -35,4 +35,5 @@ const std::string MessageClass::DATA_INCLUDE = "data_include";
 const std::string MessageClass::DATA_EXLUDE = "data_exclude";
 const std::string MessageClass::BEACON = "beacon";
 const std::string MessageClass::GPS_BEACON = "gps_beacon";
+const std::string MessageClass::GPS_ACCEPT = "gps_accept";
 const std::string MessageClass::SELF_BEACON_TIMER = "selfBeaconTimer";

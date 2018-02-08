@@ -137,12 +137,16 @@ public:
     int getContentClass(ContentClass cClass);
     int getClassFreeIndex(string contentPrefix);    //Returns the last portion of the prefix, without any class property as an integer (cause that is what we use for simplicity)
     int getSectorFromPrefixIndex(int index);
+    int getSectorFromPrefix(string contentPrefix);
 
     static std::string cleanString(std::string inputString);
     bool equals(Content_t* first, Content_t* second);
     bool equals(Content_t first, Content_t second);
     bool equals(Content_t first, std::string second);
 
+    int getMinimumViableDistance() {return maximumViableDistance;};
+
+    double distanceBetweenGPSContents(Content_t* first, Content_t* second);
 };
 
 #endif /* BACONLIBRARY_H */

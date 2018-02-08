@@ -43,6 +43,7 @@
 using Veins::TraCIMobility;
 using Veins::AnnotationManager;
 
+#define KEY_HASH = "6Z7fBNy84fP9";
 
 ////////////////////////////////////////////////////////////////////
 //  POLICY & OTHER SIMULATION RELATED EVALUATION PARAMETERS
@@ -131,8 +132,9 @@ enum CacheReplacementPolicy {
 //Policy used to take advantage of Location Correlation
 enum CacheLocationPolicy {
     IGNORE_LOCATION = 0,
-    SERVER_CENTRIC = 1,     //Server Centric - If Content is available, log request
-    CLIENT_CENTRIC = 2      //Client Centric - If content is available in cache, ignore request
+    PLC_NAIVE = 1,          //Server Centric - Dumb PLC - If Content is available and has increased probability, log request
+    PLC_SMART = 2,          //Server Centric - Smarter PLC - Take into consideration distance and time since object was added to cache
+    CLIENT_CENTRIC = 10     //Client Centric - If content is available in cache, ignore request
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -180,10 +182,10 @@ struct Content_t {
 
 struct CachedContent_t {
     Content_t* referenceObject;             //NOTE: This is a reference and not an extension to save memory
-    simtime_t lastAccessTime;               //Time in which object was obtained
+    simtime_t lastAccessTime;               //Time during which we last got a reference to the item
+    simtime_t cacheTime;                    //Time in which object was obtained
     long useCount;                          //Number of times content was "requested" while in a Library
     ContentStatus contentStatus;            //Status of Content
-    //simtime_t expireTime;                 //Time in which object will become Stale
 };
 
 //Variation of a general content object used by Clients to track status of object requests
@@ -277,6 +279,7 @@ class MessageClass {
         static const std::string DATA_EXLUDE;       //Cache Data Exclusion Message
         static const std::string BEACON;            //Generic Data message used by Veins Wave Class
         static const std::string GPS_BEACON;        //GPS Beacons used to share information of items
+        static const std::string GPS_ACCEPT;        //Reply to GPS Beacon accepting object
         static const std::string SELF_BEACON_TIMER; //
 };
 

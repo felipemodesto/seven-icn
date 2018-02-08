@@ -26,8 +26,8 @@ void ContentStore::initialize(int stage) {
         maxCachedContents = par("maxCachedContents").longValue();
 
         //We only do our GPS stuff if we have GPS Cache enabled
-        usingGPSCacheSystem = static_cast<CacheLocationPolicy>(par("geoCachePolicy").longValue());
-        if (usingGPSCacheSystem != CacheLocationPolicy::IGNORE_LOCATION) {
+        GPSCachePolicy = static_cast<CacheLocationPolicy>(par("geoCachePolicy").longValue());
+        if (GPSCachePolicy != CacheLocationPolicy::IGNORE_LOCATION) {
             //std::cout << "(CS) USING GPS\n";
             gpsCacheSize = par("geoCacheSize").longValue();
             maxCachedContents -= gpsCacheSize;                //Resizing total cache size
@@ -63,7 +63,7 @@ void ContentStore::initialize(int stage) {
 
         buildContentCache();
 
-        if (usingGPSCacheSystem == true) {
+        if (GPSCachePolicy != CacheLocationPolicy::IGNORE_LOCATION) {
             gpsCacheTimerMessage = new cMessage("gpsCacheUpdateTimer");
             resetGPSTimer();
         }
@@ -162,7 +162,6 @@ void ContentStore::shareGPSStatistics() {
             bool foundItem = false;
             for(auto aggregatedObject = aggregatedGPSStatistics.gpsList.begin() ; aggregatedObject != aggregatedGPSStatistics.gpsList.end(); aggregatedObject++) {
                 if (library->equals(aggregatedObject->referenceObject,gpsObject->referenceObject)) {
-                //if (aggregatedObject->referenceObject->contentPrefix.compare(gpsObject->referenceObject->contentPrefix) == 0) {
                     aggregatedObject->referenceCount += gpsObject->referenceCount * pow(easingFactor,temporalIndex);
                     foundItem = true;
                     break;
@@ -172,8 +171,6 @@ void ContentStore::shareGPSStatistics() {
                 OverheardGPSObject_t newObject;
                 newObject.referenceCount = gpsObject->referenceCount * pow(easingFactor,temporalIndex);
                 newObject.referenceObject = gpsObject->referenceObject;
-                //newObject.contentPrefix = gpsObject->contentPrefix;
-                //newObject.contentClass = gpsObject->contentClass;
                 newObject.referenceOriginCount = gpsObject->referenceOriginCount;
                 aggregatedGPSStatistics.gpsList.push_back(newObject);
             }
@@ -199,7 +196,7 @@ void ContentStore::shareGPSStatistics() {
 //Function called to check whether object is relevant to us in terms of logging it for our Current Location Correlation Policy
 bool ContentStore::isObjectGPSRelevant(Content_t* object) {
     //Reacting according to the Location Policy
-    switch(usingGPSCacheSystem) {
+    switch(GPSCachePolicy) {
         case CacheLocationPolicy::IGNORE_LOCATION:
             //Always return (Ignore subsystem)
             return false;
@@ -209,7 +206,8 @@ bool ContentStore::isObjectGPSRelevant(Content_t* object) {
             if (availableFromCache(object) != NULL) return false;
             break;
 
-        case CacheLocationPolicy::SERVER_CENTRIC:
+        case CacheLocationPolicy::PLC_NAIVE:
+        case CacheLocationPolicy::PLC_SMART:
             //Server-Correlation: Relevant to log requests if we are where its valid
             //if ((availableFromCache(object) == NULL) && (availableFromLocation(object) == NULL)) return false;
             //std::cout << "\t\tMAYBE\n";
@@ -306,9 +304,31 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
         //TODO: (IMPLEMENT) Actually request the GPS item! (We already log our preemptive request)
         stats->increasePLCPreemptiveCacheRequests();
         addContentToGPSCache(incomingPopularItemReference);
+        manager->notifyOfGPSInclusion(wsm->getSenderAddress(),incomingPopularItemReference);
     }
 }
 
+//
+void ContentStore::handleGPSPopularityResponseMessage(WaveShortMessage* wsm) {
+    Enter_Method_Silent();
+
+    std::cout << "(CS) Someone accepted our content. Cool\n";
+
+    cArray parArray = wsm->getParList();
+    cMsgPar* prefixParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
+
+    string referencePrefix = prefixParameter->stringValue();
+
+    //OverheardGPSObject_t* incomingPopularItemReference = NULL;
+    //bool foundInNeighborList = false;
+    for (auto iterator = neighborGPSInformation.gpsList.begin(); iterator != neighborGPSInformation.gpsList.end() ; iterator++) {
+        if (library->equals(*(iterator->referenceObject),referencePrefix) == true) {
+            iterator->referenceCount = round(iterator->referenceCount/2);
+            return;
+        }
+    }
+
+}
 
 ////////////////////////////////////////////
 //GPS Cache Operations
@@ -346,22 +366,64 @@ bool ContentStore::gpsPopularityCacheDecision(OverheardGPSObject_t* gpsPopularIt
     if (static_cast<int>(gpsCache.size()) < gpsCacheSize) return true;
 
     //TODO: (IMPLEMENT) Design and Implement a greater than average mode evaluation for the GPS Pre-caching decision
-    {
-        //We currently only have a bigger than the smallest item in side-cache mode
+    switch (GPSCachePolicy){
+        case CacheLocationPolicy::PLC_NAIVE: {
+                //We currently only have a bigger than the smallest item in side-cache mode
 
-        //Iterating through our location-dependent cache to see if the suggested item is more popular than the stuff we already have
-        CachedContent_t* minimumObject = &gpsCache.front();
-        for (auto iterator = gpsCache.begin()++; iterator != gpsCache.end(); iterator++) {
-            if (minimumObject->useCount >= iterator->useCount) {
-                minimumObject = &*iterator;
+                //Iterating through our location-dependent cache to see if the suggested item is more popular than the stuff we already have
+                CachedContent_t* minimumObject = &gpsCache.front();
+                for (auto iterator = gpsCache.begin()++; iterator != gpsCache.end(); iterator++) {
+                    if (minimumObject->useCount >= iterator->useCount) {
+                        minimumObject = &*iterator;
+                    }
+                }
+
+                //Deciding whether we remove the item
+                //TODO: Consider the referenceOriginCount neighbor advertisements as part of the solution
+                if (minimumObject->useCount <= gpsPopularItem->referenceCount) {
+                    return true;
+                }
+
             }
-        }
+            break;
 
-        //Deciding whether we remove the item
-        //TODO: Consider the referenceOriginCount neighbor advertisements as part of the solution
-        if (minimumObject->useCount <= gpsPopularItem->referenceCount) {
-            return true;
-        }
+        case CacheLocationPolicy::PLC_SMART: {
+                double sumValue = 0;
+
+                //Iterating through our location-dependent cache to see if the suggested item is more popular than the stuff we already have
+                CachedContent_t* minimumObject = &gpsCache.front();
+                for (auto iterator = gpsCache.begin()++; iterator != gpsCache.end(); iterator++) {
+                    //Checking if distance between this item and previous one is shorter than our limit and this one has greater ranking
+                    if ( gpsPopularItem->referenceCount > iterator->useCount && library->distanceBetweenGPSContents(gpsPopularItem->referenceObject,iterator->referenceObject) <= (2 * library->getMinimumViableDistance())) {
+                        //If our cache is full we'll remove this less relevant object (it has to be at this point)
+                        //We do this preemptively to ensure correct item selection
+                        iterator = gpsCache.erase(iterator);
+                        stats->increasePLCCacheReplacements();
+                        std::cout << "(CS) Preemptive GPS Preference!\n";
+                        return true;
+                    }
+
+                    if (minimumObject->useCount >= iterator->useCount) {
+                        minimumObject = &*iterator;
+                    }
+                    sumValue += iterator->useCount;
+                }
+
+                if (gpsCache.size() > 0) {
+                    sumValue = sumValue / gpsCache.size();
+                } else {
+                    sumValue = 0;
+                }
+                //If item is below average, we don't care about it
+                if (sumValue > gpsPopularItem->referenceCount) return false;
+
+                //TODO: WAKAWAKA
+            }
+            break;
+
+        default:
+            std::cerr << "WARNING: UNKNOWN CACHE POLICY MALUCOOOO\n";
+            break;
     }
     return false;
 }
@@ -391,6 +453,7 @@ void ContentStore::addContentToGPSCache(OverheardGPSObject_t* gpsPopularItem) {
     newContent.referenceObject = gpsPopularItem->referenceObject;
     newContent.contentStatus = ContentStatus::AVAILABLE;
     newContent.lastAccessTime = simTime();
+    newContent.cacheTime = newContent.lastAccessTime;
     newContent.useCount = gpsPopularItem->referenceCount;
     gpsCache.push_front(newContent);
 
@@ -409,8 +472,7 @@ void ContentStore::runGPSCacheReplacement() {
         return;
     }
 
-
-    //Looking for least used messages (aware of multiple occurences of same metric value)
+    //Looking for least used messages (aware of multiple occurrences of same metric value)
     int sameUseCount = 1;
     int timesUsed = library->getCurrentRequestIndex()+1;
     for (auto it = gpsCache.begin(); it != gpsCache.end() ; it++) {
@@ -435,7 +497,7 @@ void ContentStore::runGPSCacheReplacement() {
     //Searching for last item with desired time value to be removed
     while (foundRemoval == false) {
         for (auto it = gpsCache.begin(); it != gpsCache.end() ; it++) {
-            if (it->useCount == timesUsed) {
+            if (it->useCount <= timesUsed) {
                 //We just remove the first one we find, dont care about having multiple items with the same probability anymore
                 //if ( (foundRemoval == false) && (sameUseCount == 1 || (uniform(0,1) < individualProbability))) {
                     foundRemoval = true;
@@ -501,6 +563,7 @@ void ContentStore::addContentToCache(Content_t* contentObject) {
     newContent.referenceObject = contentObject;
     newContent.contentStatus = ContentStatus::AVAILABLE;
     newContent.lastAccessTime = simTime();
+    newContent.cacheTime = newContent.lastAccessTime;
     newContent.useCount = 0;
     //newContent.expireTime = SIMTIME_S;
     contentCache.push_front(newContent);
@@ -848,10 +911,12 @@ void ContentStore::increaseUseCount(int addedUses, std::string prefix) {
     increaseUseCount(addedUses,referenceObject);
 }
 
+//
 void ContentStore::increaseUseCount(Content_t* object) {
     increaseUseCount(1,object);
 }
 
+//
 void ContentStore::increaseUseCount(int addedUses, Content_t* object) {
 
     //Looking for Item
@@ -999,7 +1064,7 @@ NodeRole ContentStore::getRole() {
 //Getter for the Separate GPS Cache subsystem
 bool ContentStore::gpsSubCacheEnabled() {
     Enter_Method_Silent();
-    return usingGPSCacheSystem != CacheLocationPolicy::IGNORE_LOCATION;
+    return GPSCachePolicy != CacheLocationPolicy::IGNORE_LOCATION;
 }
 
 //Getter for the currently used Cache Policy
