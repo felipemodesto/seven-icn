@@ -41,6 +41,10 @@ if [ "OptiPlex-70XX" = "${HOSTNAME}" ]; then
 	RUN_CODE="/home/shared/omnet/bin/opp_run"
 fi
 
+if [ "OptiPlex-70K0" = "${HOSTNAME}" ]; then
+	RUN_CODE="-b1 ~/Simulation/omnetpp-5.2.1/bin/opp_run"
+fi
+
 if [ "ubuntu" = "${HOSTNAME}" ]; then
 	RUN_CODE="-b1 /home/felipe/Simulation/omnetpp-5.2/bin/opp_run"
 fi
