@@ -201,6 +201,7 @@ struct OverheardGPSObject_t {
     Content_t* referenceObject;
     double referenceCount;                  //Number of requests this object has had in the current list (sliding window column) - We keep this as a double value to make our calculations later easier
     double referenceOriginCount;            //Number of advertisements that lead to the current Reference Count
+    int distance;
 };
 
 //List of overheard GPS Stuff
