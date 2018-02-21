@@ -193,7 +193,7 @@ class ServiceManager : public BaseWaveApplLayer {
     public:
         static WaveShortMessage* convertCMessage(cMessage* msg);               //Convert cMessage to WaveShortMessage (Cast for now)
         ContentClass getClassFromPrefix(std::string prefix);
-        void advertiseGPSItem(OverheardGPSObject_t mostPopularItem);
+        void advertiseGPSItem(OverheardGPSObject_t mostPopularItem, int distance);
         void notifyOfGPSInclusion(int providerID, OverheardGPSObject_t* insertedItem);
 };
 

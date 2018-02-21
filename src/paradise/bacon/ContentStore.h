@@ -110,7 +110,7 @@ class ContentStore : public omnetpp::cSimpleModule {
 
         void shareGPSStatistics();
         void maintainGPSCache();
-        void logOverheardGPSMessage(Content_t* object);
+        void logGPSRequest(Content_t* object);
         void handleGPSPopularityMessage(WaveShortMessage* wsm);
         void handleGPSPopularityResponseMessage(WaveShortMessage* wsm);
 

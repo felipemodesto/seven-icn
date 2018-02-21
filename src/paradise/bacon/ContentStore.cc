@@ -122,6 +122,7 @@ void ContentStore::maintainGPSCache() {
                 //if (itA->referenceObject->contentPrefix.compare(itB->referenceObject->contentPrefix) == 0) {
                     foundRemoteItem = true;
                     itB->referenceCount += itA->referenceCount * easingFactor;
+                    break;
                     //Popularity information incoming from other items has the easing added to it, even if they are part of the most recent sector, cause I said so, fuck it!
                 }
             }
@@ -130,8 +131,8 @@ void ContentStore::maintainGPSCache() {
                 OverheardGPSObject_t newGPSObject;
                 newGPSObject.referenceObject = itA->referenceObject;
                 newGPSObject.referenceCount = itA->referenceCount;
-                //newGPSObject.contentClass = itA->contentClass;
                 newGPSObject.referenceOriginCount = itA->referenceOriginCount;
+                newGPSObject.distance = itA->distance;
                 frontFrequencySlice->gpsList.push_front(newGPSObject);
             }
         }
@@ -167,11 +168,13 @@ void ContentStore::shareGPSStatistics() {
                     break;
                 }
             }
+            //Creating an aggregate list from info from all window slits, if !foundItem, this is the first reference in the sliding window
             if (!foundItem) {
                 OverheardGPSObject_t newObject;
                 newObject.referenceCount = gpsObject->referenceCount * pow(easingFactor,temporalIndex);
                 newObject.referenceObject = gpsObject->referenceObject;
                 newObject.referenceOriginCount = gpsObject->referenceOriginCount;
+                newObject.distance = gpsObject->distance;
                 aggregatedGPSStatistics.gpsList.push_back(newObject);
             }
         }
@@ -186,10 +189,8 @@ void ContentStore::shareGPSStatistics() {
         //std::cout << "\t[" << myId << "]\t(CS) Sorted list has size: <" << aggregatedGPSStatistics.gpsList.size() << ">\n";
         OverheardGPSObject_t mostPopularObject = aggregatedGPSStatistics.gpsList.front();
 
-        //std::cout << "[" << myId << "]\t(CS) Advertising most popular non-cached item : <" << mostPopularObject.referenceObject->contentPrefix << "> with count <" << mostPopularObject.referenceCount << ">\n";
-
         //Advertising most popular object
-        manager->advertiseGPSItem(mostPopularObject);
+        manager->advertiseGPSItem(mostPopularObject,mostPopularObject.distance);
     }
 }
 
@@ -218,9 +219,7 @@ bool ContentStore::isObjectGPSRelevant(Content_t* object) {
 }
 
 //Function called once per request
-void ContentStore::logOverheardGPSMessage(Content_t* object) {
-
-    //std::cout << "\tPlease?\n";
+void ContentStore::logGPSRequest(Content_t* object) {
 
     //If the object is not relevant for us given the current Location policy, we dont log the message
     if (!isObjectGPSRelevant(object)) return;
@@ -233,30 +232,30 @@ void ContentStore::logOverheardGPSMessage(Content_t* object) {
     //std::cout.flush();
 
     //Searching most recent slice
-    bool foundItem = false;
+    //bool foundItem = false;
     for (auto it = frontFrequencySlice->gpsList.begin(); it != frontFrequencySlice->gpsList.end() ; it++) {
         if (library->equals(object,it->referenceObject)) {
         //if (object->contentPrefix.compare(it->referenceObject->contentPrefix) == 0) {
             //If we found the element, let's update the status
             it->referenceCount++;
-            foundItem = true;
+            //foundItem = true;
 
             //std::cout << "[" << myId << "]\t(CS) Increasing Popularity to <" << it->referenceCount++ << ">\n";
             //std::cout.flush();
-            break;
+            //break;
+            return;
         }
     }
 
     //If we haven't found the object, we'll create a new entry
-    if (!foundItem) {
+    //if (!foundItem) {
         OverheardGPSObject_t newGPSObject;
         newGPSObject.referenceCount = 1;
         newGPSObject.referenceObject = object;
-        //newGPSObject.contentPrefix = object->contentPrefix;
-        //newGPSObject.contentClass = object->contentClass;
         newGPSObject.referenceOriginCount = 1;
+        newGPSObject.distance = 0;                      //
         frontFrequencySlice->gpsList.push_front(newGPSObject);
-    }
+    //}
 }
 
 //Function called to potentially update our GPS statistics (and even our cache) with item
@@ -267,11 +266,13 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
     cMsgPar* prefixParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::PREFIX.c_str()));
     cMsgPar* frequencyParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::FREQUENCY.c_str()));
     cMsgPar* referenceFrequencyParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::NEIGHBORS.c_str()));
+    cMsgPar* distanceParameter = static_cast<cMsgPar*>(parArray.get(MessageParameter::HOPS_DOWN.c_str()));
 
     OverheardGPSObject_t incomingPopularItem;
     incomingPopularItem.referenceCount = frequencyParameter->doubleValue();
     incomingPopularItem.referenceObject = library->getContent(prefixParameter->stringValue());
     incomingPopularItem.referenceOriginCount = referenceFrequencyParameter->doubleValue();
+    incomingPopularItem.distance = distanceParameter->longValue();
 
     //Note: If we're learning information from other nodes, it might be relevant to log that info, even if direct requests are not necessarily valid for us, right?
     //For now, we're only interested in locally popular content objects
@@ -282,9 +283,12 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
     bool foundInNeighborList = false;
     for (auto iterator = neighborGPSInformation.gpsList.begin(); iterator != neighborGPSInformation.gpsList.end() ; iterator++) {
         if (library->equals(iterator->referenceObject,incomingPopularItem.referenceObject) == true) {
-        //if (iterator->referenceObject->contentPrefix.compare(incomingPopularItem.referenceObject->contentPrefix) == 0) {
+
+            //We keep the aggregate of usage counts from our neighbors?
             iterator->referenceCount += incomingPopularItem.referenceCount;
             iterator->referenceOriginCount += incomingPopularItem.referenceOriginCount;
+            //We keep the smallest distance count
+            if (iterator->distance > incomingPopularItem.referenceOriginCount) iterator->distance = incomingPopularItem.distance;
             foundInNeighborList = true;
             incomingPopularItemReference = &*iterator;
             break;
@@ -305,6 +309,8 @@ void ContentStore::handleGPSPopularityMessage(WaveShortMessage* wsm) {
         stats->increasePLCPreemptiveCacheRequests();
         addContentToGPSCache(incomingPopularItemReference);
         manager->notifyOfGPSInclusion(wsm->getSenderAddress(),incomingPopularItemReference);
+    } else {
+        //TODO: Forward PLC Advertisement to our neighbors
     }
 }
 

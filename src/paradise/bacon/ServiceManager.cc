@@ -809,7 +809,7 @@ void ServiceManager::onNetworkMessage(WaveShortMessage* wsm) {
                 if (contentObject->contentClass == ContentClass::TRAFFIC) {
                     //std::cout << "[" << myId << "] (SM) Passing on information to Content Store on Connection ID <" << requestID->longValue() << "> from message of type <" << wsm->getName() << ">.\n";
                     //Notify Content Store of relevant request frequency statistics
-                    cache->logOverheardGPSMessage(contentObject);
+                    cache->logGPSRequest(contentObject);
                 } else {
                     //std::cout << "(SM) Content belongs to a class we don't care about? Confused\n";
                 }
@@ -2985,7 +2985,7 @@ void ServiceManager::logNetworkmessage(WaveShortMessage *msg) {
 //Note: This is always called from the Content Store (technically once per Second or however long we set the refresh timer for it)
 
 //
-void ServiceManager::advertiseGPSItem(OverheardGPSObject_t mostPopularItem) {
+void ServiceManager::advertiseGPSItem(OverheardGPSObject_t mostPopularItem, int distance) {
     Enter_Method_Silent();
     WaveShortMessage * gpsBeaconMessage = prepareWSM(MessageClass::GPS_BEACON, beaconLengthBits, type_CCH, dataPriority, -1, -2);
 
@@ -3004,11 +3004,10 @@ void ServiceManager::advertiseGPSItem(OverheardGPSObject_t mostPopularItem) {
     neighborParticipationParameters->setDoubleValue(mostPopularItem.referenceOriginCount);
     gpsBeaconMessage->addPar(neighborParticipationParameters);
 
-    //TODO: FIX/FINISH/WORK? XXXXXXXXXXXXXXXXXXXXXXXX
-    //Adding Local Load Perception
-    //cMsgPar* neighborParticipationParameters = new cMsgPar(MessageParameter::NEIGHBORS.c_str());
-    //neighborParticipationParameters->setDoubleValue(mostPopularItem.referenceOriginCount);
-    //gpsBeaconMessage->addPar(neighborParticipationParameters);
+    //Adding Distance to Advertisement
+    cMsgPar* distanceParameter = new cMsgPar(MessageParameter::HOPS_DOWN.c_str());
+    distanceParameter->setLongValue(distance);
+    gpsBeaconMessage->addPar(distanceParameter);
 
     //Adding -1 as a representation of no request ID
     cMsgPar* requestIDParameter = new cMsgPar(MessageParameter::CONNECTION_ID.c_str());
